@@ -74,6 +74,21 @@ const StudentProfile = () => {
   const hasStudentData = scores.qualityOfLife.studentNormalized >= 0;
   const hasParentData = scores.qualityOfLife.parentNormalized >= 0;
 
+  // Timeline data for progress tracking
+  const timelineData = reassessmentScores ? [
+    { label: SECTION_LABELS.quality_of_life, קליטה: scores.qualityOfLife.studentNormalized >= 0 ? scores.qualityOfLife.studentNormalized : 0, סיכום: reassessmentScores.qualityOfLife.studentNormalized >= 0 ? reassessmentScores.qualityOfLife.studentNormalized : 0 },
+    { label: SECTION_LABELS.self_efficacy, קליטה: scores.selfEfficacy.studentNormalized >= 0 ? scores.selfEfficacy.studentNormalized : 0, סיכום: reassessmentScores.selfEfficacy.studentNormalized >= 0 ? reassessmentScores.selfEfficacy.studentNormalized : 0 },
+    { label: SECTION_LABELS.locus_of_control, קליטה: scores.locusOfControl.studentNormalized >= 0 ? scores.locusOfControl.studentNormalized : 0, סיכום: reassessmentScores.locusOfControl.studentNormalized >= 0 ? reassessmentScores.locusOfControl.studentNormalized : 0 },
+    { label: SECTION_LABELS.cognitive_flexibility, קליטה: scores.cognitiveFlexibility.studentNormalized >= 0 ? scores.cognitiveFlexibility.studentNormalized : 0, סיכום: reassessmentScores.cognitiveFlexibility.studentNormalized >= 0 ? reassessmentScores.cognitiveFlexibility.studentNormalized : 0 },
+  ] : null;
+
+  const handleExportPersonalPlan = async () => {
+    await generatePersonalPlanPDF(session, {
+      aiRecommendations: aiResult || undefined,
+      supportPlans: supportPlansData,
+    });
+  };
+
   const handleCopy = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
     setCopied(label);
