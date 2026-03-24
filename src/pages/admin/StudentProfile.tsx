@@ -330,25 +330,6 @@ const StudentProfile = () => {
           </div>
         )}
 
-        {/* Academic Assessment Section */}
-        <AcademicAssessment
-          sessionId={session.id}
-          studentName={session.studentName}
-          gradeLevel={session.grade || "ט"}
-          existingScores={scores}
-          assessments={academicAssessments}
-          onAssessmentsChange={handleRefreshAssessments}
-        />
-
-        {/* AI Insights Section */}
-        {hasStudentData && (
-          <AIInsightsCard
-            studentName={session.studentName}
-            gradeLevel={session.grade || ""}
-            existingScores={scores}
-            academicData={academicAssessments.filter((a) => a.status === "analyzed").map((a) => a.ai_analysis)}
-          />
-        )}
 
         {/* Open-ended Responses */}
         {Object.keys(session.studentOpenResponses).length > 0 && (
