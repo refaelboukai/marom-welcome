@@ -4,7 +4,7 @@ import { getSessionDB, updateSessionDB } from "@/lib/supabase-storage";
 import { IntakeSession } from "@/lib/types";
 import QuestionnaireFlow from "@/components/QuestionnaireFlow";
 import logo from "@/assets/logo.jpeg";
-import { Heart, Star, Loader2 } from "lucide-react";
+import { Heart, Star, Loader2, LogOut } from "lucide-react";
 
 type Step = "welcome" | "questionnaire" | "complete";
 
@@ -72,7 +72,10 @@ const ParentFlow = () => {
 
   if (step === "welcome") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-background">
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-background relative">
+        <button onClick={() => navigate("/")} className="absolute top-4 left-4 p-2 rounded-xl hover:bg-muted transition-colors" title="התנתק">
+          <LogOut className="w-5 h-5 text-muted-foreground" />
+        </button>
         <div className="w-full max-w-md animate-fade-in text-center">
           <img src={logo} alt="מרום" className="h-16 mx-auto mb-6" />
           <h1 className="text-2xl font-heading font-bold mb-3">שלום, הורה יקר</h1>
@@ -99,10 +102,8 @@ const ParentFlow = () => {
               ככל שהפער בין צרכיו של האדם לבין מציאות חייו קטן יותר — כך איכות החיים גבוהה יותר.
             </p>
           </div>
-          <button
-            onClick={handleStart}
-            className="btn-intake w-full bg-primary text-primary-foreground shadow-md hover:shadow-lg text-lg py-4 mt-6"
-          >
+          <button onClick={handleStart}
+            className="btn-intake w-full bg-primary text-primary-foreground shadow-md hover:shadow-lg text-lg py-4 mt-6">
             התחל
           </button>
         </div>
@@ -112,7 +113,10 @@ const ParentFlow = () => {
 
   if (step === "questionnaire") {
     return (
-      <div className="min-h-screen py-6 bg-background">
+      <div className="min-h-screen py-6 bg-background relative">
+        <button onClick={() => navigate("/")} className="absolute top-4 left-4 z-30 p-2 rounded-xl hover:bg-muted transition-colors" title="התנתק">
+          <LogOut className="w-5 h-5 text-muted-foreground" />
+        </button>
         <QuestionnaireFlow
           role="parent"
           responses={session.parentResponses}
@@ -127,7 +131,10 @@ const ParentFlow = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-background">
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-background relative">
+      <button onClick={() => navigate("/")} className="absolute top-4 left-4 p-2 rounded-xl hover:bg-muted transition-colors" title="התנתק">
+        <LogOut className="w-5 h-5 text-muted-foreground" />
+      </button>
       <div className="w-full max-w-md animate-fade-in text-center">
         <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-success/15 flex items-center justify-center">
           <Heart className="w-10 h-10 text-success" />
@@ -139,6 +146,9 @@ const ParentFlow = () => {
         <div className="intake-card mt-6">
           <p className="text-sm text-muted-foreground">💚 אנחנו מעריכים את המעורבות שלך</p>
         </div>
+        <button onClick={() => navigate("/")} className="btn-intake bg-secondary text-secondary-foreground mt-4">
+          חזרה למסך הראשי
+        </button>
       </div>
     </div>
   );

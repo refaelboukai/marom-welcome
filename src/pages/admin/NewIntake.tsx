@@ -13,6 +13,7 @@ const NewIntake = () => {
     parentName: "",
     parentPhone: "",
     secondParentName: "",
+    classGroup: "",
     notes: "",
   });
   const [created, setCreated] = useState<{ studentCode: string; parentCode: string } | null>(null);
@@ -75,7 +76,7 @@ const NewIntake = () => {
               <button
                 onClick={() => {
                   setCreated(null);
-                  setForm({ studentName: "", studentIdNumber: "", grade: "", intakeDate: new Date().toISOString().split("T")[0], parentName: "", parentPhone: "", secondParentName: "", notes: "" });
+                  setForm({ studentName: "", studentIdNumber: "", grade: "", intakeDate: new Date().toISOString().split("T")[0], parentName: "", parentPhone: "", secondParentName: "", classGroup: "", notes: "" });
                 }}
                 className="btn-intake bg-secondary text-secondary-foreground flex-1"
               >
@@ -127,6 +128,17 @@ const NewIntake = () => {
               />
             </div>
           ))}
+
+          {/* Class group selector */}
+          <div>
+            <label className="block text-sm font-medium mb-1.5">כיתה / קבוצה</label>
+            <select value={form.classGroup} onChange={(e) => updateField("classGroup", e.target.value)}
+              className="w-full bg-card border border-input rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+              <option value="">ללא שיוך</option>
+              <option value="tali">הכיתה של טלי</option>
+              <option value="eden">הכיתה של עדן</option>
+            </select>
+          </div>
 
           <div>
             <label className="block text-sm font-medium mb-1.5">הערות</label>
