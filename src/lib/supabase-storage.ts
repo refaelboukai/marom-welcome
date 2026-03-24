@@ -16,11 +16,15 @@ function rowToSession(row: any): IntakeSession {
     notes: row.notes,
     studentCode: row.student_code,
     parentCode: row.parent_code,
+    staffCode: row.staff_code,
+    classGroup: row.class_group || "",
     status: row.status as IntakeStatus,
     studentResponses: (row.student_responses as Record<string, number>) || {},
     studentOpenResponses: (row.student_open_responses as Record<string, string>) || {},
     parentResponses: (row.parent_responses as Record<string, number>) || {},
     parentOpenResponse: row.parent_open_response,
+    staffResponses: (row.staff_responses as Record<string, number>) || {},
+    staffOpenResponses: (row.staff_open_responses as Record<string, string>) || {},
     adminNotes: row.admin_notes,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -59,6 +63,8 @@ export async function initializeSessionsDB(): Promise<void> {
       parent_phone: studentData ? (studentData.motherPhone || studentData.fatherPhone) : "",
       student_code: sc.code,
       parent_code: generateCode(),
+      staff_code: generateCode(),
+      class_group: sc.classGroup || "",
       status: "not_started",
     };
   });
@@ -135,6 +141,9 @@ export async function updateSessionDB(id: string, updates: Partial<IntakeSession
   if (updates.parentOpenResponse !== undefined) dbUpdates.parent_open_response = updates.parentOpenResponse;
   if (updates.adminNotes !== undefined) dbUpdates.admin_notes = updates.adminNotes;
   if (updates.closedAt !== undefined) dbUpdates.closed_at = updates.closedAt;
+  if (updates.staffResponses !== undefined) dbUpdates.staff_responses = updates.staffResponses;
+  if (updates.staffOpenResponses !== undefined) dbUpdates.staff_open_responses = updates.staffOpenResponses;
+  if (updates.classGroup !== undefined) dbUpdates.class_group = updates.classGroup;
 
   const { data, error } = await supabase
     .from("intake_sessions")
@@ -162,6 +171,8 @@ export async function createSessionDB(data: Partial<IntakeSession>): Promise<Int
     notes: data.notes,
     student_code: generateCode(),
     parent_code: generateCode(),
+    staff_code: generateCode(),
+    class_group: data.classGroup || "",
     status: "not_started",
   };
 

@@ -76,6 +76,7 @@ export type Database = {
       intake_sessions: {
         Row: {
           admin_notes: string | null
+          class_group: string | null
           closed_at: string | null
           created_at: string
           grade: string | null
@@ -88,6 +89,9 @@ export type Database = {
           parent_phone: string | null
           parent_responses: Json
           second_parent_name: string | null
+          staff_code: string | null
+          staff_open_responses: Json
+          staff_responses: Json
           status: string
           student_code: string
           student_id_number: string | null
@@ -98,6 +102,7 @@ export type Database = {
         }
         Insert: {
           admin_notes?: string | null
+          class_group?: string | null
           closed_at?: string | null
           created_at?: string
           grade?: string | null
@@ -110,6 +115,9 @@ export type Database = {
           parent_phone?: string | null
           parent_responses?: Json
           second_parent_name?: string | null
+          staff_code?: string | null
+          staff_open_responses?: Json
+          staff_responses?: Json
           status?: string
           student_code: string
           student_id_number?: string | null
@@ -120,6 +128,7 @@ export type Database = {
         }
         Update: {
           admin_notes?: string | null
+          class_group?: string | null
           closed_at?: string | null
           created_at?: string
           grade?: string | null
@@ -132,6 +141,9 @@ export type Database = {
           parent_phone?: string | null
           parent_responses?: Json
           second_parent_name?: string | null
+          staff_code?: string | null
+          staff_open_responses?: Json
+          staff_responses?: Json
           status?: string
           student_code?: string
           student_id_number?: string | null
