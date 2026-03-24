@@ -508,7 +508,7 @@ const StudentProfile = () => {
         )}
 
         {/* PDF Export Buttons */}
-        <div className="grid grid-cols-2 gap-3 print:hidden">
+        <div className="grid grid-cols-3 gap-3 print:hidden">
           <button onClick={() => generateStudentPDF(session, "parent")}
             className="btn-intake bg-info/10 text-info text-sm flex items-center justify-center gap-2">
             <Download className="w-4 h-4" /> PDF להורים
@@ -516,6 +516,10 @@ const StudentProfile = () => {
           <button onClick={() => generateStudentPDF(session, "staff")}
             className="btn-intake bg-primary/10 text-primary text-sm flex items-center justify-center gap-2">
             <FileText className="w-4 h-4" /> PDF לצוות
+          </button>
+          <button onClick={handleExportPersonalPlan}
+            className="btn-intake bg-success/10 text-success text-sm flex items-center justify-center gap-2">
+            <ScrollText className="w-4 h-4" /> תכנית אישית
           </button>
         </div>
 
