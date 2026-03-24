@@ -5,6 +5,7 @@ import { IntakeSession, SECTION_LABELS, OPEN_QUESTION_LABELS, GASGoal } from "@/
 import { calculateScores, generateRiskFlags, generateInsights, generateGASGoals, getScoreLabel, getScoreColor, getTopFocusAreas } from "@/lib/scoring";
 import StatusBadge from "@/components/StatusBadge";
 import { ArrowRight, AlertTriangle, Copy, CheckCircle, Lock, Unlock, FileText, Target, Lightbulb, TrendingUp, Users, Printer, MessageSquare, BarChart3, Shield, Loader2 } from "lucide-react";
+import SupportPlans from "@/components/SupportPlans";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Legend } from "recharts";
 
 const StudentProfile = () => {
