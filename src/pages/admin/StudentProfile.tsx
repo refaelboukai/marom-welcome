@@ -6,6 +6,7 @@ import { calculateScores, generateRiskFlags, generateInsights, generateGASGoals,
 import StatusBadge from "@/components/StatusBadge";
 import { ArrowRight, AlertTriangle, Copy, CheckCircle, Lock, Unlock, FileText, Target, Lightbulb, TrendingUp, Users, Printer, MessageSquare, BarChart3, Shield, Loader2, RefreshCw, Download, PenLine } from "lucide-react";
 import SupportPlans from "@/components/SupportPlans";
+import AIRecommendations from "@/components/AIRecommendations";
 import { generateStudentPDF } from "@/lib/pdf-export";
 import { supabase } from "@/integrations/supabase/client";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
