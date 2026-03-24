@@ -433,6 +433,18 @@ const StudentProfile = () => {
         {/* Support Plans */}
         <SupportPlans sessionId={session.id} />
 
+        {/* AI Recommendations */}
+        {hasStudentData && (
+          <AIRecommendations
+            student={{
+              name: session.studentName,
+              scores,
+              openResponses: session.studentOpenResponses,
+              staffOpenResponses: session.staffOpenResponses,
+            }}
+          />
+        )}
+
         {/* Open-ended Responses */}
         {Object.keys(session.studentOpenResponses).length > 0 && (
           <div className="intake-card">
