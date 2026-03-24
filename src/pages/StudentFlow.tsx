@@ -1,12 +1,13 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getSessionDB, updateSessionDB } from "@/lib/supabase-storage";
 import { IntakeSession } from "@/lib/types";
 import QuestionnaireFlow from "@/components/QuestionnaireFlow";
 import logo from "@/assets/logo.jpeg";
-import { Heart, BookOpen, Brain, Lightbulb, Star, Sparkles, Loader2 } from "lucide-react";
+import { Heart, BookOpen, Brain, Lightbulb, Star, Sparkles, Loader2, RotateCcw, CheckCircle } from "lucide-react";
+import SignatureCanvas from "react-signature-canvas";
 
-type Step = "welcome" | "explanation" | "questionnaire" | "complete";
+type Step = "welcome" | "consent" | "explanation" | "questionnaire" | "complete";
 
 const explanationCards = [
   { icon: Heart, title: "איכות חיים", desc: "עד כמה טוב לך בחיים שלך – בבית, בבית הספר, עם חברים, ועם עצמך." },
@@ -16,12 +17,32 @@ const explanationCards = [
   { icon: Sparkles, title: "למה זה חשוב?", desc: "השאלונים עוזרים לנו להבין איך לתמוך בך בצורה הכי טובה." },
 ];
 
+const schoolRules = [
+  "בית הספר שלנו הינו מרחב לימודי-חינוכי-טיפולי, שבו כל תלמיד ותלמידה ירכשו כלים בתחומים מקצועיים להתמודדות מיטיבה בהמשך חייכם.",
+  "לכל תלמיד הזכות למוגנות, שייכות ומשמעות. לכל תלמיד הזכות להתפתחות רגשית, חברתית, לימודית ואישית תוך חיזוק המסוגלות העצמית.",
+  "אנחנו מאמינים בחינוך המבוסס על ערכים של הכלה ואמפתיה, עם גבולות ברורים, שיתוף והתייעצות.",
+  "כבוד הדדי — בשיחה, במרחב האישי ובלבוש. מותר להתווכח, מותר לא להסכים, אך חובה לכבד את האחד.ה את השני.ה, תלמידים וצוות כאחד.",
+  "יש להקפיד על לבוש מכבד את עצמנו ואת הסביבה (לא גופיות, חולצות מכבדות).",
+  "מותר להתווכח, מותר לטעון אחרת — אך חובה להקשיב לצוות בית הספר. נשמע, נעשה ונהיה ביקורתיים.",
+  "חובה להגיע בזמן לשיעור, להגיע מוכנים עם הציוד הנחוץ. מערכת שעות מחייבת אך גמישה.",
+  "חובה להיות נוכחים בשיעורים בכיתות לאורך כל שעות היום, אלא אם קיבלתם אישור לצאת מהכיתה.",
+  "הפלאפונים יאוחסנו לאורך כל היום בארון במזכירות בית הספר.",
+  "חובה על כל איש צוות ותלמיד למלא את התורנות שלו בצורה הטובה ביותר.",
+  "חובה עלינו לשמור על הסביבה שלנו בבית הספר, ללא אלימות.",
+  "אסור לצאת מבית הספר ללא אישור. יציאה ללא אישור מסכנת אתכם ותפקידנו לשמור עליכם.",
+  "אם נפגעת או שנחשפת לפגיעה באחר.ת — יש לדווח במיידי לצוות.",
+  "שמירה על הכללים תוביל תמיד להערכה והוקרה. הפרה של הכללים תוביל תמיד לתגובה והשלכות.",
+];
+
 const StudentFlow = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
   const [session, setSession] = useState<IntakeSession | null>(null);
   const [step, setStep] = useState<Step>("welcome");
   const [loading, setLoading] = useState(true);
+  const [consentChecked, setConsentChecked] = useState(false);
+  const [hasSigned, setHasSigned] = useState(false);
+  const sigCanvasRef = useRef<SignatureCanvas>(null);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -67,9 +88,18 @@ const StudentFlow = () => {
     setStep("complete");
   }, [session]);
 
-  const handleSaveAndExit = useCallback(() => {
-    navigate("/");
-  }, [navigate]);
+  const handleSaveAndExit = useCallback(() => { navigate("/"); }, [navigate]);
+
+  const handleClearSignature = () => {
+    sigCanvasRef.current?.clear();
+    setHasSigned(false);
+  };
+
+  const handleSignEnd = () => {
+    if (sigCanvasRef.current && !sigCanvasRef.current.isEmpty()) {
+      setHasSigned(true);
+    }
+  };
 
   if (loading) {
     return (
@@ -85,9 +115,10 @@ const StudentFlow = () => {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-background">
         <div className="w-full max-w-md animate-fade-in text-center">
-          <img src={logo} alt="מרום" className="h-16 mx-auto mb-6" />
-          <h1 className="text-3xl font-heading font-bold mb-3">ברוך הבא</h1>
-          <h2 className="text-lg text-primary font-medium mb-4">{session.studentName}</h2>
+          <img src={logo} alt="מרום" className="h-20 mx-auto mb-6" />
+          <h1 className="text-3xl font-heading font-bold mb-2">ברוכים הבאים</h1>
+          <h2 className="text-xl font-heading text-primary font-semibold mb-1">לבית ספר מרום בית אקשטיין</h2>
+          <h3 className="text-lg text-muted-foreground mb-4">{session.studentName}</h3>
           <p className="text-muted-foreground leading-relaxed mb-2">
             אנחנו רוצים להכיר אותך טוב יותר כדי לעזור לך להרגיש טוב, להצליח ולהתקדם בבית הספר.
           </p>
@@ -97,11 +128,90 @@ const StudentFlow = () => {
             <p>✓ המידע נועד לעזור לך</p>
           </div>
           <button
-            onClick={() => setStep("explanation")}
+            onClick={() => setStep("consent")}
             className="btn-intake w-full bg-primary text-primary-foreground shadow-md hover:shadow-lg text-lg py-4 mt-6"
           >
             התחל
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (step === "consent") {
+    return (
+      <div className="min-h-screen px-4 py-6 bg-background">
+        <div className="max-w-md mx-auto animate-slide-up">
+          <div className="text-center mb-4">
+            <img src={logo} alt="מרום" className="h-12 mx-auto mb-3" />
+            <h2 className="text-xl font-heading font-bold">כללי בית הספר</h2>
+            <p className="text-sm text-muted-foreground">אנא קרא/י בעיון ואשר/י בחתימתך</p>
+          </div>
+
+          <div className="intake-card max-h-[45vh] overflow-y-auto text-right space-y-3 text-sm leading-relaxed mb-4">
+            <p className="font-semibold text-primary text-base mb-2">ברוכים הבאים לבית ספר מרום בית אקשטיין</p>
+            {schoolRules.map((rule, i) => (
+              <div key={i} className="flex gap-2 items-start">
+                <span className="text-primary font-bold text-xs mt-0.5 flex-shrink-0">{i + 1}.</span>
+                <p className="text-muted-foreground">{rule}</p>
+              </div>
+            ))}
+            <div className="pt-3 mt-3 border-t border-border">
+              <p className="font-semibold text-sm">שמירה על הכללים תוביל תמיד להערכה והוקרה, והטבות וזכויות נוספות בבית הספר.</p>
+            </div>
+          </div>
+
+          {/* Consent checkbox */}
+          <label className="flex items-start gap-3 p-3 rounded-xl bg-muted/30 border border-border/50 cursor-pointer mb-4">
+            <input
+              type="checkbox"
+              checked={consentChecked}
+              onChange={(e) => setConsentChecked(e.target.checked)}
+              className="mt-1 w-4 h-4 rounded border-input accent-primary"
+            />
+            <span className="text-sm text-foreground leading-relaxed">
+              קראתי את הכללים ואני מסכים/ה להם
+            </span>
+          </label>
+
+          {/* Digital signature */}
+          <div className="intake-card-soft mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-medium">חתימת התלמיד/ה</p>
+              <button onClick={handleClearSignature} className="text-xs text-muted-foreground flex items-center gap-1 hover:text-foreground">
+                <RotateCcw className="w-3 h-3" /> נקה
+              </button>
+            </div>
+            <div className="border-2 border-dashed border-border rounded-xl bg-card overflow-hidden" style={{ touchAction: "none" }}>
+              <SignatureCanvas
+                ref={sigCanvasRef}
+                penColor="hsl(220, 20%, 20%)"
+                canvasProps={{
+                  width: 350,
+                  height: 120,
+                  className: "w-full",
+                  style: { width: "100%", height: "120px" },
+                }}
+                onEnd={handleSignEnd}
+              />
+            </div>
+            {hasSigned && (
+              <p className="text-xs text-success flex items-center gap-1 mt-1.5">
+                <CheckCircle className="w-3 h-3" /> חתימה התקבלה
+              </p>
+            )}
+          </div>
+
+          <div className="flex gap-3">
+            <button onClick={() => setStep("welcome")} className="btn-intake bg-secondary text-secondary-foreground flex-1">חזרה</button>
+            <button
+              onClick={() => setStep("explanation")}
+              disabled={!consentChecked || !hasSigned}
+              className="btn-intake flex-1 bg-primary text-primary-foreground shadow-md hover:shadow-lg text-lg py-4 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              אישור והמשך
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -130,7 +240,7 @@ const StudentFlow = () => {
             })}
           </div>
           <div className="flex gap-3 mt-6">
-            <button onClick={() => setStep("welcome")} className="btn-intake bg-secondary text-secondary-foreground flex-1">חזרה</button>
+            <button onClick={() => setStep("consent")} className="btn-intake bg-secondary text-secondary-foreground flex-1">חזרה</button>
             <button onClick={handleStartQuestionnaire} className="btn-intake flex-1 bg-primary text-primary-foreground shadow-md hover:shadow-lg text-lg py-4">המשך לשאלונים</button>
           </div>
         </div>
