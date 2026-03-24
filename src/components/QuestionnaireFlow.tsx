@@ -75,7 +75,7 @@ const QuestionnaireFlow = ({
   const globalOffset = currentPage * ITEMS_PER_PAGE;
 
   return (
-    <div className="max-w-lg mx-auto px-4 pb-8">
+    <div className="max-w-lg md:max-w-2xl mx-auto px-4 sm:px-6 pb-8">
       <ProgressHeader
         current={totalAnswered}
         total={totalItems}

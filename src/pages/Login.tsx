@@ -42,9 +42,9 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-gradient-to-b from-background via-background to-primary/5">
-      <div className="w-full max-w-sm animate-fade-in text-center">
-        <img src={logo} alt="מרום בית אקשטיין" className="h-28 mx-auto mb-6 rounded-3xl shadow-lg ring-4 ring-primary/10" />
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 bg-gradient-to-b from-background via-background to-primary/5 safe-top safe-bottom">
+      <div className="w-full max-w-sm md:max-w-md animate-fade-in text-center">
+        <img src={logo} alt="מרום בית אקשטיין" className="h-24 sm:h-28 md:h-32 mx-auto mb-6 rounded-3xl shadow-lg ring-4 ring-primary/10" />
         <h1 className="text-3xl font-heading font-bold mb-1 bg-gradient-to-l from-primary to-primary/70 bg-clip-text text-transparent">מרום בית אקשטיין</h1>
         <p className="text-muted-foreground text-sm mb-8">מערכת קליטה, הערכה ומיפוי</p>
 
