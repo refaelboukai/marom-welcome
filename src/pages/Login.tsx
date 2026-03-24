@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { findSessionByCodeDB, isAdminCode, initializeSessionsDB } from "@/lib/supabase-storage";
+import { STAFF_CODE } from "@/data/students";
 import logo from "@/assets/logo.jpeg";
 import { Loader2 } from "lucide-react";
 
@@ -20,10 +21,8 @@ const Login = () => {
     const trimmed = code.trim().toUpperCase();
     if (!trimmed) return;
 
-    if (isAdminCode(trimmed)) {
-      navigate("/admin");
-      return;
-    }
+    if (isAdminCode(trimmed)) { navigate("/admin"); return; }
+    if (trimmed === STAFF_CODE) { navigate("/staff"); return; }
 
     setLoading(true);
     setError("");
@@ -31,11 +30,7 @@ const Login = () => {
     try {
       const result = await findSessionByCodeDB(trimmed);
       if (result) {
-        if (result.role === "student") {
-          navigate(`/student/${result.session.id}`);
-        } else {
-          navigate(`/parent/${result.session.id}`);
-        }
+        navigate(result.role === "student" ? `/student/${result.session.id}` : `/parent/${result.session.id}`);
       } else {
         setError("הקוד שהוזן אינו תקין. נסה שוב.");
       }
@@ -47,52 +42,32 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-background">
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-gradient-to-b from-background via-background to-primary/5">
       <div className="w-full max-w-sm animate-fade-in text-center">
-        <img src={logo} alt="מרום בית אקשטיין" className="h-20 mx-auto mb-6 rounded-2xl shadow-sm" />
-        <h1 className="text-2xl font-heading font-bold mb-1">מרום בית אקשטיין</h1>
-        <p className="text-muted-foreground text-sm mb-8">מערכת קליטה והערכה</p>
+        <img src={logo} alt="מרום בית אקשטיין" className="h-28 mx-auto mb-6 rounded-3xl shadow-lg ring-4 ring-primary/10" />
+        <h1 className="text-3xl font-heading font-bold mb-1 bg-gradient-to-l from-primary to-primary/70 bg-clip-text text-transparent">מרום בית אקשטיין</h1>
+        <p className="text-muted-foreground text-sm mb-8">מערכת קליטה, הערכה ומיפוי</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-2 text-right">הזן קוד גישה</label>
             <input
-              type="text"
-              value={code}
+              type="text" value={code}
               onChange={(e) => { setCode(e.target.value); setError(""); }}
               placeholder="הזן את הקוד שקיבלת"
-              className="w-full bg-card border border-input rounded-2xl px-4 py-3 text-center font-mono text-lg tracking-widest focus:outline-none focus:ring-2 focus:ring-ring"
-              dir="ltr"
-              autoFocus
-              disabled={loading}
+              className="w-full bg-card border-2 border-input rounded-2xl px-4 py-4 text-center font-mono text-lg tracking-widest focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+              dir="ltr" autoFocus disabled={loading}
             />
           </div>
-          {error && (
-            <p className="text-destructive text-sm animate-fade-in">{error}</p>
-          )}
-          <button
-            type="submit"
-            disabled={!code.trim() || loading || !initialized}
-            className={`btn-intake w-full text-lg py-4 flex items-center justify-center gap-2 ${
-              code.trim() && !loading
-                ? "bg-primary text-primary-foreground shadow-md hover:shadow-lg"
-                : "bg-muted text-muted-foreground cursor-not-allowed"
-            }`}
-          >
-            {loading ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                מתחבר...
-              </>
-            ) : (
-              "כניסה"
-            )}
+          {error && <p className="text-destructive text-sm animate-fade-in">{error}</p>}
+          <button type="submit" disabled={!code.trim() || loading || !initialized}
+            className={`btn-intake w-full text-lg py-4 flex items-center justify-center gap-2 shadow-lg ${
+              code.trim() && !loading ? "bg-primary text-primary-foreground hover:shadow-xl hover:scale-[1.01] transition-all" : "bg-muted text-muted-foreground cursor-not-allowed"
+            }`}>
+            {loading ? <><Loader2 className="w-5 h-5 animate-spin" />מתחבר...</> : "כניסה"}
           </button>
         </form>
-
-        <p className="text-xs text-muted-foreground mt-6">
-          קוד הגישה ניתן על ידי צוות בית הספר
-        </p>
+        <p className="text-xs text-muted-foreground mt-6">קוד הגישה ניתן על ידי צוות בית הספר</p>
       </div>
     </div>
   );
