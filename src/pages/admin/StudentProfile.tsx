@@ -4,7 +4,7 @@ import { getSessionDB, updateSessionDB } from "@/lib/supabase-storage";
 import { IntakeSession, SECTION_LABELS, OPEN_QUESTION_LABELS, GASGoal } from "@/lib/types";
 import { calculateScores, generateRiskFlags, generateInsights, generateGASGoals, getScoreLabel, getScoreColor, getTopFocusAreas } from "@/lib/scoring";
 import StatusBadge from "@/components/StatusBadge";
-import { ArrowRight, AlertTriangle, Copy, CheckCircle, Lock, Unlock, FileText, Target, Lightbulb, TrendingUp, Users, Printer, MessageSquare, BarChart3, Shield, Loader2, GraduationCap, Brain } from "lucide-react";
+import { ArrowRight, AlertTriangle, Copy, CheckCircle, Lock, Unlock, FileText, Target, Lightbulb, TrendingUp, Users, Printer, MessageSquare, BarChart3, Shield, Loader2 } from "lucide-react";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Legend } from "recharts";
 
 const StudentProfile = () => {
