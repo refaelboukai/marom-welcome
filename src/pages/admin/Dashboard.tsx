@@ -147,17 +147,7 @@ const Dashboard = () => {
           <CodeManagement sessions={sessions} />
         ) : (
           <>
-            {/* AI Recommendations */}
-            <div className="mb-4">
-              <AIRecommendations
-                students={sessionsWithMeta.filter((s) => tab === "all" || s.classGroup === tab).map((s) => ({
-                  name: s.studentName,
-                  classGroup: s.classGroup || "",
-                  scores: s.scores,
-                }))}
-                classLabel={tab === "tali" ? "הכיתה של טלי" : tab === "eden" ? "הכיתה של עדן" : "כל התלמידים"}
-              />
-            </div>
+
 
             {/* Export Bar */}
             <div className="flex flex-wrap gap-2 mb-4">
