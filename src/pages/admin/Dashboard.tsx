@@ -6,7 +6,7 @@ import { questionnaireItems } from "@/data/questionnaires";
 import { CLASS_GROUPS } from "@/data/students";
 import StatusBadge from "@/components/StatusBadge";
 import CodeManagement from "@/components/CodeManagement";
-import AIRecommendations from "@/components/AIRecommendations";
+
 import logo from "@/assets/logo.jpeg";
 import { Plus, Users, AlertTriangle, CheckCircle, Clock, Search, LogOut, XCircle, Loader2, Download, Key, FileText, Copy } from "lucide-react";
 import { calculateScores, generateRiskFlags, getCompletionPercentage } from "@/lib/scoring";
@@ -147,17 +147,7 @@ const Dashboard = () => {
           <CodeManagement sessions={sessions} />
         ) : (
           <>
-            {/* AI Recommendations */}
-            <div className="mb-4">
-              <AIRecommendations
-                students={sessionsWithMeta.filter((s) => tab === "all" || s.classGroup === tab).map((s) => ({
-                  name: s.studentName,
-                  classGroup: s.classGroup || "",
-                  scores: s.scores,
-                }))}
-                classLabel={tab === "tali" ? "הכיתה של טלי" : tab === "eden" ? "הכיתה של עדן" : "כל התלמידים"}
-              />
-            </div>
+
 
             {/* Export Bar */}
             <div className="flex flex-wrap gap-2 mb-4">

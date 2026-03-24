@@ -1,29 +1,30 @@
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ScoreResults } from "@/lib/types";
-import { Brain, Loader2, Sparkles, AlertCircle, Target, TrendingUp, Lightbulb } from "lucide-react";
+import { ScoreResults, OPEN_QUESTION_LABELS } from "@/lib/types";
+import { Brain, Loader2, Sparkles, AlertCircle, Target, TrendingUp, Lightbulb, Heart, Users } from "lucide-react";
 
-interface StudentData {
+interface StudentAIData {
   name: string;
-  classGroup: string;
   scores: ScoreResults;
+  openResponses?: Record<string, string>;
+  staffOpenResponses?: Record<string, string>;
 }
 
-interface AIRecommendation {
-  classInsight: string;
-  recommendations: string[];
-  attentionCount: number;
+interface AIResult {
+  personalInsight: string;
   strengths: string[];
-  focusAreas: string[];
+  areasForSupport: string[];
+  recommendations: string[];
+  suggestedGoals: string[];
+  parentGuidance: string;
 }
 
 interface AIRecommendationsProps {
-  students: StudentData[];
-  classLabel?: string;
+  student: StudentAIData;
 }
 
-const AIRecommendations = ({ students, classLabel }: AIRecommendationsProps) => {
-  const [result, setResult] = useState<AIRecommendation | null>(null);
+const AIRecommendations = ({ student }: AIRecommendationsProps) => {
+  const [result, setResult] = useState<AIResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,69 +32,50 @@ const AIRecommendations = ({ students, classLabel }: AIRecommendationsProps) => 
     setLoading(true);
     setError(null);
 
-    const studentsData = students
-      .filter((s) => s.scores.qualityOfLife.normalized >= 0)
-      .map((s) => ({
-        classGroup: s.classGroup,
-        qualityOfLife: s.scores.qualityOfLife.normalized,
-        selfEfficacy: s.scores.selfEfficacy.normalized,
-        locusOfControl: s.scores.locusOfControl.normalized,
-        cognitiveFlexibility: s.scores.cognitiveFlexibility.normalized,
-        studentVsParentGaps: {
-          qualityOfLife: s.scores.qualityOfLife.studentNormalized >= 0 && s.scores.qualityOfLife.parentNormalized >= 0
-            ? Math.abs(s.scores.qualityOfLife.studentNormalized - s.scores.qualityOfLife.parentNormalized)
-            : null,
-          selfEfficacy: s.scores.selfEfficacy.studentNormalized >= 0 && s.scores.selfEfficacy.parentNormalized >= 0
-            ? Math.abs(s.scores.selfEfficacy.studentNormalized - s.scores.selfEfficacy.parentNormalized)
-            : null,
-        },
-      }));
-
-    if (studentsData.length === 0) {
+    const scores = student.scores;
+    if (scores.qualityOfLife.normalized < 0) {
       setError("אין מספיק נתונים ליצירת המלצות. יש צורך בתשובות לשאלונים.");
       setLoading(false);
       return;
     }
 
+    const studentData = {
+      name: student.name,
+      qualityOfLife: { score: scores.qualityOfLife.normalized, student: scores.qualityOfLife.studentNormalized, parent: scores.qualityOfLife.parentNormalized },
+      selfEfficacy: { score: scores.selfEfficacy.normalized, student: scores.selfEfficacy.studentNormalized, parent: scores.selfEfficacy.parentNormalized },
+      locusOfControl: { score: scores.locusOfControl.normalized, student: scores.locusOfControl.studentNormalized, parent: scores.locusOfControl.parentNormalized },
+      cognitiveFlexibility: { score: scores.cognitiveFlexibility.normalized, student: scores.cognitiveFlexibility.studentNormalized, parent: scores.cognitiveFlexibility.parentNormalized },
+    };
+
     try {
       const { data, error: fnError } = await supabase.functions.invoke("ai-recommendations", {
-        body: { students: studentsData },
+        body: {
+          student: studentData,
+          openResponses: student.openResponses,
+          staffOpenResponses: student.staffOpenResponses,
+        },
       });
 
       if (fnError) throw new Error(fnError.message);
       if (data?.error) throw new Error(data.error);
-
       setResult(data);
     } catch (e: any) {
       setError(e.message || "שגיאה ביצירת המלצות");
     } finally {
       setLoading(false);
     }
-  }, [students]);
+  }, [student]);
 
   return (
     <div className="intake-card border-primary/20">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-heading font-semibold flex items-center gap-2">
           <Brain className="w-5 h-5 text-primary" />
-          המלצות AI {classLabel && `— ${classLabel}`}
+          המלצות AI אישיות — {student.name}
         </h3>
-        <button
-          onClick={handleGenerate}
-          disabled={loading}
-          className="btn-intake bg-primary text-primary-foreground text-xs px-3 py-1.5 gap-1"
-        >
-          {loading ? (
-            <>
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              מנתח...
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-3.5 h-3.5" />
-              {result ? "רענן" : "צור המלצות"}
-            </>
-          )}
+        <button onClick={handleGenerate} disabled={loading}
+          className="btn-intake bg-primary text-primary-foreground text-xs px-3 py-1.5 gap-1">
+          {loading ? (<><Loader2 className="w-3.5 h-3.5 animate-spin" /> מנתח...</>) : (<><Sparkles className="w-3.5 h-3.5" /> {result ? "רענן" : "צור המלצות"}</>)}
         </button>
       </div>
 
@@ -106,24 +88,25 @@ const AIRecommendations = ({ students, classLabel }: AIRecommendationsProps) => 
 
       {!result && !loading && !error && (
         <p className="text-sm text-muted-foreground text-center py-4">
-          לחץ על "צור המלצות" לקבלת תובנות מבוססות AI על בסיס נתוני השאלונים
+          לחץ על "צור המלצות" לקבלת תובנות והמלצות אישיות מבוססות AI עבור התלמיד
         </p>
       )}
 
       {result && (
         <div className="space-y-4 animate-fade-in">
-          {/* Class Insight */}
+          {/* Personal Insight */}
           <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
-            <p className="text-sm leading-relaxed">{result.classInsight}</p>
+            <h4 className="text-xs font-semibold mb-2 flex items-center gap-1 text-primary">
+              <Heart className="w-3.5 h-3.5" /> תובנה אישית
+            </h4>
+            <p className="text-sm leading-relaxed">{result.personalInsight}</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {/* Strengths */}
             {result.strengths.length > 0 && (
               <div className="p-3 bg-success/5 rounded-xl border border-success/10">
                 <h4 className="text-xs font-semibold mb-2 flex items-center gap-1 text-success">
-                  <TrendingUp className="w-3.5 h-3.5" />
-                  חוזקות
+                  <TrendingUp className="w-3.5 h-3.5" /> חוזקות
                 </h4>
                 <ul className="space-y-1">
                   {result.strengths.map((s, i) => (
@@ -134,16 +117,13 @@ const AIRecommendations = ({ students, classLabel }: AIRecommendationsProps) => 
                 </ul>
               </div>
             )}
-
-            {/* Focus Areas */}
-            {result.focusAreas.length > 0 && (
+            {result.areasForSupport.length > 0 && (
               <div className="p-3 bg-warning/5 rounded-xl border border-warning/10">
                 <h4 className="text-xs font-semibold mb-2 flex items-center gap-1 text-warning">
-                  <Target className="w-3.5 h-3.5" />
-                  תחומי מיקוד
+                  <Target className="w-3.5 h-3.5" /> תחומים לתמיכה
                 </h4>
                 <ul className="space-y-1">
-                  {result.focusAreas.map((s, i) => (
+                  {result.areasForSupport.map((s, i) => (
                     <li key={i} className="text-xs text-muted-foreground flex items-start gap-1.5">
                       <span className="text-warning mt-0.5">•</span>{s}
                     </li>
@@ -153,12 +133,10 @@ const AIRecommendations = ({ students, classLabel }: AIRecommendationsProps) => 
             )}
           </div>
 
-          {/* Recommendations */}
           {result.recommendations.length > 0 && (
             <div className="p-4 bg-muted/30 rounded-xl">
               <h4 className="text-xs font-semibold mb-3 flex items-center gap-1">
-                <Lightbulb className="w-3.5 h-3.5 text-primary" />
-                המלצות מעשיות
+                <Lightbulb className="w-3.5 h-3.5 text-primary" /> המלצות מעשיות
               </h4>
               <div className="space-y-2">
                 {result.recommendations.map((rec, i) => (
@@ -171,12 +149,27 @@ const AIRecommendations = ({ students, classLabel }: AIRecommendationsProps) => 
             </div>
           )}
 
-          {/* Attention Count */}
-          {result.attentionCount > 0 && (
-            <div className="text-center p-2 bg-warning/10 rounded-xl">
-              <p className="text-xs text-warning font-medium">
-                {result.attentionCount} תלמידים דורשים תשומת לב מיוחדת
-              </p>
+          {result.suggestedGoals.length > 0 && (
+            <div className="p-3 bg-info/5 rounded-xl border border-info/10">
+              <h4 className="text-xs font-semibold mb-2 flex items-center gap-1 text-info">
+                <Target className="w-3.5 h-3.5" /> יעדים מוצעים
+              </h4>
+              <ul className="space-y-1">
+                {result.suggestedGoals.map((g, i) => (
+                  <li key={i} className="text-xs text-muted-foreground flex items-start gap-1.5">
+                    <span className="text-info mt-0.5">{i + 1}.</span>{g}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {result.parentGuidance && (
+            <div className="p-3 bg-accent rounded-xl border border-border/50">
+              <h4 className="text-xs font-semibold mb-1 flex items-center gap-1">
+                <Users className="w-3.5 h-3.5 text-info" /> הנחיה להורים
+              </h4>
+              <p className="text-xs text-muted-foreground leading-relaxed">{result.parentGuidance}</p>
             </div>
           )}
         </div>
