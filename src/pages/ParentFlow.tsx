@@ -1,67 +1,72 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getSession, updateSession } from "@/lib/storage";
+import { getSessionDB, updateSessionDB } from "@/lib/supabase-storage";
 import { IntakeSession } from "@/lib/types";
 import QuestionnaireFlow from "@/components/QuestionnaireFlow";
 import logo from "@/assets/logo.jpeg";
-import { CheckCircle } from "lucide-react";
+import { Heart, Star, Loader2 } from "lucide-react";
 
-type Step = "welcome" | "explanation" | "questionnaire" | "complete";
+type Step = "welcome" | "questionnaire" | "complete";
 
 const ParentFlow = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
   const [session, setSession] = useState<IntakeSession | null>(null);
   const [step, setStep] = useState<Step>("welcome");
-  const [parentComment, setParentComment] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!sessionId) return;
-    const s = getSession(sessionId);
-    if (!s) {
-      navigate("/");
-      return;
-    }
-    setSession(s);
-    setParentComment(s.parentOpenResponse || "");
-    if (["parent_completed", "under_review", "completed"].includes(s.status)) {
-      setStep("complete");
-    } else if (Object.keys(s.parentResponses).length > 0) {
-      setStep("questionnaire");
-    }
+    getSessionDB(sessionId).then((s) => {
+      setLoading(false);
+      if (!s) { navigate("/"); return; }
+      setSession(s);
+      if (["parent_completed", "under_review", "completed"].includes(s.status)) {
+        setStep("complete");
+      } else if (Object.keys(s.parentResponses).length > 0) {
+        setStep("questionnaire");
+      }
+    });
   }, [sessionId, navigate]);
 
-  const handleStart = useCallback(() => {
+  const handleStart = useCallback(async () => {
     if (!session) return;
-    const newStatus = ["not_started", "student_completed"].includes(session.status) ? "parent_started" : session.status;
-    updateSession(session.id, { status: newStatus });
-    setSession((prev) => prev ? { ...prev, status: newStatus as any } : null);
+    if (!["parent_started", "parent_completed"].includes(session.status)) {
+      await updateSessionDB(session.id, { status: "parent_started" });
+      setSession((prev) => prev ? { ...prev, status: "parent_started" } : null);
+    }
     setStep("questionnaire");
   }, [session]);
 
-  const handleUpdateResponse = useCallback((itemId: string, value: number) => {
+  const handleUpdateResponse = useCallback(async (itemId: string, value: number) => {
     if (!session) return;
     const updated = { ...session.parentResponses, [itemId]: value };
-    updateSession(session.id, { parentResponses: updated });
     setSession((prev) => prev ? { ...prev, parentResponses: updated } : null);
+    await updateSessionDB(session.id, { parentResponses: updated });
   }, [session]);
 
-  const handleUpdateParentComment = useCallback((key: string, value: string) => {
+  const handleUpdateOpenResponse = useCallback(async (key: string, value: string) => {
     if (!session) return;
-    setParentComment(value);
-    updateSession(session.id, { parentOpenResponse: value });
+    await updateSessionDB(session.id, { parentOpenResponse: value });
+    setSession((prev) => prev ? { ...prev, parentOpenResponse: value } : null);
   }, [session]);
 
-  const handleComplete = useCallback(() => {
+  const handleComplete = useCallback(async () => {
     if (!session) return;
-    updateSession(session.id, { status: "parent_completed", parentOpenResponse: parentComment });
+    await updateSessionDB(session.id, { status: "parent_completed" });
     setSession((prev) => prev ? { ...prev, status: "parent_completed" } : null);
     setStep("complete");
-  }, [session, parentComment]);
+  }, [session]);
 
-  const handleSaveAndExit = useCallback(() => {
-    navigate("/");
-  }, [navigate]);
+  const handleSaveAndExit = useCallback(() => { navigate("/"); }, [navigate]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!session) return null;
 
@@ -70,62 +75,21 @@ const ParentFlow = () => {
       <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-background">
         <div className="w-full max-w-md animate-fade-in text-center">
           <img src={logo} alt="מרום" className="h-16 mx-auto mb-6" />
-          <h1 className="text-2xl font-heading font-bold mb-3">שלום רב</h1>
-          <p className="text-muted-foreground leading-relaxed mb-4">
-            במסגרת תהליך קליטת <strong>{session.studentName}</strong> בבית הספר,
-            נשמח לשמוע את נקודת המבט שלכם כהורים.
+          <h1 className="text-2xl font-heading font-bold mb-3">שלום, הורה יקר</h1>
+          <p className="text-muted-foreground leading-relaxed mb-2">
+            כחלק מתהליך הקליטה של <strong>{session.studentName}</strong>, נשמח לשמוע את התפיסה שלך בנוגע לתפקוד ילדך.
           </p>
-          <div className="intake-card text-right space-y-2 text-sm text-muted-foreground">
+          <div className="intake-card mt-6 text-right space-y-2 text-sm text-muted-foreground">
             <p>✓ השאלון קצר וממוקד</p>
-            <p>✓ התשובות שלכם חשובות לנו</p>
-            <p>✓ המידע ישמש את צוות בית הספר בלבד</p>
+            <p>✓ אין תשובות נכונות או לא נכונות</p>
+            <p>✓ שיתוף הפעולה שלך חשוב מאוד</p>
           </div>
           <button
-            onClick={() => setStep("explanation")}
+            onClick={handleStart}
             className="btn-intake w-full bg-primary text-primary-foreground shadow-md hover:shadow-lg text-lg py-4 mt-6"
           >
-            התחלה
+            התחל
           </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (step === "explanation") {
-    return (
-      <div className="min-h-screen px-4 py-8 bg-background">
-        <div className="max-w-md mx-auto animate-slide-up">
-          <h2 className="text-xl font-heading font-bold mb-1 text-center">על מה השאלון?</h2>
-          <p className="text-sm text-muted-foreground text-center mb-6">
-            השאלון בודק ארבעה תחומים מרכזיים מנקודת המבט שלכם כהורים
-          </p>
-          <div className="space-y-3">
-            {[
-              { title: "איכות חיים", desc: "עד כמה לדעתכם ילדכם מרוצה מתחומי חייו השונים" },
-              { title: "מסוגלות עצמית", desc: "עד כמה לדעתכם ילדכם מאמין ביכולתו להצליח" },
-              { title: "מיקוד שליטה", desc: "עד כמה לדעתכם ילדכם מרגיש השפעה על מה שקורה לו" },
-              { title: "גמישות קוגניטיבית", desc: "עד כמה לדעתכם ילדכם מצליח לחשוב בגמישות ולהתמודד" },
-            ].map((card, i) => (
-              <div key={i} className="intake-card-soft animate-fade-in" style={{ animationDelay: `${i * 80}ms` }}>
-                <h3 className="font-semibold text-sm mb-1">{card.title}</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">{card.desc}</p>
-              </div>
-            ))}
-          </div>
-          <div className="flex gap-3 mt-6">
-            <button
-              onClick={() => setStep("welcome")}
-              className="btn-intake bg-secondary text-secondary-foreground flex-1"
-            >
-              חזרה
-            </button>
-            <button
-              onClick={handleStart}
-              className="btn-intake flex-1 bg-primary text-primary-foreground shadow-md hover:shadow-lg text-lg py-4"
-            >
-              המשך לשאלון
-            </button>
-          </div>
         </div>
       </div>
     );
@@ -137,9 +101,9 @@ const ParentFlow = () => {
         <QuestionnaireFlow
           role="parent"
           responses={session.parentResponses}
-          openResponses={{ parent_comment: parentComment }}
+          openResponses={session.parentOpenResponse ? { parent_comment: session.parentOpenResponse } : {}}
           onUpdateResponse={handleUpdateResponse}
-          onUpdateOpenResponse={handleUpdateParentComment}
+          onUpdateOpenResponse={handleUpdateOpenResponse}
           onComplete={handleComplete}
           onSaveAndExit={handleSaveAndExit}
         />
@@ -151,13 +115,15 @@ const ParentFlow = () => {
     <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-background">
       <div className="w-full max-w-md animate-fade-in text-center">
         <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-success/15 flex items-center justify-center">
-          <CheckCircle className="w-10 h-10 text-success" />
+          <Heart className="w-10 h-10 text-success" />
         </div>
         <h1 className="text-2xl font-heading font-bold mb-3">תודה רבה!</h1>
-        <p className="text-muted-foreground leading-relaxed">
+        <p className="text-muted-foreground leading-relaxed mb-2">
           תודה על שיתוף הפעולה. המידע שמסרת חשוב לתהליך ההיכרות והתמיכה בתלמיד.
         </p>
-        <p className="text-sm text-muted-foreground mt-2">צוות בית הספר ייצור איתכם קשר בהמשך.</p>
+        <div className="intake-card mt-6">
+          <p className="text-sm text-muted-foreground">💚 אנחנו מעריכים את המעורבות שלך</p>
+        </div>
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { createSession } from "@/lib/storage";
-import { ArrowRight, Copy, CheckCircle } from "lucide-react";
+import { createSessionDB } from "@/lib/supabase-storage";
+import { ArrowRight, Copy, CheckCircle, Loader2 } from "lucide-react";
 
 const NewIntake = () => {
   const navigate = useNavigate();
@@ -17,11 +17,16 @@ const NewIntake = () => {
   });
   const [created, setCreated] = useState<{ studentCode: string; parentCode: string } | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!form.studentName.trim()) return;
-    const session = createSession(form);
-    setCreated({ studentCode: session.studentCode, parentCode: session.parentCode });
+    setLoading(true);
+    const session = await createSessionDB(form);
+    setLoading(false);
+    if (session) {
+      setCreated({ studentCode: session.studentCode, parentCode: session.parentCode });
+    }
   };
 
   const handleCopy = (text: string, label: string) => {
@@ -76,10 +81,7 @@ const NewIntake = () => {
               >
                 הוסף תלמיד נוסף
               </button>
-              <button
-                onClick={() => navigate("/admin")}
-                className="btn-intake bg-primary text-primary-foreground flex-1"
-              >
+              <button onClick={() => navigate("/admin")} className="btn-intake bg-primary text-primary-foreground flex-1">
                 חזרה לדשבורד
               </button>
             </div>
@@ -128,25 +130,19 @@ const NewIntake = () => {
 
           <div>
             <label className="block text-sm font-medium mb-1.5">הערות</label>
-            <textarea
-              value={form.notes}
-              onChange={(e) => updateField("notes", e.target.value)}
+            <textarea value={form.notes} onChange={(e) => updateField("notes", e.target.value)}
               className="w-full bg-card border border-input rounded-xl p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
-              rows={3}
-              placeholder="הערות נוספות..."
-            />
+              rows={3} placeholder="הערות נוספות..." />
           </div>
 
           <button
             onClick={handleSubmit}
-            disabled={!form.studentName.trim()}
-            className={`btn-intake w-full text-lg py-4 ${
-              form.studentName.trim()
-                ? "bg-primary text-primary-foreground shadow-md"
-                : "bg-muted text-muted-foreground cursor-not-allowed"
+            disabled={!form.studentName.trim() || loading}
+            className={`btn-intake w-full text-lg py-4 flex items-center justify-center gap-2 ${
+              form.studentName.trim() && !loading ? "bg-primary text-primary-foreground shadow-md" : "bg-muted text-muted-foreground cursor-not-allowed"
             }`}
           >
-            פתח תהליך קליטה
+            {loading ? <><Loader2 className="w-5 h-5 animate-spin" /> יוצר...</> : "פתח תהליך קליטה"}
           </button>
         </div>
       </div>

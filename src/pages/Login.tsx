@@ -1,82 +1,97 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { findSessionByCode, isAdminCode } from "@/lib/storage";
+import { findSessionByCodeDB, isAdminCode, initializeSessionsDB } from "@/lib/supabase-storage";
 import logo from "@/assets/logo.jpeg";
+import { Loader2 } from "lucide-react";
 
 const Login = () => {
+  const navigate = useNavigate();
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [initialized, setInitialized] = useState(false);
 
-  const handleSubmit = () => {
+  useEffect(() => {
+    initializeSessionsDB().then(() => setInitialized(true));
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     const trimmed = code.trim().toUpperCase();
-    if (!trimmed) {
-      setError("יש להזין קוד");
-      return;
-    }
+    if (!trimmed) return;
 
     if (isAdminCode(trimmed)) {
       navigate("/admin");
       return;
     }
 
-    const result = findSessionByCode(trimmed);
-    if (result) {
-      const { session, role } = result;
-      if (role === "student") {
-        navigate(`/student/${session.id}`);
-      } else {
-        navigate(`/parent/${session.id}`);
-      }
-      return;
-    }
+    setLoading(true);
+    setError("");
 
-    setError("הקוד שהוזן אינו תקין");
+    try {
+      const result = await findSessionByCodeDB(trimmed);
+      if (result) {
+        if (result.role === "student") {
+          navigate(`/student/${result.session.id}`);
+        } else {
+          navigate(`/parent/${result.session.id}`);
+        }
+      } else {
+        setError("הקוד שהוזן אינו תקין. נסה שוב.");
+      }
+    } catch {
+      setError("שגיאה בחיבור לשרת. נסה שוב.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-background">
-      <div className="w-full max-w-sm animate-fade-in">
-        <div className="flex justify-center mb-8">
-          <img src={logo} alt="בית אקשטיין - מרום" className="h-20 object-contain" />
-        </div>
+      <div className="w-full max-w-sm animate-fade-in text-center">
+        <img src={logo} alt="מרום בית אקשטיין" className="h-20 mx-auto mb-6 rounded-2xl shadow-sm" />
+        <h1 className="text-2xl font-heading font-bold mb-1">מרום בית אקשטיין</h1>
+        <p className="text-muted-foreground text-sm mb-8">מערכת קליטה והערכה</p>
 
-        <div className="intake-card text-center">
-          <h1 className="text-2xl font-heading font-bold mb-2">מרום בית אקשטיין</h1>
-          <p className="text-muted-foreground text-sm mb-6">מערכת קליטת תלמידים</p>
-
-          <div className="space-y-4">
-            <div>
-              <input
-                type="text"
-                value={code}
-                onChange={(e) => {
-                  setCode(e.target.value);
-                  setError("");
-                }}
-                onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-                placeholder="הזן קוד גישה"
-                className="w-full text-center text-lg tracking-widest bg-background border-2 border-input rounded-xl p-4 focus:outline-none focus:border-primary transition-colors font-mono"
-                dir="ltr"
-                autoComplete="off"
-              />
-            </div>
-
-            {error && (
-              <p className="text-destructive text-sm animate-fade-in">{error}</p>
-            )}
-
-            <button
-              onClick={handleSubmit}
-              className="btn-intake w-full bg-primary text-primary-foreground shadow-md hover:shadow-lg text-lg py-4"
-            >
-              כניסה
-            </button>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-2 text-right">הזן קוד גישה</label>
+            <input
+              type="text"
+              value={code}
+              onChange={(e) => { setCode(e.target.value); setError(""); }}
+              placeholder="הזן את הקוד שקיבלת"
+              className="w-full bg-card border border-input rounded-2xl px-4 py-3 text-center font-mono text-lg tracking-widest focus:outline-none focus:ring-2 focus:ring-ring"
+              dir="ltr"
+              autoFocus
+              disabled={loading}
+            />
           </div>
-        </div>
+          {error && (
+            <p className="text-destructive text-sm animate-fade-in">{error}</p>
+          )}
+          <button
+            type="submit"
+            disabled={!code.trim() || loading || !initialized}
+            className={`btn-intake w-full text-lg py-4 flex items-center justify-center gap-2 ${
+              code.trim() && !loading
+                ? "bg-primary text-primary-foreground shadow-md hover:shadow-lg"
+                : "bg-muted text-muted-foreground cursor-not-allowed"
+            }`}
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                מתחבר...
+              </>
+            ) : (
+              "כניסה"
+            )}
+          </button>
+        </form>
 
-        <p className="text-center text-xs text-muted-foreground mt-6">
-          קבוצת דנאל · לבחור חכם בלב שלם
+        <p className="text-xs text-muted-foreground mt-6">
+          קוד הגישה ניתן על ידי צוות בית הספר
         </p>
       </div>
     </div>

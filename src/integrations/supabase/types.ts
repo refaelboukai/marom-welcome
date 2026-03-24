@@ -14,7 +14,134 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      academic_assessments: {
+        Row: {
+          action_plan: Json | null
+          ai_analysis: Json | null
+          assessment_type: string
+          created_at: string
+          dimension_scores: Json | null
+          grade_level: string
+          id: string
+          performance_level: string | null
+          session_id: string
+          status: string
+          student_answers: Json | null
+          subject: string
+          test_content: Json | null
+          updated_at: string
+        }
+        Insert: {
+          action_plan?: Json | null
+          ai_analysis?: Json | null
+          assessment_type?: string
+          created_at?: string
+          dimension_scores?: Json | null
+          grade_level: string
+          id?: string
+          performance_level?: string | null
+          session_id: string
+          status?: string
+          student_answers?: Json | null
+          subject: string
+          test_content?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          action_plan?: Json | null
+          ai_analysis?: Json | null
+          assessment_type?: string
+          created_at?: string
+          dimension_scores?: Json | null
+          grade_level?: string
+          id?: string
+          performance_level?: string | null
+          session_id?: string
+          status?: string
+          student_answers?: Json | null
+          subject?: string
+          test_content?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "academic_assessments_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "intake_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      intake_sessions: {
+        Row: {
+          admin_notes: string | null
+          closed_at: string | null
+          created_at: string
+          grade: string | null
+          id: string
+          intake_date: string
+          notes: string | null
+          parent_code: string
+          parent_name: string | null
+          parent_open_response: string | null
+          parent_phone: string | null
+          parent_responses: Json
+          second_parent_name: string | null
+          status: string
+          student_code: string
+          student_id_number: string | null
+          student_name: string
+          student_open_responses: Json
+          student_responses: Json
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          closed_at?: string | null
+          created_at?: string
+          grade?: string | null
+          id?: string
+          intake_date?: string
+          notes?: string | null
+          parent_code: string
+          parent_name?: string | null
+          parent_open_response?: string | null
+          parent_phone?: string | null
+          parent_responses?: Json
+          second_parent_name?: string | null
+          status?: string
+          student_code: string
+          student_id_number?: string | null
+          student_name: string
+          student_open_responses?: Json
+          student_responses?: Json
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          closed_at?: string | null
+          created_at?: string
+          grade?: string | null
+          id?: string
+          intake_date?: string
+          notes?: string | null
+          parent_code?: string
+          parent_name?: string | null
+          parent_open_response?: string | null
+          parent_phone?: string | null
+          parent_responses?: Json
+          second_parent_name?: string | null
+          status?: string
+          student_code?: string
+          student_id_number?: string | null
+          student_name?: string
+          student_open_responses?: Json
+          student_responses?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
