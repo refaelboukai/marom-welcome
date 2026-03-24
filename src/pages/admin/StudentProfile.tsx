@@ -15,7 +15,6 @@ const StudentProfile = () => {
   const [copied, setCopied] = useState<string | null>(null);
   const [notesSaved, setNotesSaved] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [academicAssessments, setAcademicAssessments] = useState<any[]>([]);
   const printRef = useRef<HTMLDivElement>(null);
 
   const loadData = useCallback(async () => {
