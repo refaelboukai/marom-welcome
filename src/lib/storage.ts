@@ -110,6 +110,8 @@ export function createSession(data: Partial<IntakeSession>): IntakeSession {
     studentResponses: {},
     studentOpenResponses: {},
     parentResponses: {},
+    staffResponses: {},
+    staffOpenResponses: {},
     adminNotes: "",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
