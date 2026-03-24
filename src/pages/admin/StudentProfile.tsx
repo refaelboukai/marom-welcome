@@ -1,12 +1,10 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getSessionDB, updateSessionDB, getAcademicAssessments } from "@/lib/supabase-storage";
+import { getSessionDB, updateSessionDB } from "@/lib/supabase-storage";
 import { IntakeSession, SECTION_LABELS, OPEN_QUESTION_LABELS, GASGoal } from "@/lib/types";
 import { calculateScores, generateRiskFlags, generateInsights, generateGASGoals, getScoreLabel, getScoreColor, getTopFocusAreas } from "@/lib/scoring";
 import StatusBadge from "@/components/StatusBadge";
-import AcademicAssessment from "@/components/AcademicAssessment";
-import AIInsightsCard from "@/components/AIInsightsCard";
-import { ArrowRight, AlertTriangle, Copy, CheckCircle, Lock, Unlock, FileText, Target, Lightbulb, TrendingUp, Users, Printer, MessageSquare, BarChart3, Shield, Loader2, GraduationCap, Brain } from "lucide-react";
+import { ArrowRight, AlertTriangle, Copy, CheckCircle, Lock, Unlock, FileText, Target, Lightbulb, TrendingUp, Users, Printer, MessageSquare, BarChart3, Shield, Loader2 } from "lucide-react";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Legend } from "recharts";
 
 const StudentProfile = () => {
@@ -17,7 +15,6 @@ const StudentProfile = () => {
   const [copied, setCopied] = useState<string | null>(null);
   const [notesSaved, setNotesSaved] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [academicAssessments, setAcademicAssessments] = useState<any[]>([]);
   const printRef = useRef<HTMLDivElement>(null);
 
   const loadData = useCallback(async () => {
@@ -26,18 +23,11 @@ const StudentProfile = () => {
     if (!s) { navigate("/admin"); return; }
     setSession(s);
     setNotes(s.adminNotes || "");
-    const assessments = await getAcademicAssessments(sessionId);
-    setAcademicAssessments(assessments);
     setLoading(false);
   }, [sessionId, navigate]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  const handleRefreshAssessments = useCallback(async () => {
-    if (!sessionId) return;
-    const assessments = await getAcademicAssessments(sessionId);
-    setAcademicAssessments(assessments);
-  }, [sessionId]);
 
   if (loading || !session) {
     return (
@@ -340,25 +330,6 @@ const StudentProfile = () => {
           </div>
         )}
 
-        {/* Academic Assessment Section */}
-        <AcademicAssessment
-          sessionId={session.id}
-          studentName={session.studentName}
-          gradeLevel={session.grade || "ט"}
-          existingScores={scores}
-          assessments={academicAssessments}
-          onAssessmentsChange={handleRefreshAssessments}
-        />
-
-        {/* AI Insights Section */}
-        {hasStudentData && (
-          <AIInsightsCard
-            studentName={session.studentName}
-            gradeLevel={session.grade || ""}
-            existingScores={scores}
-            academicData={academicAssessments.filter((a) => a.status === "analyzed").map((a) => a.ai_analysis)}
-          />
-        )}
 
         {/* Open-ended Responses */}
         {Object.keys(session.studentOpenResponses).length > 0 && (
