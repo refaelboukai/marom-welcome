@@ -5,6 +5,7 @@ import { IntakeSession, SECTION_LABELS, OPEN_QUESTION_LABELS, GASGoal } from "@/
 import { calculateScores, generateRiskFlags, generateInsights, generateGASGoals, getScoreLabel, getScoreColor, getTopFocusAreas } from "@/lib/scoring";
 import StatusBadge from "@/components/StatusBadge";
 import { ArrowRight, AlertTriangle, Copy, CheckCircle, Lock, Unlock, FileText, Target, Lightbulb, TrendingUp, Users, Printer, MessageSquare, BarChart3, Shield, Loader2 } from "lucide-react";
+import SupportPlans from "@/components/SupportPlans";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Legend } from "recharts";
 
 const StudentProfile = () => {
@@ -193,12 +194,12 @@ const StudentProfile = () => {
               <div key={key} className="intake-card-soft text-center">
                 <Icon className="w-5 h-5 mx-auto mb-1 text-primary/60" />
                 <p className="text-xs text-muted-foreground mb-1">{label}</p>
-                <p className={`text-2xl font-bold ${getScoreColor(s.normalized)}`}>{s.normalized >= 0 ? s.normalized : "—"}</p>
+                <p className={`text-2xl font-bold ${getScoreColor(s.normalized)}`}>{s.normalized >= 0 ? s.normalized.toFixed(2) : "—"}</p>
                 <p className="text-xs text-muted-foreground">{getScoreLabel(s.normalized)}</p>
                 {s.studentNormalized >= 0 && s.parentNormalized >= 0 && (
                   <div className="mt-2 text-[10px] text-muted-foreground space-y-0.5">
-                    <p>תלמיד: {s.studentNormalized} | הורה: {s.parentNormalized}</p>
-                    <p className={Math.abs(s.studentNormalized - s.parentNormalized) > 25 ? "text-warning font-medium" : ""}>פער: {Math.abs(s.studentNormalized - s.parentNormalized)}</p>
+                    <p>תלמיד: {s.studentNormalized.toFixed(2)} | הורה: {s.parentNormalized.toFixed(2)}</p>
+                    <p className={Math.abs(s.studentNormalized - s.parentNormalized) > 1.0 ? "text-warning font-medium" : ""}>פער: {Math.abs(s.studentNormalized - s.parentNormalized).toFixed(2)}</p>
                   </div>
                 )}
               </div>
@@ -230,9 +231,9 @@ const StudentProfile = () => {
                     return (
                       <tr key={key} className="border-b border-border/50">
                         <td className="py-2 px-2 font-medium text-xs">{label}</td>
-                        <td className="py-2 px-2 text-center">{s.studentNormalized >= 0 ? s.studentNormalized : "—"}</td>
-                        <td className="py-2 px-2 text-center">{s.parentNormalized >= 0 ? s.parentNormalized : "—"}</td>
-                        <td className={`py-2 px-2 text-center font-bold ${gap > 25 ? "text-warning" : ""}`}>{gap >= 0 ? gap : "—"}</td>
+                        <td className="py-2 px-2 text-center">{s.studentNormalized >= 0 ? s.studentNormalized.toFixed(2) : "—"}</td>
+                        <td className="py-2 px-2 text-center">{s.parentNormalized >= 0 ? s.parentNormalized.toFixed(2) : "—"}</td>
+                        <td className={`py-2 px-2 text-center font-bold ${gap > 1.0 ? "text-warning" : ""}`}>{gap >= 0 ? gap.toFixed(2) : "—"}</td>
                       </tr>
                     );
                   })}
@@ -330,6 +331,8 @@ const StudentProfile = () => {
           </div>
         )}
 
+        {/* Support Plans */}
+        <SupportPlans sessionId={session.id} />
 
         {/* Open-ended Responses */}
         {Object.keys(session.studentOpenResponses).length > 0 && (

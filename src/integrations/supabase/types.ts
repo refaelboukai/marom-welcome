@@ -154,6 +154,44 @@ export type Database = {
         }
         Relationships: []
       }
+      support_plans: {
+        Row: {
+          created_at: string
+          description: string
+          domain: string
+          id: string
+          session_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          domain: string
+          id?: string
+          session_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          domain?: string
+          id?: string
+          session_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_plans_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "intake_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

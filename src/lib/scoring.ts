@@ -32,12 +32,14 @@ function calcDomainScore(
   const totalAnswered = studentValues.length + parentValues.length;
   const totalPossible = items.length * 2;
 
+  const round2 = (v: number) => Math.round(v * 100) / 100;
+
   return {
-    raw: rawAvg >= 0 ? Math.round(rawAvg * 100) / 100 : -1,
-    normalized: rawAvg >= 0 ? Math.round(rawAvg * 10) / 10 : -1,
+    raw: rawAvg >= 0 ? round2(rawAvg) : -1,
+    normalized: rawAvg >= 0 ? round2(rawAvg) : -1,
     completionRate: Math.round((totalAnswered / totalPossible) * 100),
-    studentNormalized: studentAvg >= 0 ? Math.round(studentAvg * 10) / 10 : -1,
-    parentNormalized: parentAvg >= 0 ? Math.round(parentAvg * 10) / 10 : -1,
+    studentNormalized: studentAvg >= 0 ? round2(studentAvg) : -1,
+    parentNormalized: parentAvg >= 0 ? round2(parentAvg) : -1,
   };
 }
 

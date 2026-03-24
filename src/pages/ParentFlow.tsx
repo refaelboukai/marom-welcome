@@ -84,6 +84,21 @@ const ParentFlow = () => {
             <p>✓ אין תשובות נכונות או לא נכונות</p>
             <p>✓ שיתוף הפעולה שלך חשוב מאוד</p>
           </div>
+          <div className="intake-card mt-4 text-right space-y-2 text-sm border-primary/20">
+            <h3 className="font-heading font-semibold text-primary text-base mb-2">🌱 על התכנית — "לא מוותרים על אף ילד"</h3>
+            <p className="text-muted-foreground leading-relaxed">
+              התכנית מבוססת על תפיסת <strong>איכות חיים</strong> — גישה הרואה בכל אדם בעל רצונות, שאיפות, אהבות ויכולות.
+            </p>
+            <p className="text-muted-foreground leading-relaxed">
+              מטרת התכנית היא לבסס יחד עם התלמידים הזדמנויות לקדם את עצמם, תוך איתור משותף של תחומי החיים אותם יש לשמר או לשפר.
+            </p>
+            <p className="text-muted-foreground leading-relaxed">
+              השאלון שלפניך עוזר לנו להבין את תפיסתך כהורה, ומשמש חלק בלתי נפרד מבניית תכנית אישית לקידום איכות החיים של ילדך.
+            </p>
+            <p className="text-xs text-muted-foreground/70 mt-2">
+              ככל שהפער בין צרכיו של האדם לבין מציאות חייו קטן יותר — כך איכות החיים גבוהה יותר.
+            </p>
+          </div>
           <button
             onClick={handleStart}
             className="btn-intake w-full bg-primary text-primary-foreground shadow-md hover:shadow-lg text-lg py-4 mt-6"
