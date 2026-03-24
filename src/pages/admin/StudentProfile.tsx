@@ -197,8 +197,8 @@ const StudentProfile = () => {
                 <p className="text-xs text-muted-foreground">{getScoreLabel(s.normalized)}</p>
                 {s.studentNormalized >= 0 && s.parentNormalized >= 0 && (
                   <div className="mt-2 text-[10px] text-muted-foreground space-y-0.5">
-                    <p>תלמיד: {s.studentNormalized} | הורה: {s.parentNormalized}</p>
-                    <p className={Math.abs(s.studentNormalized - s.parentNormalized) > 25 ? "text-warning font-medium" : ""}>פער: {Math.abs(s.studentNormalized - s.parentNormalized)}</p>
+                    <p>תלמיד: {s.studentNormalized.toFixed(2)} | הורה: {s.parentNormalized.toFixed(2)}</p>
+                    <p className={Math.abs(s.studentNormalized - s.parentNormalized) > 1.0 ? "text-warning font-medium" : ""}>פער: {Math.abs(s.studentNormalized - s.parentNormalized).toFixed(2)}</p>
                   </div>
                 )}
               </div>
