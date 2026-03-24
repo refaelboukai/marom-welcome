@@ -50,6 +50,8 @@ export function initializeSessions(): void {
       studentResponses: {},
       studentOpenResponses: {},
       parentResponses: {},
+      staffResponses: {},
+      staffOpenResponses: {},
       adminNotes: "",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
