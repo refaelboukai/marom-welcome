@@ -88,7 +88,7 @@ const ParentFlow = () => {
             <p>✓ שיתוף הפעולה שלך חשוב מאוד</p>
           </div>
           <div className="intake-card mt-4 text-right space-y-2 text-sm border-primary/20">
-            <h3 className="font-heading font-semibold text-primary text-base mb-2">🌱 על התכנית — "לא מוותרים על אף ילד"</h3>
+            <h3 className="font-heading font-semibold text-primary text-base mb-2">🌱 על התכנית</h3>
             <p className="text-muted-foreground leading-relaxed">
               התכנית מבוססת על תפיסת <strong>איכות חיים</strong> — גישה הרואה בכל אדם בעל רצונות, שאיפות, אהבות ויכולות.
             </p>
