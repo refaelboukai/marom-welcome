@@ -23,21 +23,21 @@ function calcDomainScore(
     }
   }
 
-  const studentAvg = studentValues.length > 0 ? studentValues.reduce((a, b) => a + b, 0) / studentValues.length : 0;
-  const parentAvg = parentValues.length > 0 ? parentValues.reduce((a, b) => a + b, 0) / parentValues.length : 0;
+  const studentAvg = studentValues.length > 0 ? studentValues.reduce((a, b) => a + b, 0) / studentValues.length : -1;
+  const parentAvg = parentValues.length > 0 ? parentValues.reduce((a, b) => a + b, 0) / parentValues.length : -1;
 
   const allValues = [...studentValues, ...parentValues];
-  const rawAvg = allValues.length > 0 ? allValues.reduce((a, b) => a + b, 0) / allValues.length : 0;
+  const rawAvg = allValues.length > 0 ? allValues.reduce((a, b) => a + b, 0) / allValues.length : -1;
 
   const totalAnswered = studentValues.length + parentValues.length;
   const totalPossible = items.length * 2;
 
   return {
-    raw: Math.round(rawAvg * 100) / 100,
-    normalized: Math.round(((rawAvg - 1) / 4) * 100),
+    raw: rawAvg >= 0 ? Math.round(rawAvg * 100) / 100 : -1,
+    normalized: rawAvg >= 0 ? Math.round(rawAvg * 10) / 10 : -1,
     completionRate: Math.round((totalAnswered / totalPossible) * 100),
-    studentNormalized: studentValues.length > 0 ? Math.round(((studentAvg - 1) / 4) * 100) : -1,
-    parentNormalized: parentValues.length > 0 ? Math.round(((parentAvg - 1) / 4) * 100) : -1,
+    studentNormalized: studentAvg >= 0 ? Math.round(studentAvg * 10) / 10 : -1,
+    parentNormalized: parentAvg >= 0 ? Math.round(parentAvg * 10) / 10 : -1,
   };
 }
 
@@ -56,21 +56,19 @@ export function calculateScores(
 export function generateRiskFlags(scores: ScoreResults): RiskFlag[] {
   const flags: RiskFlag[] = [];
 
-  // Individual domain checks
-  if (scores.qualityOfLife.normalized > 0 && scores.qualityOfLife.normalized < 30) {
+  if (scores.qualityOfLife.normalized > 0 && scores.qualityOfLife.normalized < 2.5) {
     flags.push({ domain: "איכות חיים", severity: "concern", message: "ציון איכות חיים נמוך — מומלץ בירור נוסף ושיח אישי" });
   }
-  if (scores.selfEfficacy.normalized > 0 && scores.selfEfficacy.normalized < 25) {
+  if (scores.selfEfficacy.normalized > 0 && scores.selfEfficacy.normalized < 2.0) {
     flags.push({ domain: "מסוגלות עצמית", severity: "urgent", message: "מסוגלות עצמית נמוכה מאוד — דורש תשומת לב מיידית" });
   }
-  if (scores.locusOfControl.normalized > 0 && scores.locusOfControl.normalized < 25) {
+  if (scores.locusOfControl.normalized > 0 && scores.locusOfControl.normalized < 2.0) {
     flags.push({ domain: "מיקוד שליטה", severity: "concern", message: "מיקוד שליטה חיצוני חזק — ייתכן שהתלמיד חווה חוסר אונים" });
   }
-  if (scores.cognitiveFlexibility.normalized > 0 && scores.cognitiveFlexibility.normalized < 25) {
+  if (scores.cognitiveFlexibility.normalized > 0 && scores.cognitiveFlexibility.normalized < 2.0) {
     flags.push({ domain: "גמישות קוגניטיבית", severity: "concern", message: "קושי בגמישות קוגניטיבית — מומלץ בירור נוסף" });
   }
 
-  // Cross-domain discrepancy check
   const sections = [
     { key: "qualityOfLife" as const, label: "איכות חיים" },
     { key: "selfEfficacy" as const, label: "מסוגלות עצמית" },
@@ -82,20 +80,19 @@ export function generateRiskFlags(scores: ScoreResults): RiskFlag[] {
     const s = scores[key];
     if (s.studentNormalized >= 0 && s.parentNormalized >= 0) {
       const gap = Math.abs(s.studentNormalized - s.parentNormalized);
-      if (gap > 30) {
+      if (gap > 1.2) {
         flags.push({
           domain: label,
           severity: "attention",
-          message: `פער משמעותי (${gap} נקודות) בין תפיסת התלמיד להורה ב${label} — מומלץ שיח משותף`,
+          message: `פער משמעותי (${gap.toFixed(1)}) בין תפיסת התלמיד להורה ב${label} — מומלץ שיח משותף`,
         });
       }
     }
   }
 
-  // Combined risk patterns
   if (
-    scores.selfEfficacy.normalized > 0 && scores.selfEfficacy.normalized < 35 &&
-    scores.locusOfControl.normalized > 0 && scores.locusOfControl.normalized < 35
+    scores.selfEfficacy.normalized > 0 && scores.selfEfficacy.normalized < 2.5 &&
+    scores.locusOfControl.normalized > 0 && scores.locusOfControl.normalized < 2.5
   ) {
     flags.push({
       domain: "דפוס משולב",
@@ -104,9 +101,7 @@ export function generateRiskFlags(scores: ScoreResults): RiskFlag[] {
     });
   }
 
-  if (
-    scores.cognitiveFlexibility.normalized > 0 && scores.cognitiveFlexibility.normalized < 30
-  ) {
+  if (scores.cognitiveFlexibility.normalized > 0 && scores.cognitiveFlexibility.normalized < 2.5) {
     flags.push({
       domain: "גמישות חשיבה",
       severity: "attention",
@@ -114,7 +109,6 @@ export function generateRiskFlags(scores: ScoreResults): RiskFlag[] {
     });
   }
 
-  // Deduplicate by domain
   const seen = new Set<string>();
   return flags.filter((f) => {
     const k = f.domain + f.severity;
@@ -137,51 +131,53 @@ export function generateInsights(scores: ScoreResults): InsightResult {
     { key: "cognitiveFlexibility" as const, label: "גמישות קוגניטיבית" },
   ];
 
-  // Identify strengths and weaknesses
   for (const { key, label } of domains) {
     const s = scores[key];
-    if (s.normalized >= 70) {
+    if (s.normalized >= 4.0) {
       strengths.push(`${label} — ציון גבוה (${s.normalized}), מהווה משאב משמעותי`);
-    } else if (s.normalized >= 0 && s.normalized < 40) {
+    } else if (s.normalized >= 0 && s.normalized < 2.5) {
       areasForSupport.push(`${label} — ציון נמוך (${s.normalized}), דורש תמיכה וחיזוק`);
     }
 
-    // Discrepancy
     if (s.studentNormalized >= 0 && s.parentNormalized >= 0) {
       const gap = Math.abs(s.studentNormalized - s.parentNormalized);
-      if (gap > 25) {
+      if (gap > 1.0) {
         const who = s.studentNormalized > s.parentNormalized ? "התלמיד מדווח גבוה יותר מההורה" : "ההורה מדווח גבוה יותר מהתלמיד";
-        discrepancies.push(`${label}: ${who} (פער ${gap} נקודות) — מומלץ העמקה`);
+        discrepancies.push(`${label}: ${who} (פער ${gap.toFixed(1)}) — מומלץ העמקה`);
       }
     }
   }
 
-  // Generate recommendations
-  if (scores.selfEfficacy.normalized >= 0 && scores.selfEfficacy.normalized < 40) {
+  if (scores.selfEfficacy.normalized >= 0 && scores.selfEfficacy.normalized < 2.5) {
     recommendations.push("חיזוק תחושת מסוגלות באמצעות משימות הדרגתיות עם חוויות הצלחה");
   }
-  if (scores.locusOfControl.normalized >= 0 && scores.locusOfControl.normalized < 40) {
+  if (scores.locusOfControl.normalized >= 0 && scores.locusOfControl.normalized < 2.5) {
     recommendations.push("עבודה על העצמה ותחושת שליטה — מתן בחירות וחיזוק אחריות אישית");
   }
-  if (scores.cognitiveFlexibility.normalized >= 0 && scores.cognitiveFlexibility.normalized < 40) {
+  if (scores.cognitiveFlexibility.normalized >= 0 && scores.cognitiveFlexibility.normalized < 2.5) {
     recommendations.push("תרגול אסטרטגיות חשיבה גמישה, פתרון בעיות ונקיטת פרספקטיבה");
   }
-  if (scores.qualityOfLife.normalized >= 0 && scores.qualityOfLife.normalized < 40) {
+  if (scores.qualityOfLife.normalized >= 0 && scores.qualityOfLife.normalized < 2.5) {
     recommendations.push("בירור מעמיק של תחומי איכות חיים — חברתי, רגשי, לימודי ומשפחתי");
   }
   if (discrepancies.length > 0) {
     recommendations.push("שיח משותף עם התלמיד וההורה לגבי פערים בתפיסה");
   }
 
-  // Summary
-  const avgScore = domains.reduce((sum, { key }) => sum + Math.max(0, scores[key].normalized), 0) / domains.length;
+  const validDomains = domains.filter(({ key }) => scores[key].normalized >= 0);
+  const avgScore = validDomains.length > 0
+    ? validDomains.reduce((sum, { key }) => sum + scores[key].normalized, 0) / validDomains.length
+    : -1;
+
   let summary: string;
-  if (avgScore >= 70) {
+  if (avgScore >= 4.0) {
     summary = "התלמיד מציג תמונה כללית חיובית ברוב התחומים. קיימים משאבים רגשיים ואישיותיים משמעותיים.";
-  } else if (avgScore >= 45) {
+  } else if (avgScore >= 3.0) {
     summary = "התלמיד מציג תמונה מעורבת. ישנם תחומים בהם קיימים משאבים לצד תחומים הדורשים תשומת לב וליווי.";
-  } else {
+  } else if (avgScore >= 0) {
     summary = "התלמיד מציג ציונים נמוכים במספר תחומים. מומלץ ליווי אישי ותכנית תמיכה ממוקדת.";
+  } else {
+    summary = "אין מספיק נתונים לסיכום.";
   }
 
   const interpretation = generateInterpretation(scores);
@@ -192,16 +188,16 @@ export function generateInsights(scores: ScoreResults): InsightResult {
 function generateInterpretation(scores: ScoreResults): string {
   const parts: string[] = [];
 
-  if (scores.selfEfficacy.normalized >= 0 && scores.selfEfficacy.normalized < 35 &&
-      scores.locusOfControl.normalized >= 0 && scores.locusOfControl.normalized < 35) {
+  if (scores.selfEfficacy.normalized >= 0 && scores.selfEfficacy.normalized < 2.5 &&
+      scores.locusOfControl.normalized >= 0 && scores.locusOfControl.normalized < 2.5) {
     parts.push("ייתכן שהתלמיד חווה קושי להאמין ביכולתו להשפיע על מצבו ולהצליח באופן עקבי. שילוב של מסוגלות נמוכה עם מיקוד שליטה חיצוני עשוי להעיד על תחושת חוסר אונים.");
   }
 
-  if (scores.cognitiveFlexibility.normalized >= 0 && scores.cognitiveFlexibility.normalized < 35) {
+  if (scores.cognitiveFlexibility.normalized >= 0 && scores.cognitiveFlexibility.normalized < 2.5) {
     parts.push("ייתכן קושי בחשיבה על חלופות, בשינוי נקודת מבט ובהתמודדות עם מצבים מורכבים או מלחיצים.");
   }
 
-  if (scores.qualityOfLife.normalized >= 0 && scores.qualityOfLife.normalized < 35) {
+  if (scores.qualityOfLife.normalized >= 0 && scores.qualityOfLife.normalized < 2.5) {
     parts.push("ציון איכות החיים הנמוך עשוי להעיד על קושי בתחומים רגשיים, חברתיים או לימודיים. מומלץ בירור מעמיק.");
   }
 
@@ -215,7 +211,7 @@ function generateInterpretation(scores: ScoreResults): string {
 export function generateGASGoals(scores: ScoreResults): GASGoal[] {
   const goals: GASGoal[] = [];
 
-  if (scores.selfEfficacy.normalized >= 0 && scores.selfEfficacy.normalized < 50) {
+  if (scores.selfEfficacy.normalized >= 0 && scores.selfEfficacy.normalized < 3.0) {
     goals.push({
       id: "gas_se",
       area: "מסוגלות עצמית",
@@ -226,7 +222,7 @@ export function generateGASGoals(scores: ScoreResults): GASGoal[] {
     });
   }
 
-  if (scores.locusOfControl.normalized >= 0 && scores.locusOfControl.normalized < 50) {
+  if (scores.locusOfControl.normalized >= 0 && scores.locusOfControl.normalized < 3.0) {
     goals.push({
       id: "gas_loc",
       area: "מיקוד שליטה",
@@ -237,7 +233,7 @@ export function generateGASGoals(scores: ScoreResults): GASGoal[] {
     });
   }
 
-  if (scores.cognitiveFlexibility.normalized >= 0 && scores.cognitiveFlexibility.normalized < 50) {
+  if (scores.cognitiveFlexibility.normalized >= 0 && scores.cognitiveFlexibility.normalized < 3.0) {
     goals.push({
       id: "gas_cf",
       area: "גמישות קוגניטיבית",
@@ -248,7 +244,7 @@ export function generateGASGoals(scores: ScoreResults): GASGoal[] {
     });
   }
 
-  if (scores.qualityOfLife.normalized >= 0 && scores.qualityOfLife.normalized < 50) {
+  if (scores.qualityOfLife.normalized >= 0 && scores.qualityOfLife.normalized < 3.0) {
     goals.push({
       id: "gas_qol",
       area: "איכות חיים ורווחה רגשית",
@@ -273,19 +269,19 @@ export function getTopFocusAreas(scores: ScoreResults): string[] {
   return areas.sort((a, b) => a.score - b.score).slice(0, 3).map((a) => `${a.label} (${a.score})`);
 }
 
-export function getScoreLabel(normalized: number): string {
-  if (normalized < 0) return "לא זמין";
-  if (normalized < 25) return "נמוך";
-  if (normalized < 50) return "מתחת לממוצע";
-  if (normalized < 75) return "ממוצע";
+export function getScoreLabel(score: number): string {
+  if (score < 0) return "לא זמין";
+  if (score < 2.0) return "נמוך";
+  if (score < 3.0) return "מתחת לממוצע";
+  if (score < 4.0) return "ממוצע";
   return "גבוה";
 }
 
-export function getScoreColor(normalized: number): string {
-  if (normalized < 0) return "text-muted-foreground";
-  if (normalized < 25) return "text-destructive";
-  if (normalized < 50) return "text-warning";
-  if (normalized < 75) return "text-foreground";
+export function getScoreColor(score: number): string {
+  if (score < 0) return "text-muted-foreground";
+  if (score < 2.0) return "text-destructive";
+  if (score < 3.0) return "text-warning";
+  if (score < 4.0) return "text-foreground";
   return "text-success";
 }
 
