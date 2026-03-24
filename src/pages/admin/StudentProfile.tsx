@@ -21,6 +21,8 @@ const StudentProfile = () => {
   const [loading, setLoading] = useState(true);
   const [consentSignature, setConsentSignature] = useState<string | null>(null);
   const [reassessmentData, setReassessmentData] = useState<any>(null);
+  const [aiResult, setAiResult] = useState<PersonalPlanData["aiRecommendations"] | null>(null);
+  const [supportPlansData, setSupportPlansData] = useState<PersonalPlanData["supportPlans"]>([]);
   const printRef = useRef<HTMLDivElement>(null);
 
   const loadData = useCallback(async () => {
