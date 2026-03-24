@@ -331,6 +331,8 @@ const StudentProfile = () => {
           </div>
         )}
 
+        {/* Support Plans */}
+        <SupportPlans sessionId={session.id} />
 
         {/* Open-ended Responses */}
         {Object.keys(session.studentOpenResponses).length > 0 && (
