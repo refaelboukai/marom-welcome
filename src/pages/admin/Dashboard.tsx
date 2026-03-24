@@ -228,7 +228,7 @@ const Dashboard = () => {
                             <td className="px-4 py-3"><StatusBadge status={session.status} /></td>
                             <td className="px-4 py-3 text-center"><span className={`text-xs font-medium ${session.studentCompletion === 100 ? "text-success" : "text-muted-foreground"}`}>{session.studentCompletion}%</span></td>
                             <td className="px-4 py-3 text-center"><span className={`text-xs font-medium ${session.parentCompletion === 100 ? "text-success" : "text-muted-foreground"}`}>{session.parentCompletion}%</span></td>
-                            <td className="px-4 py-3 text-center font-bold">{overallScore >= 0 ? overallScore.toFixed(1) : "—"}</td>
+                            <td className="px-4 py-3 text-center font-bold">{overallScore >= 0 ? overallScore.toFixed(2) : "—"}</td>
                             <td className="px-4 py-3 text-center">{session.riskFlags.length > 0 && <AlertTriangle className="w-4 h-4 text-warning inline" />}</td>
                             <td className="px-4 py-3 text-center">
                               <button onClick={(e) => { e.stopPropagation(); handleCopy(session.parentCode, `pc-${session.id}`); }}
