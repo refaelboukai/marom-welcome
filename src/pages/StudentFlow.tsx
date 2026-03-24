@@ -194,11 +194,11 @@ const StudentFlow = () => {
 
   if (step === "consent") {
     return (
-      <div className="min-h-screen px-4 py-6 bg-background relative">
+      <div className="min-h-screen px-4 sm:px-6 py-6 bg-background relative safe-top safe-bottom">
         <button onClick={() => navigate("/")} className="absolute top-4 left-4 p-2 rounded-xl hover:bg-muted transition-colors" title="התנתק">
           <LogOut className="w-5 h-5 text-muted-foreground" />
         </button>
-        <div className="max-w-md mx-auto animate-slide-up">
+        <div className="max-w-md md:max-w-lg mx-auto animate-slide-up">
           <div className="text-center mb-4">
             <img src={logo} alt="מרום" className="h-12 mx-auto mb-3" />
             <h2 className="text-xl font-heading font-bold">כללי בית הספר</h2>
