@@ -302,7 +302,27 @@ const StudentProfile = () => {
           </div>
         )}
 
-        {/* Score Cards */}
+        {/* Progress Timeline */}
+        {timelineData && (
+          <div className="intake-card border-info/20">
+            <h3 className="font-heading font-semibold mb-4 flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-info" />
+              ציר התקדמות — קליטה ← סיכום שנתי
+            </h3>
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={timelineData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="label" tick={{ fontSize: 10 }} />
+                <YAxis domain={[0, 5]} tick={{ fontSize: 10 }} />
+                <Tooltip />
+                <Line type="monotone" dataKey="קליטה" stroke="hsl(200, 60%, 50%)" strokeWidth={2} dot={{ r: 5 }} />
+                <Line type="monotone" dataKey="סיכום" stroke="hsl(165, 35%, 42%)" strokeWidth={2} dot={{ r: 5 }} />
+                <Legend />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-3">
           {scoreCards.map(({ key, label, icon: Icon }) => {
             const s = scores[key];
