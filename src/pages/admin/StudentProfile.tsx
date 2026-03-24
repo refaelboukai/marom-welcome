@@ -479,6 +479,7 @@ const StudentProfile = () => {
               openResponses: session.studentOpenResponses,
               staffOpenResponses: session.staffOpenResponses,
             }}
+            onResult={(r) => setAiResult(r)}
           />
         )}
 
