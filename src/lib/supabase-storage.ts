@@ -63,6 +63,8 @@ export async function initializeSessionsDB(): Promise<void> {
       parent_phone: studentData ? (studentData.motherPhone || studentData.fatherPhone) : "",
       student_code: sc.code,
       parent_code: generateCode(),
+      staff_code: generateCode(),
+      class_group: sc.classGroup || "",
       status: "not_started",
     };
   });
