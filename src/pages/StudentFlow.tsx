@@ -158,11 +158,11 @@ const StudentFlow = () => {
 
   if (step === "welcome") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-background relative">
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 bg-background relative safe-top safe-bottom">
         <button onClick={() => navigate("/")} className="absolute top-4 left-4 p-2 rounded-xl hover:bg-muted transition-colors" title="התנתק">
           <LogOut className="w-5 h-5 text-muted-foreground" />
         </button>
-        <div className="w-full max-w-md animate-fade-in text-center">
+        <div className="w-full max-w-md md:max-w-lg animate-fade-in text-center">
           <img src={logo} alt="מרום" className="h-20 mx-auto mb-6" />
           <h1 className="text-3xl font-heading font-bold mb-2">ברוכים הבאים</h1>
           <h2 className="text-xl font-heading text-primary font-semibold mb-1">לבית ספר מרום בית אקשטיין</h2>
