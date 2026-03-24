@@ -34,11 +34,15 @@ export interface IntakeSession {
   notes?: string;
   studentCode: string;
   parentCode: string;
+  staffCode?: string;
+  classGroup?: string;
   status: IntakeStatus;
   studentResponses: Record<string, number>;
   studentOpenResponses: Record<string, string>;
   parentResponses: Record<string, number>;
   parentOpenResponse?: string;
+  staffResponses: Record<string, number>;
+  staffOpenResponses: Record<string, string>;
   scores?: ScoreResults;
   riskFlags?: RiskFlag[];
   adminNotes?: string;
@@ -117,4 +121,20 @@ export const OPEN_QUESTION_LABELS: Record<string, string> = {
   dream: "החלום שלי",
   want_to_change: "מה הייתי רוצה לשנות",
   areas_to_advance: "שלושה תחומים שאני רוצה לקדם",
+};
+
+export const STAFF_QUESTION_KEYS = [
+  "staff_behavioral",
+  "staff_social",
+  "staff_academic",
+  "staff_emotional",
+  "staff_recommendations",
+] as const;
+
+export const STAFF_QUESTION_LABELS: Record<string, string> = {
+  staff_behavioral: "תפקוד התנהגותי",
+  staff_social: "תפקוד חברתי",
+  staff_academic: "תפקוד לימודי",
+  staff_emotional: "תפקוד רגשי",
+  staff_recommendations: "המלצות הצוות",
 };

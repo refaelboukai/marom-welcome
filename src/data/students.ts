@@ -18,30 +18,36 @@ export interface Student {
 }
 
 export const ADMIN_CODE = "9020";
+export const STAFF_CODE = "1001";
 
-export const studentCodes: { name: string; code: string; group: string }[] = [
-  // קבוצה ראשונה
-  { name: "אוריאן שיקלי", code: "3MWANYDP", group: "1" },
-  { name: "רון מרש", code: "4KD6DSCL", group: "1" },
-  { name: "הודיה אלחרר", code: "2NYLMKY5", group: "1" },
-  { name: "יובל אורטס", code: "4WVZJ6C5", group: "1" },
-  { name: "ענהאל שמיאן דהן", code: "2QAPD446", group: "1" },
-  { name: "להב נהוראי", code: "4K63KH4F", group: "1" },
-  { name: "ליאן עמאר", code: "2ES4CVZ9", group: "1" },
-  // קבוצה שנייה
-  { name: "תאיר שקיר", code: "2FMZ95WF", group: "2" },
-  { name: "אריאל עוז עזרא", code: "2WHMZBQW", group: "2" },
-  { name: "נעם יחיאב", code: "3JCKN2HT", group: "2" },
-  { name: "אלה בן דוד", code: "3PV9ADF8", group: "2" },
-  { name: "איתמר דכינגר", code: "5CQM2KMB", group: "2" },
-  { name: "אוריאן קדוש", code: "5GW3XBN5", group: "2" },
-  { name: "ליה קרמר", code: "5U7SZXQ3", group: "2" },
-  { name: "נעם טובי קרלן", code: "6DDFP7Y2", group: "2" },
-  { name: "נחמן דרור", code: "6SMMR6UD", group: "2" },
-  { name: "אילון שוורץ", code: "6ZP6SNHT", group: "2" },
-  { name: "איתמר דהן", code: "72Z96TWV", group: "2" },
-  { name: "עופר יוסף בכר", code: "7CJRQ33K", group: "2" },
-  { name: "ליה פקנהיים", code: "7E7BQBST", group: "2" },
+export const CLASS_GROUPS = {
+  tali: { label: "הכיתה של טלי", key: "tali" },
+  eden: { label: "הכיתה של עדן", key: "eden" },
+} as const;
+
+export const studentCodes: { name: string; code: string; group: string; classGroup: string }[] = [
+  // הכיתה של טלי
+  { name: "אוריאן שיקלי", code: "3MWANYDP", group: "1", classGroup: "tali" },
+  { name: "רון מרש", code: "4KD6DSCL", group: "1", classGroup: "tali" },
+  { name: "הודיה אלחרר", code: "2NYLMKY5", group: "1", classGroup: "tali" },
+  { name: "יובל אורטס", code: "4WVZJ6C5", group: "1", classGroup: "tali" },
+  { name: "ענהאל שמיאן דהן", code: "2QAPD446", group: "1", classGroup: "tali" },
+  { name: "להב נהוראי", code: "4K63KH4F", group: "1", classGroup: "tali" },
+  { name: "ליאן עמאר", code: "2ES4CVZ9", group: "1", classGroup: "tali" },
+  // הכיתה של עדן
+  { name: "תאיר שקיר", code: "2FMZ95WF", group: "2", classGroup: "eden" },
+  { name: "אריאל עוז עזרא", code: "2WHMZBQW", group: "2", classGroup: "eden" },
+  { name: "נעם יחיאב", code: "3JCKN2HT", group: "2", classGroup: "eden" },
+  { name: "אלה בן דוד", code: "3PV9ADF8", group: "2", classGroup: "eden" },
+  { name: "איתמר דכינגר", code: "5CQM2KMB", group: "2", classGroup: "eden" },
+  { name: "אוריאן קדוש", code: "5GW3XBN5", group: "2", classGroup: "eden" },
+  { name: "ליה קרמר", code: "5U7SZXQ3", group: "2", classGroup: "eden" },
+  { name: "נעם טובי קרלן", code: "6DDFP7Y2", group: "2", classGroup: "eden" },
+  { name: "נחמן דרור", code: "6SMMR6UD", group: "2", classGroup: "eden" },
+  { name: "אילון שוורץ", code: "6ZP6SNHT", group: "2", classGroup: "eden" },
+  { name: "איתמר דהן", code: "72Z96TWV", group: "2", classGroup: "eden" },
+  { name: "עופר יוסף בכר", code: "7CJRQ33K", group: "2", classGroup: "eden" },
+  { name: "ליה פקנהיים", code: "7E7BQBST", group: "2", classGroup: "eden" },
 ];
 
 export const studentsData: Omit<Student, "code" | "group">[] = [
