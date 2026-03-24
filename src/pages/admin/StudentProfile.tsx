@@ -230,9 +230,9 @@ const StudentProfile = () => {
                     return (
                       <tr key={key} className="border-b border-border/50">
                         <td className="py-2 px-2 font-medium text-xs">{label}</td>
-                        <td className="py-2 px-2 text-center">{s.studentNormalized >= 0 ? s.studentNormalized : "—"}</td>
-                        <td className="py-2 px-2 text-center">{s.parentNormalized >= 0 ? s.parentNormalized : "—"}</td>
-                        <td className={`py-2 px-2 text-center font-bold ${gap > 25 ? "text-warning" : ""}`}>{gap >= 0 ? gap : "—"}</td>
+                        <td className="py-2 px-2 text-center">{s.studentNormalized >= 0 ? s.studentNormalized.toFixed(2) : "—"}</td>
+                        <td className="py-2 px-2 text-center">{s.parentNormalized >= 0 ? s.parentNormalized.toFixed(2) : "—"}</td>
+                        <td className={`py-2 px-2 text-center font-bold ${gap > 1.0 ? "text-warning" : ""}`}>{gap >= 0 ? gap.toFixed(2) : "—"}</td>
                       </tr>
                     );
                   })}
