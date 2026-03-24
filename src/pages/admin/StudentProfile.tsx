@@ -4,9 +4,11 @@ import { getSessionDB, updateSessionDB } from "@/lib/supabase-storage";
 import { IntakeSession, SECTION_LABELS, OPEN_QUESTION_LABELS, GASGoal } from "@/lib/types";
 import { calculateScores, generateRiskFlags, generateInsights, generateGASGoals, getScoreLabel, getScoreColor, getTopFocusAreas } from "@/lib/scoring";
 import StatusBadge from "@/components/StatusBadge";
-import { ArrowRight, AlertTriangle, Copy, CheckCircle, Lock, Unlock, FileText, Target, Lightbulb, TrendingUp, Users, Printer, MessageSquare, BarChart3, Shield, Loader2 } from "lucide-react";
+import { ArrowRight, AlertTriangle, Copy, CheckCircle, Lock, Unlock, FileText, Target, Lightbulb, TrendingUp, Users, Printer, MessageSquare, BarChart3, Shield, Loader2, RefreshCw, Download, PenLine } from "lucide-react";
 import SupportPlans from "@/components/SupportPlans";
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Legend } from "recharts";
+import { generateStudentPDF } from "@/lib/pdf-export";
+import { supabase } from "@/integrations/supabase/client";
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 
 const StudentProfile = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -16,6 +18,8 @@ const StudentProfile = () => {
   const [copied, setCopied] = useState<string | null>(null);
   const [notesSaved, setNotesSaved] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [consentSignature, setConsentSignature] = useState<string | null>(null);
+  const [reassessmentData, setReassessmentData] = useState<any>(null);
   const printRef = useRef<HTMLDivElement>(null);
 
   const loadData = useCallback(async () => {
@@ -24,11 +28,19 @@ const StudentProfile = () => {
     if (!s) { navigate("/admin"); return; }
     setSession(s);
     setNotes(s.adminNotes || "");
+
+    // Load extra fields via raw query
+    const { data: raw } = await (supabase as any).from("intake_sessions").select("consent_signature, consent_date, reassessment_student_responses, reassessment_parent_responses, reassessment_date, reassessment_status").eq("id", sessionId).maybeSingle();
+    if (raw) {
+      setConsentSignature(raw.consent_signature);
+      if (raw.reassessment_student_responses && Object.keys(raw.reassessment_student_responses).length > 0) {
+        setReassessmentData(raw);
+      }
+    }
     setLoading(false);
   }, [sessionId, navigate]);
 
   useEffect(() => { loadData(); }, [loadData]);
-
 
   if (loading || !session) {
     return (
@@ -43,6 +55,11 @@ const StudentProfile = () => {
   const insights = generateInsights(scores);
   const gasGoals = generateGASGoals(scores);
   const focusAreas = getTopFocusAreas(scores);
+
+  // Reassessment scores for comparison
+  const reassessmentScores = reassessmentData?.reassessment_student_responses && Object.keys(reassessmentData.reassessment_student_responses).length > 0
+    ? calculateScores(reassessmentData.reassessment_student_responses, reassessmentData.reassessment_parent_responses || {})
+    : null;
 
   const radarData = [
     { subject: "איכות חיים", student: scores.qualityOfLife.studentNormalized, parent: scores.qualityOfLife.parentNormalized },
@@ -76,6 +93,15 @@ const StudentProfile = () => {
     setSession((prev) => prev ? { ...prev, status: "under_review", closedAt: undefined } : null);
   };
 
+  const handleOpenReassessment = async () => {
+    await (supabase as any).from("intake_sessions").update({
+      reassessment_status: "open_student",
+      reassessment_student_responses: {},
+      reassessment_parent_responses: {},
+    }).eq("id", session.id);
+    alert("סיכום שנתי נפתח — התלמיד יכול כעת למלא שאלונים מחדש עם אותו קוד");
+  };
+
   const handlePrint = () => { window.print(); };
 
   const scoreCards = [
@@ -84,6 +110,13 @@ const StudentProfile = () => {
     { key: "locusOfControl" as const, label: SECTION_LABELS.locus_of_control, icon: Target },
     { key: "cognitiveFlexibility" as const, label: SECTION_LABELS.cognitive_flexibility, icon: Lightbulb },
   ];
+
+  // Comparison data for bar chart
+  const comparisonData = reassessmentScores ? scoreCards.map(({ key, label }) => ({
+    name: label,
+    קליטה: scores[key].studentNormalized >= 0 ? scores[key].studentNormalized : 0,
+    סיכום: reassessmentScores[key].studentNormalized >= 0 ? reassessmentScores[key].studentNormalized : 0,
+  })) : null;
 
   return (
     <div className="min-h-screen bg-background print:bg-white" ref={printRef}>
@@ -101,9 +134,17 @@ const StudentProfile = () => {
               {session.studentIdNumber && <span className="text-xs text-muted-foreground">ת.ז. {session.studentIdNumber}</span>}
             </div>
           </div>
-          <button onClick={handlePrint} className="p-2 rounded-lg hover:bg-muted print:hidden" title="הדפסה">
-            <Printer className="w-5 h-5 text-muted-foreground" />
-          </button>
+          <div className="flex items-center gap-1 print:hidden">
+            <button onClick={() => generateStudentPDF(session, "parent")} className="p-2 rounded-lg hover:bg-muted" title="PDF להורים">
+              <Download className="w-5 h-5 text-info" />
+            </button>
+            <button onClick={() => generateStudentPDF(session, "staff")} className="p-2 rounded-lg hover:bg-muted" title="PDF לצוות">
+              <FileText className="w-5 h-5 text-primary" />
+            </button>
+            <button onClick={handlePrint} className="p-2 rounded-lg hover:bg-muted" title="הדפסה">
+              <Printer className="w-5 h-5 text-muted-foreground" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -113,8 +154,8 @@ const StudentProfile = () => {
           <h3 className="font-heading font-semibold mb-3 text-sm">מעקב תהליך</h3>
           <div className="flex items-center gap-1 overflow-x-auto pb-2">
             {(["not_started", "student_started", "student_completed", "parent_started", "parent_completed", "under_review", "completed"] as const).map((s, i) => {
-              const isActive = s === session.status;
               const isPast = ["not_started", "student_started", "student_completed", "parent_started", "parent_completed", "under_review", "completed"].indexOf(session.status) >= i;
+              const isActive = s === session.status;
               return (
                 <div key={s} className="flex items-center">
                   <div className={`w-3 h-3 rounded-full flex-shrink-0 ${isPast ? "bg-primary" : "bg-muted"} ${isActive ? "ring-2 ring-primary/30 ring-offset-2" : ""}`} />
@@ -129,6 +170,19 @@ const StudentProfile = () => {
             {session.closedAt && <span>נסגר: {new Date(session.closedAt).toLocaleDateString("he-IL")}</span>}
           </div>
         </div>
+
+        {/* Consent Signature */}
+        {consentSignature && (
+          <div className="intake-card-soft print:break-inside-avoid">
+            <h3 className="font-heading font-semibold mb-2 flex items-center gap-2 text-sm">
+              <PenLine className="w-4 h-4 text-primary" />
+              חתימת הסכמה לכללי בית הספר
+            </h3>
+            <div className="bg-card border border-border rounded-xl p-2 inline-block">
+              <img src={consentSignature} alt="חתימת תלמיד" className="h-16" />
+            </div>
+          </div>
+        )}
 
         {/* Codes */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 print:hidden">
@@ -183,6 +237,50 @@ const StudentProfile = () => {
                 <Legend />
               </RadarChart>
             </ResponsiveContainer>
+          </div>
+        )}
+
+        {/* Reassessment Comparison */}
+        {comparisonData && (
+          <div className="intake-card border-primary/20">
+            <h3 className="font-heading font-semibold mb-4 flex items-center gap-2">
+              <RefreshCw className="w-5 h-5 text-primary" />
+              השוואת קליטה ← סיכום שנתי
+            </h3>
+            {reassessmentData?.reassessment_date && (
+              <p className="text-xs text-muted-foreground mb-3">תאריך סיכום: {new Date(reassessmentData.reassessment_date).toLocaleDateString("he-IL")}</p>
+            )}
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={comparisonData} barGap={4}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                <YAxis domain={[0, 5]} tick={{ fontSize: 10 }} />
+                <Tooltip />
+                <Bar dataKey="קליטה" fill="hsl(200, 60%, 50%)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="סיכום" fill="hsl(165, 35%, 42%)" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+            <div className="flex items-center justify-center gap-4 mt-2 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-[hsl(200,60%,50%)]" /> קליטה</span>
+              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-[hsl(165,35%,42%)]" /> סיכום שנתי</span>
+            </div>
+            {/* Score changes */}
+            <div className="grid grid-cols-2 gap-2 mt-4">
+              {scoreCards.map(({ key, label }) => {
+                const initial = scores[key].studentNormalized;
+                const final = reassessmentScores![key].studentNormalized;
+                if (initial < 0 || final < 0) return null;
+                const diff = final - initial;
+                return (
+                  <div key={key} className="p-2 bg-muted/30 rounded-lg text-center">
+                    <p className="text-[10px] text-muted-foreground">{label}</p>
+                    <p className={`text-sm font-bold ${diff > 0 ? "text-success" : diff < 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                      {diff > 0 ? "+" : ""}{diff.toFixed(2)}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
@@ -359,6 +457,18 @@ const StudentProfile = () => {
           </div>
         )}
 
+        {/* PDF Export Buttons */}
+        <div className="grid grid-cols-2 gap-3 print:hidden">
+          <button onClick={() => generateStudentPDF(session, "parent")}
+            className="btn-intake bg-info/10 text-info text-sm flex items-center justify-center gap-2">
+            <Download className="w-4 h-4" /> PDF להורים
+          </button>
+          <button onClick={() => generateStudentPDF(session, "staff")}
+            className="btn-intake bg-primary/10 text-primary text-sm flex items-center justify-center gap-2">
+            <FileText className="w-4 h-4" /> PDF לצוות
+          </button>
+        </div>
+
         {/* Admin Notes */}
         <div className="intake-card print:hidden">
           <h3 className="font-heading font-semibold mb-3">הערות צוות</h3>
@@ -374,15 +484,23 @@ const StudentProfile = () => {
           </div>
         </div>
 
-        {/* Close / Reopen */}
-        <div className="flex gap-3 print:hidden">
-          {session.status !== "completed" ? (
-            <button onClick={handleCloseIntake} className="btn-intake bg-primary text-primary-foreground flex-1 flex items-center justify-center gap-2">
-              <Lock className="w-4 h-4" /> סגור תהליך קליטה
-            </button>
-          ) : (
-            <button onClick={handleReopenIntake} className="btn-intake bg-secondary text-secondary-foreground flex-1 flex items-center justify-center gap-2">
-              <Unlock className="w-4 h-4" /> פתח מחדש
+        {/* Close / Reopen / Reassessment */}
+        <div className="flex flex-col gap-3 print:hidden">
+          <div className="flex gap-3">
+            {session.status !== "completed" ? (
+              <button onClick={handleCloseIntake} className="btn-intake bg-primary text-primary-foreground flex-1 flex items-center justify-center gap-2">
+                <Lock className="w-4 h-4" /> סגור תהליך קליטה
+              </button>
+            ) : (
+              <button onClick={handleReopenIntake} className="btn-intake bg-secondary text-secondary-foreground flex-1 flex items-center justify-center gap-2">
+                <Unlock className="w-4 h-4" /> פתח מחדש
+              </button>
+            )}
+          </div>
+          {(session.status === "completed" || session.status === "under_review") && (
+            <button onClick={handleOpenReassessment}
+              className="btn-intake bg-accent text-accent-foreground flex items-center justify-center gap-2 border border-primary/20">
+              <RefreshCw className="w-4 h-4" /> פתח סיכום שנתי — מילוי שאלונים חוזר
             </button>
           )}
         </div>
