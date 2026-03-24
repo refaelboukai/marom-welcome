@@ -28,11 +28,6 @@ const StudentProfile = () => {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  const handleRefreshAssessments = useCallback(async () => {
-    if (!sessionId) return;
-    const assessments = await getAcademicAssessments(sessionId);
-    setAcademicAssessments(assessments);
-  }, [sessionId]);
 
   if (loading || !session) {
     return (
