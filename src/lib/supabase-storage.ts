@@ -171,6 +171,8 @@ export async function createSessionDB(data: Partial<IntakeSession>): Promise<Int
     notes: data.notes,
     student_code: generateCode(),
     parent_code: generateCode(),
+    staff_code: generateCode(),
+    class_group: data.classGroup || "",
     status: "not_started",
   };
 
