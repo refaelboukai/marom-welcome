@@ -6,6 +6,7 @@ import { questionnaireItems } from "@/data/questionnaires";
 import { CLASS_GROUPS } from "@/data/students";
 import StatusBadge from "@/components/StatusBadge";
 import CodeManagement from "@/components/CodeManagement";
+import AIRecommendations from "@/components/AIRecommendations";
 import logo from "@/assets/logo.jpeg";
 import { Plus, Users, AlertTriangle, CheckCircle, Clock, Search, LogOut, XCircle, Loader2, Download, Key, FileText, Copy } from "lucide-react";
 import { calculateScores, generateRiskFlags, getCompletionPercentage } from "@/lib/scoring";
@@ -146,6 +147,18 @@ const Dashboard = () => {
           <CodeManagement sessions={sessions} />
         ) : (
           <>
+            {/* AI Recommendations */}
+            <div className="mb-4">
+              <AIRecommendations
+                students={sessionsWithMeta.filter((s) => tab === "all" || s.classGroup === tab).map((s) => ({
+                  name: s.studentName,
+                  classGroup: s.classGroup || "",
+                  scores: s.scores,
+                }))}
+                classLabel={tab === "tali" ? "הכיתה של טלי" : tab === "eden" ? "הכיתה של עדן" : "כל התלמידים"}
+              />
+            </div>
+
             {/* Export Bar */}
             <div className="flex flex-wrap gap-2 mb-4">
               <button onClick={() => exportToExcel(tab === "all" ? sessions : filtered, tab === "tali" ? "הכיתה_של_טלי" : tab === "eden" ? "הכיתה_של_עדן" : "כל_התלמידים")}
@@ -206,8 +219,8 @@ const Dashboard = () => {
                     </thead>
                     <tbody>
                       {filtered.map((session) => {
-                        const avgScore = [session.scores.qualityOfLife, session.scores.selfEfficacy, session.scores.locusOfControl, session.scores.cognitiveFlexibility].filter((d) => d.normalized >= 0);
-                        const overallScore = avgScore.length > 0 ? Math.round(avgScore.reduce((sum, d) => sum + d.normalized, 0) / avgScore.length) : -1;
+                        const avgScoreDomains = [session.scores.qualityOfLife, session.scores.selfEfficacy, session.scores.locusOfControl, session.scores.cognitiveFlexibility].filter((d) => d.normalized >= 0);
+                        const overallScore = avgScoreDomains.length > 0 ? Math.round(avgScoreDomains.reduce((sum, d) => sum + d.normalized, 0) / avgScoreDomains.length * 10) / 10 : -1;
                         return (
                           <tr key={session.id} className="border-t border-border hover:bg-muted/30 transition-colors">
                             <td className="px-4 py-3 font-medium cursor-pointer hover:text-primary" onClick={() => navigate(`/admin/student/${session.id}`)}>{session.studentName}</td>
@@ -215,7 +228,7 @@ const Dashboard = () => {
                             <td className="px-4 py-3"><StatusBadge status={session.status} /></td>
                             <td className="px-4 py-3 text-center"><span className={`text-xs font-medium ${session.studentCompletion === 100 ? "text-success" : "text-muted-foreground"}`}>{session.studentCompletion}%</span></td>
                             <td className="px-4 py-3 text-center"><span className={`text-xs font-medium ${session.parentCompletion === 100 ? "text-success" : "text-muted-foreground"}`}>{session.parentCompletion}%</span></td>
-                            <td className="px-4 py-3 text-center font-bold">{overallScore >= 0 ? overallScore : "—"}</td>
+                            <td className="px-4 py-3 text-center font-bold">{overallScore >= 0 ? overallScore.toFixed(1) : "—"}</td>
                             <td className="px-4 py-3 text-center">{session.riskFlags.length > 0 && <AlertTriangle className="w-4 h-4 text-warning inline" />}</td>
                             <td className="px-4 py-3 text-center">
                               <button onClick={(e) => { e.stopPropagation(); handleCopy(session.parentCode, `pc-${session.id}`); }}

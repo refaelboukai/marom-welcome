@@ -176,7 +176,7 @@ const StudentProfile = () => {
               <RadarChart data={radarData}>
                 <PolarGrid stroke="hsl(var(--border))" />
                 <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11 }} />
-                <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: 10 }} />
+                <PolarRadiusAxis domain={[0, 5]} tick={{ fontSize: 10 }} />
                 {hasStudentData && <Radar name="תלמיד" dataKey="student" stroke="hsl(165, 35%, 42%)" fill="hsl(165, 35%, 42%)" fillOpacity={0.2} />}
                 {hasParentData && <Radar name="הורה" dataKey="parent" stroke="hsl(200, 60%, 50%)" fill="hsl(200, 60%, 50%)" fillOpacity={0.15} />}
                 <Legend />
