@@ -60,6 +60,7 @@ const AIRecommendations = ({ student, onResult }: AIRecommendationsProps) => {
       if (fnError) throw new Error(fnError.message);
       if (data?.error) throw new Error(data.error);
       setResult(data);
+      onResult?.(data);
     } catch (e: any) {
       setError(e.message || "שגיאה ביצירת המלצות");
     } finally {
