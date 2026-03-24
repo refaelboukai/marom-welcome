@@ -233,7 +233,7 @@ const StudentFlow = () => {
             </div>
             <div className="border-2 border-dashed border-border rounded-xl bg-card overflow-hidden" style={{ touchAction: "none" }}>
               <SignatureCanvas ref={sigCanvasRef} penColor="hsl(220, 20%, 20%)"
-                canvasProps={{ width: 350, height: 120, className: "w-full", style: { width: "100%", height: "120px" } }}
+                canvasProps={{ width: 500, height: 150, className: "w-full", style: { width: "100%", height: "150px" } }}
                 onEnd={handleSignEnd} />
             </div>
             {hasSigned && (
