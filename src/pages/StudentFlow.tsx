@@ -257,11 +257,11 @@ const StudentFlow = () => {
 
   if (step === "explanation") {
     return (
-      <div className="min-h-screen px-4 py-8 bg-background relative">
+      <div className="min-h-screen px-4 sm:px-6 py-8 bg-background relative safe-top safe-bottom">
         <button onClick={() => navigate("/")} className="absolute top-4 left-4 p-2 rounded-xl hover:bg-muted transition-colors" title="התנתק">
           <LogOut className="w-5 h-5 text-muted-foreground" />
         </button>
-        <div className="max-w-md mx-auto animate-slide-up">
+        <div className="max-w-md md:max-w-lg mx-auto animate-slide-up">
           <h2 className="text-xl font-heading font-bold mb-1 text-center">מה אנחנו הולכים לעשות?</h2>
           <p className="text-sm text-muted-foreground text-center mb-6">הנה הסבר קצר על כל חלק</p>
           <div className="space-y-3">
