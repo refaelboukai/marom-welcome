@@ -23,8 +23,6 @@ const StudentProfile = () => {
     if (!s) { navigate("/admin"); return; }
     setSession(s);
     setNotes(s.adminNotes || "");
-    const assessments = await getAcademicAssessments(sessionId);
-    setAcademicAssessments(assessments);
     setLoading(false);
   }, [sessionId, navigate]);
 
