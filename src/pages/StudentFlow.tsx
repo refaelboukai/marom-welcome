@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getSession, updateSession } from "@/lib/storage";
+import { getSessionDB, updateSessionDB } from "@/lib/supabase-storage";
 import { IntakeSession } from "@/lib/types";
 import QuestionnaireFlow from "@/components/QuestionnaireFlow";
 import logo from "@/assets/logo.jpeg";
-import { Heart, BookOpen, Brain, Lightbulb, Star, Sparkles } from "lucide-react";
+import { Heart, BookOpen, Brain, Lightbulb, Star, Sparkles, Loader2 } from "lucide-react";
 
 type Step = "welcome" | "explanation" | "questionnaire" | "complete";
 
@@ -21,48 +21,48 @@ const StudentFlow = () => {
   const navigate = useNavigate();
   const [session, setSession] = useState<IntakeSession | null>(null);
   const [step, setStep] = useState<Step>("welcome");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!sessionId) return;
-    const s = getSession(sessionId);
-    if (!s) {
-      navigate("/");
-      return;
-    }
-    setSession(s);
-    if (["student_completed", "parent_started", "parent_completed", "under_review", "completed"].includes(s.status)) {
-      setStep("complete");
-    } else if (Object.keys(s.studentResponses).length > 0) {
-      setStep("questionnaire");
-    }
+    getSessionDB(sessionId).then((s) => {
+      setLoading(false);
+      if (!s) { navigate("/"); return; }
+      setSession(s);
+      if (["student_completed", "parent_started", "parent_completed", "under_review", "completed"].includes(s.status)) {
+        setStep("complete");
+      } else if (Object.keys(s.studentResponses).length > 0) {
+        setStep("questionnaire");
+      }
+    });
   }, [sessionId, navigate]);
 
-  const handleStartQuestionnaire = useCallback(() => {
+  const handleStartQuestionnaire = useCallback(async () => {
     if (!session) return;
     if (session.status === "not_started") {
-      updateSession(session.id, { status: "student_started" });
+      await updateSessionDB(session.id, { status: "student_started" });
       setSession((prev) => prev ? { ...prev, status: "student_started" } : null);
     }
     setStep("questionnaire");
   }, [session]);
 
-  const handleUpdateResponse = useCallback((itemId: string, value: number) => {
+  const handleUpdateResponse = useCallback(async (itemId: string, value: number) => {
     if (!session) return;
     const updated = { ...session.studentResponses, [itemId]: value };
-    updateSession(session.id, { studentResponses: updated });
     setSession((prev) => prev ? { ...prev, studentResponses: updated } : null);
+    await updateSessionDB(session.id, { studentResponses: updated });
   }, [session]);
 
-  const handleUpdateOpenResponse = useCallback((key: string, value: string) => {
+  const handleUpdateOpenResponse = useCallback(async (key: string, value: string) => {
     if (!session) return;
     const updated = { ...session.studentOpenResponses, [key]: value };
-    updateSession(session.id, { studentOpenResponses: updated });
     setSession((prev) => prev ? { ...prev, studentOpenResponses: updated } : null);
+    await updateSessionDB(session.id, { studentOpenResponses: updated });
   }, [session]);
 
-  const handleComplete = useCallback(() => {
+  const handleComplete = useCallback(async () => {
     if (!session) return;
-    updateSession(session.id, { status: "student_completed" });
+    await updateSessionDB(session.id, { status: "student_completed" });
     setSession((prev) => prev ? { ...prev, status: "student_completed" } : null);
     setStep("complete");
   }, [session]);
@@ -70,6 +70,14 @@ const StudentFlow = () => {
   const handleSaveAndExit = useCallback(() => {
     navigate("/");
   }, [navigate]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!session) return null;
 
@@ -122,18 +130,8 @@ const StudentFlow = () => {
             })}
           </div>
           <div className="flex gap-3 mt-6">
-            <button
-              onClick={() => setStep("welcome")}
-              className="btn-intake bg-secondary text-secondary-foreground flex-1"
-            >
-              חזרה
-            </button>
-            <button
-              onClick={handleStartQuestionnaire}
-              className="btn-intake flex-1 bg-primary text-primary-foreground shadow-md hover:shadow-lg text-lg py-4"
-            >
-              המשך לשאלונים
-            </button>
+            <button onClick={() => setStep("welcome")} className="btn-intake bg-secondary text-secondary-foreground flex-1">חזרה</button>
+            <button onClick={handleStartQuestionnaire} className="btn-intake flex-1 bg-primary text-primary-foreground shadow-md hover:shadow-lg text-lg py-4">המשך לשאלונים</button>
           </div>
         </div>
       </div>
