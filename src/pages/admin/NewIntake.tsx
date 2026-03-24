@@ -9,6 +9,7 @@ const NewIntake = () => {
     studentName: "",
     studentIdNumber: "",
     grade: "",
+    intakeDate: new Date().toISOString().split("T")[0],
     parentName: "",
     parentPhone: "",
     secondParentName: "",
@@ -65,12 +66,23 @@ const NewIntake = () => {
               </div>
             </div>
 
-            <button
-              onClick={() => navigate("/admin")}
-              className="btn-intake w-full bg-primary text-primary-foreground mt-6"
-            >
-              חזרה לדשבורד
-            </button>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setCreated(null);
+                  setForm({ studentName: "", studentIdNumber: "", grade: "", intakeDate: new Date().toISOString().split("T")[0], parentName: "", parentPhone: "", secondParentName: "", notes: "" });
+                }}
+                className="btn-intake bg-secondary text-secondary-foreground flex-1"
+              >
+                הוסף תלמיד נוסף
+              </button>
+              <button
+                onClick={() => navigate("/admin")}
+                className="btn-intake bg-primary text-primary-foreground flex-1"
+              >
+                חזרה לדשבורד
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -81,6 +93,7 @@ const NewIntake = () => {
     { key: "studentName", label: "שם התלמיד/ה", required: true, type: "text" },
     { key: "studentIdNumber", label: "תעודת זהות", required: false, type: "text" },
     { key: "grade", label: "כיתה / שכבה", required: false, type: "text" },
+    { key: "intakeDate", label: "תאריך קליטה", required: false, type: "date" },
     { key: "parentName", label: "שם הורה", required: false, type: "text" },
     { key: "parentPhone", label: "טלפון הורה", required: false, type: "tel" },
     { key: "secondParentName", label: "הורה נוסף (אופציונלי)", required: false, type: "text" },
@@ -133,7 +146,7 @@ const NewIntake = () => {
                 : "bg-muted text-muted-foreground cursor-not-allowed"
             }`}
           >
-            צור תהליך קליטה
+            פתח תהליך קליטה
           </button>
         </div>
       </div>

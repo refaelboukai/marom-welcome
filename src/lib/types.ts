@@ -68,6 +68,24 @@ export interface RiskFlag {
   message: string;
 }
 
+export interface GASGoal {
+  id: string;
+  area: string;
+  current: string;
+  level0: string;
+  level1: string;
+  level2: string;
+}
+
+export interface InsightResult {
+  summary: string;
+  strengths: string[];
+  areasForSupport: string[];
+  discrepancies: string[];
+  recommendations: string[];
+  interpretation: string;
+}
+
 export const STATUS_LABELS: Record<IntakeStatus, string> = {
   not_started: "טרם החל",
   student_started: "התלמיד התחיל",
