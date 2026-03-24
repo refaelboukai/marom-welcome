@@ -21,9 +21,10 @@ interface AIResult {
 
 interface AIRecommendationsProps {
   student: StudentAIData;
+  onResult?: (result: AIResult) => void;
 }
 
-const AIRecommendations = ({ student }: AIRecommendationsProps) => {
+const AIRecommendations = ({ student, onResult }: AIRecommendationsProps) => {
   const [result, setResult] = useState<AIResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,6 +60,7 @@ const AIRecommendations = ({ student }: AIRecommendationsProps) => {
       if (fnError) throw new Error(fnError.message);
       if (data?.error) throw new Error(data.error);
       setResult(data);
+      onResult?.(data);
     } catch (e: any) {
       setError(e.message || "שגיאה ביצירת המלצות");
     } finally {

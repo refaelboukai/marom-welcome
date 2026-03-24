@@ -4,12 +4,12 @@ import { getSessionDB, updateSessionDB } from "@/lib/supabase-storage";
 import { IntakeSession, SECTION_LABELS, OPEN_QUESTION_LABELS, GASGoal } from "@/lib/types";
 import { calculateScores, generateRiskFlags, generateInsights, generateGASGoals, getScoreLabel, getScoreColor, getTopFocusAreas } from "@/lib/scoring";
 import StatusBadge from "@/components/StatusBadge";
-import { ArrowRight, AlertTriangle, Copy, CheckCircle, Lock, Unlock, FileText, Target, Lightbulb, TrendingUp, Users, Printer, MessageSquare, BarChart3, Shield, Loader2, RefreshCw, Download, PenLine } from "lucide-react";
+import { ArrowRight, AlertTriangle, Copy, CheckCircle, Lock, Unlock, FileText, Target, Lightbulb, TrendingUp, Users, Printer, MessageSquare, BarChart3, Shield, Loader2, RefreshCw, Download, PenLine, ScrollText } from "lucide-react";
 import SupportPlans from "@/components/SupportPlans";
 import AIRecommendations from "@/components/AIRecommendations";
-import { generateStudentPDF } from "@/lib/pdf-export";
+import { generateStudentPDF, generatePersonalPlanPDF, PersonalPlanData } from "@/lib/pdf-export";
 import { supabase } from "@/integrations/supabase/client";
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line } from "recharts";
 
 const StudentProfile = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -21,6 +21,8 @@ const StudentProfile = () => {
   const [loading, setLoading] = useState(true);
   const [consentSignature, setConsentSignature] = useState<string | null>(null);
   const [reassessmentData, setReassessmentData] = useState<any>(null);
+  const [aiResult, setAiResult] = useState<PersonalPlanData["aiRecommendations"] | null>(null);
+  const [supportPlansData, setSupportPlansData] = useState<PersonalPlanData["supportPlans"]>([]);
   const printRef = useRef<HTMLDivElement>(null);
 
   const loadData = useCallback(async () => {
@@ -71,6 +73,21 @@ const StudentProfile = () => {
 
   const hasStudentData = scores.qualityOfLife.studentNormalized >= 0;
   const hasParentData = scores.qualityOfLife.parentNormalized >= 0;
+
+  // Timeline data for progress tracking
+  const timelineData = reassessmentScores ? [
+    { label: SECTION_LABELS.quality_of_life, קליטה: scores.qualityOfLife.studentNormalized >= 0 ? scores.qualityOfLife.studentNormalized : 0, סיכום: reassessmentScores.qualityOfLife.studentNormalized >= 0 ? reassessmentScores.qualityOfLife.studentNormalized : 0 },
+    { label: SECTION_LABELS.self_efficacy, קליטה: scores.selfEfficacy.studentNormalized >= 0 ? scores.selfEfficacy.studentNormalized : 0, סיכום: reassessmentScores.selfEfficacy.studentNormalized >= 0 ? reassessmentScores.selfEfficacy.studentNormalized : 0 },
+    { label: SECTION_LABELS.locus_of_control, קליטה: scores.locusOfControl.studentNormalized >= 0 ? scores.locusOfControl.studentNormalized : 0, סיכום: reassessmentScores.locusOfControl.studentNormalized >= 0 ? reassessmentScores.locusOfControl.studentNormalized : 0 },
+    { label: SECTION_LABELS.cognitive_flexibility, קליטה: scores.cognitiveFlexibility.studentNormalized >= 0 ? scores.cognitiveFlexibility.studentNormalized : 0, סיכום: reassessmentScores.cognitiveFlexibility.studentNormalized >= 0 ? reassessmentScores.cognitiveFlexibility.studentNormalized : 0 },
+  ] : null;
+
+  const handleExportPersonalPlan = async () => {
+    await generatePersonalPlanPDF(session, {
+      aiRecommendations: aiResult || undefined,
+      supportPlans: supportPlansData,
+    });
+  };
 
   const handleCopy = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -285,7 +302,27 @@ const StudentProfile = () => {
           </div>
         )}
 
-        {/* Score Cards */}
+        {/* Progress Timeline */}
+        {timelineData && (
+          <div className="intake-card border-info/20">
+            <h3 className="font-heading font-semibold mb-4 flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-info" />
+              ציר התקדמות — קליטה ← סיכום שנתי
+            </h3>
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={timelineData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="label" tick={{ fontSize: 10 }} />
+                <YAxis domain={[0, 5]} tick={{ fontSize: 10 }} />
+                <Tooltip />
+                <Line type="monotone" dataKey="קליטה" stroke="hsl(200, 60%, 50%)" strokeWidth={2} dot={{ r: 5 }} />
+                <Line type="monotone" dataKey="סיכום" stroke="hsl(165, 35%, 42%)" strokeWidth={2} dot={{ r: 5 }} />
+                <Legend />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-3">
           {scoreCards.map(({ key, label, icon: Icon }) => {
             const s = scores[key];
@@ -442,6 +479,7 @@ const StudentProfile = () => {
               openResponses: session.studentOpenResponses,
               staffOpenResponses: session.staffOpenResponses,
             }}
+            onResult={(r) => setAiResult(r)}
           />
         )}
 
@@ -471,7 +509,7 @@ const StudentProfile = () => {
         )}
 
         {/* PDF Export Buttons */}
-        <div className="grid grid-cols-2 gap-3 print:hidden">
+        <div className="grid grid-cols-3 gap-3 print:hidden">
           <button onClick={() => generateStudentPDF(session, "parent")}
             className="btn-intake bg-info/10 text-info text-sm flex items-center justify-center gap-2">
             <Download className="w-4 h-4" /> PDF להורים
@@ -479,6 +517,10 @@ const StudentProfile = () => {
           <button onClick={() => generateStudentPDF(session, "staff")}
             className="btn-intake bg-primary/10 text-primary text-sm flex items-center justify-center gap-2">
             <FileText className="w-4 h-4" /> PDF לצוות
+          </button>
+          <button onClick={handleExportPersonalPlan}
+            className="btn-intake bg-success/10 text-success text-sm flex items-center justify-center gap-2">
+            <ScrollText className="w-4 h-4" /> תכנית אישית
           </button>
         </div>
 
