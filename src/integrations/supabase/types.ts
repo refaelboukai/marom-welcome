@@ -78,6 +78,8 @@ export type Database = {
           admin_notes: string | null
           class_group: string | null
           closed_at: string | null
+          consent_date: string | null
+          consent_signature: string | null
           created_at: string
           grade: string | null
           id: string
@@ -88,6 +90,10 @@ export type Database = {
           parent_open_response: string | null
           parent_phone: string | null
           parent_responses: Json
+          reassessment_date: string | null
+          reassessment_parent_responses: Json | null
+          reassessment_status: string | null
+          reassessment_student_responses: Json | null
           second_parent_name: string | null
           staff_code: string | null
           staff_open_responses: Json
@@ -104,6 +110,8 @@ export type Database = {
           admin_notes?: string | null
           class_group?: string | null
           closed_at?: string | null
+          consent_date?: string | null
+          consent_signature?: string | null
           created_at?: string
           grade?: string | null
           id?: string
@@ -114,6 +122,10 @@ export type Database = {
           parent_open_response?: string | null
           parent_phone?: string | null
           parent_responses?: Json
+          reassessment_date?: string | null
+          reassessment_parent_responses?: Json | null
+          reassessment_status?: string | null
+          reassessment_student_responses?: Json | null
           second_parent_name?: string | null
           staff_code?: string | null
           staff_open_responses?: Json
@@ -130,6 +142,8 @@ export type Database = {
           admin_notes?: string | null
           class_group?: string | null
           closed_at?: string | null
+          consent_date?: string | null
+          consent_signature?: string | null
           created_at?: string
           grade?: string | null
           id?: string
@@ -140,6 +154,10 @@ export type Database = {
           parent_open_response?: string | null
           parent_phone?: string | null
           parent_responses?: Json
+          reassessment_date?: string | null
+          reassessment_parent_responses?: Json | null
+          reassessment_status?: string | null
+          reassessment_student_responses?: Json | null
           second_parent_name?: string | null
           staff_code?: string | null
           staff_open_responses?: Json

@@ -4,8 +4,9 @@ import { getSessionDB, updateSessionDB } from "@/lib/supabase-storage";
 import { IntakeSession } from "@/lib/types";
 import QuestionnaireFlow from "@/components/QuestionnaireFlow";
 import logo from "@/assets/logo.jpeg";
-import { Heart, BookOpen, Brain, Lightbulb, Star, Sparkles, Loader2, RotateCcw, CheckCircle } from "lucide-react";
+import { Heart, BookOpen, Brain, Lightbulb, Star, Sparkles, Loader2, RotateCcw, CheckCircle, LogOut } from "lucide-react";
 import SignatureCanvas from "react-signature-canvas";
+import { supabase } from "@/integrations/supabase/client";
 
 type Step = "welcome" | "consent" | "explanation" | "questionnaire" | "complete";
 
@@ -43,6 +44,7 @@ const StudentFlow = () => {
   const [loading, setLoading] = useState(true);
   const [consentChecked, setConsentChecked] = useState(false);
   const [hasSigned, setHasSigned] = useState(false);
+  const [isReassessment, setIsReassessment] = useState(false);
   const sigCanvasRef = useRef<SignatureCanvas>(null);
 
   useEffect(() => {
@@ -51,6 +53,15 @@ const StudentFlow = () => {
       setLoading(false);
       if (!s) { navigate("/"); return; }
       setSession(s);
+
+      // Check if this is a reassessment flow
+      const reassessmentStatus = (s as any).reassessmentStatus;
+      if (reassessmentStatus === "open_student" || reassessmentStatus === "open_both") {
+        setIsReassessment(true);
+        setStep("welcome");
+        return;
+      }
+
       if (["student_completed", "parent_started", "parent_completed", "under_review", "completed"].includes(s.status)) {
         setStep("complete");
       } else if (Object.keys(s.studentResponses).length > 0) {
@@ -59,21 +70,46 @@ const StudentFlow = () => {
     });
   }, [sessionId, navigate]);
 
+  const handleConsentAndContinue = useCallback(async () => {
+    if (!session || !sigCanvasRef.current) return;
+    const signatureData = sigCanvasRef.current.toDataURL("image/png");
+    // Save signature to DB
+    await (supabase as any).from("intake_sessions").update({
+      consent_signature: signatureData,
+      consent_date: new Date().toISOString(),
+    }).eq("id", session.id);
+    setStep("explanation");
+  }, [session]);
+
   const handleStartQuestionnaire = useCallback(async () => {
     if (!session) return;
+    if (isReassessment) {
+      setStep("questionnaire");
+      return;
+    }
     if (session.status === "not_started") {
       await updateSessionDB(session.id, { status: "student_started" });
       setSession((prev) => prev ? { ...prev, status: "student_started" } : null);
     }
     setStep("questionnaire");
-  }, [session]);
+  }, [session, isReassessment]);
 
   const handleUpdateResponse = useCallback(async (itemId: string, value: number) => {
     if (!session) return;
+    if (isReassessment) {
+      const current = (session as any).reassessmentStudentResponses || {};
+      const updated = { ...current, [itemId]: value };
+      (session as any).reassessmentStudentResponses = updated;
+      setSession({ ...session });
+      await (supabase as any).from("intake_sessions").update({
+        reassessment_student_responses: updated,
+      }).eq("id", session.id);
+      return;
+    }
     const updated = { ...session.studentResponses, [itemId]: value };
     setSession((prev) => prev ? { ...prev, studentResponses: updated } : null);
     await updateSessionDB(session.id, { studentResponses: updated });
-  }, [session]);
+  }, [session, isReassessment]);
 
   const handleUpdateOpenResponse = useCallback(async (key: string, value: string) => {
     if (!session) return;
@@ -84,10 +120,18 @@ const StudentFlow = () => {
 
   const handleComplete = useCallback(async () => {
     if (!session) return;
+    if (isReassessment) {
+      await (supabase as any).from("intake_sessions").update({
+        reassessment_status: "student_completed",
+        reassessment_date: new Date().toISOString(),
+      }).eq("id", session.id);
+      setStep("complete");
+      return;
+    }
     await updateSessionDB(session.id, { status: "student_completed" });
     setSession((prev) => prev ? { ...prev, status: "student_completed" } : null);
     setStep("complete");
-  }, [session]);
+  }, [session, isReassessment]);
 
   const handleSaveAndExit = useCallback(() => { navigate("/"); }, [navigate]);
 
@@ -114,12 +158,21 @@ const StudentFlow = () => {
 
   if (step === "welcome") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-background">
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-background relative">
+        <button onClick={() => navigate("/")} className="absolute top-4 left-4 p-2 rounded-xl hover:bg-muted transition-colors" title="התנתק">
+          <LogOut className="w-5 h-5 text-muted-foreground" />
+        </button>
         <div className="w-full max-w-md animate-fade-in text-center">
           <img src={logo} alt="מרום" className="h-20 mx-auto mb-6" />
           <h1 className="text-3xl font-heading font-bold mb-2">ברוכים הבאים</h1>
           <h2 className="text-xl font-heading text-primary font-semibold mb-1">לבית ספר מרום בית אקשטיין</h2>
           <h3 className="text-lg text-muted-foreground mb-4">{session.studentName}</h3>
+          {isReassessment && (
+            <div className="intake-card border-primary/30 mb-4">
+              <p className="text-sm text-primary font-medium">📋 סיכום שנתי — מילוי שאלונים חוזר</p>
+              <p className="text-xs text-muted-foreground mt-1">השאלונים הפעם ישמשו להשוואה עם תוצאות הקליטה ולבדיקת התקדמות</p>
+            </div>
+          )}
           <p className="text-muted-foreground leading-relaxed mb-2">
             אנחנו רוצים להכיר אותך טוב יותר כדי לעזור לך להרגיש טוב, להצליח ולהתקדם בבית הספר.
           </p>
@@ -129,10 +182,10 @@ const StudentFlow = () => {
             <p>✓ המידע נועד לעזור לך</p>
           </div>
           <button
-            onClick={() => setStep("consent")}
+            onClick={() => isReassessment ? setStep("explanation") : setStep("consent")}
             className="btn-intake w-full bg-primary text-primary-foreground shadow-md hover:shadow-lg text-lg py-4 mt-6"
           >
-            התחל
+            {isReassessment ? "המשך לשאלונים" : "התחל"}
           </button>
         </div>
       </div>
@@ -141,7 +194,10 @@ const StudentFlow = () => {
 
   if (step === "consent") {
     return (
-      <div className="min-h-screen px-4 py-6 bg-background">
+      <div className="min-h-screen px-4 py-6 bg-background relative">
+        <button onClick={() => navigate("/")} className="absolute top-4 left-4 p-2 rounded-xl hover:bg-muted transition-colors" title="התנתק">
+          <LogOut className="w-5 h-5 text-muted-foreground" />
+        </button>
         <div className="max-w-md mx-auto animate-slide-up">
           <div className="text-center mb-4">
             <img src={logo} alt="מרום" className="h-12 mx-auto mb-3" />
@@ -162,20 +218,12 @@ const StudentFlow = () => {
             </div>
           </div>
 
-          {/* Consent checkbox */}
           <label className="flex items-start gap-3 p-3 rounded-xl bg-muted/30 border border-border/50 cursor-pointer mb-4">
-            <input
-              type="checkbox"
-              checked={consentChecked}
-              onChange={(e) => setConsentChecked(e.target.checked)}
-              className="mt-1 w-4 h-4 rounded border-input accent-primary"
-            />
-            <span className="text-sm text-foreground leading-relaxed">
-              קראתי את הכללים ואני מסכים/ה להם
-            </span>
+            <input type="checkbox" checked={consentChecked} onChange={(e) => setConsentChecked(e.target.checked)}
+              className="mt-1 w-4 h-4 rounded border-input accent-primary" />
+            <span className="text-sm text-foreground leading-relaxed">קראתי את הכללים ואני מסכים/ה להם</span>
           </label>
 
-          {/* Digital signature */}
           <div className="intake-card-soft mb-4">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-medium">חתימת התלמיד/ה</p>
@@ -184,17 +232,9 @@ const StudentFlow = () => {
               </button>
             </div>
             <div className="border-2 border-dashed border-border rounded-xl bg-card overflow-hidden" style={{ touchAction: "none" }}>
-              <SignatureCanvas
-                ref={sigCanvasRef}
-                penColor="hsl(220, 20%, 20%)"
-                canvasProps={{
-                  width: 350,
-                  height: 120,
-                  className: "w-full",
-                  style: { width: "100%", height: "120px" },
-                }}
-                onEnd={handleSignEnd}
-              />
+              <SignatureCanvas ref={sigCanvasRef} penColor="hsl(220, 20%, 20%)"
+                canvasProps={{ width: 350, height: 120, className: "w-full", style: { width: "100%", height: "120px" } }}
+                onEnd={handleSignEnd} />
             </div>
             {hasSigned && (
               <p className="text-xs text-success flex items-center gap-1 mt-1.5">
@@ -205,11 +245,8 @@ const StudentFlow = () => {
 
           <div className="flex gap-3">
             <button onClick={() => setStep("welcome")} className="btn-intake bg-secondary text-secondary-foreground flex-1">חזרה</button>
-            <button
-              onClick={() => setStep("explanation")}
-              disabled={!consentChecked || !hasSigned}
-              className="btn-intake flex-1 bg-primary text-primary-foreground shadow-md hover:shadow-lg text-lg py-4 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
+            <button onClick={handleConsentAndContinue} disabled={!consentChecked || !hasSigned}
+              className="btn-intake flex-1 bg-primary text-primary-foreground shadow-md hover:shadow-lg text-lg py-4 disabled:opacity-40 disabled:cursor-not-allowed">
               אישור והמשך
             </button>
           </div>
@@ -220,7 +257,10 @@ const StudentFlow = () => {
 
   if (step === "explanation") {
     return (
-      <div className="min-h-screen px-4 py-8 bg-background">
+      <div className="min-h-screen px-4 py-8 bg-background relative">
+        <button onClick={() => navigate("/")} className="absolute top-4 left-4 p-2 rounded-xl hover:bg-muted transition-colors" title="התנתק">
+          <LogOut className="w-5 h-5 text-muted-foreground" />
+        </button>
         <div className="max-w-md mx-auto animate-slide-up">
           <h2 className="text-xl font-heading font-bold mb-1 text-center">מה אנחנו הולכים לעשות?</h2>
           <p className="text-sm text-muted-foreground text-center mb-6">הנה הסבר קצר על כל חלק</p>
@@ -241,7 +281,7 @@ const StudentFlow = () => {
             })}
           </div>
           <div className="flex gap-3 mt-6">
-            <button onClick={() => setStep("consent")} className="btn-intake bg-secondary text-secondary-foreground flex-1">חזרה</button>
+            <button onClick={() => isReassessment ? setStep("welcome") : setStep("consent")} className="btn-intake bg-secondary text-secondary-foreground flex-1">חזרה</button>
             <button onClick={handleStartQuestionnaire} className="btn-intake flex-1 bg-primary text-primary-foreground shadow-md hover:shadow-lg text-lg py-4">המשך לשאלונים</button>
           </div>
         </div>
@@ -250,11 +290,15 @@ const StudentFlow = () => {
   }
 
   if (step === "questionnaire") {
+    const responses = isReassessment ? ((session as any).reassessmentStudentResponses || {}) : session.studentResponses;
     return (
-      <div className="min-h-screen py-6 bg-background">
+      <div className="min-h-screen py-6 bg-background relative">
+        <button onClick={() => navigate("/")} className="absolute top-4 left-4 z-30 p-2 rounded-xl hover:bg-muted transition-colors" title="התנתק">
+          <LogOut className="w-5 h-5 text-muted-foreground" />
+        </button>
         <QuestionnaireFlow
           role="student"
-          responses={session.studentResponses}
+          responses={responses}
           openResponses={session.studentOpenResponses}
           onUpdateResponse={handleUpdateResponse}
           onUpdateOpenResponse={handleUpdateOpenResponse}
@@ -266,12 +310,17 @@ const StudentFlow = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-background">
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-background relative">
+      <button onClick={() => navigate("/")} className="absolute top-4 left-4 p-2 rounded-xl hover:bg-muted transition-colors" title="התנתק">
+        <LogOut className="w-5 h-5 text-muted-foreground" />
+      </button>
       <div className="w-full max-w-md animate-fade-in text-center">
         <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-success/15 flex items-center justify-center">
           <Star className="w-10 h-10 text-success" />
         </div>
-        <h1 className="text-2xl font-heading font-bold mb-3">סיימת בהצלחה!</h1>
+        <h1 className="text-2xl font-heading font-bold mb-3">
+          {isReassessment ? "סיימת את הסיכום השנתי!" : "סיימת בהצלחה!"}
+        </h1>
         <p className="text-muted-foreground leading-relaxed mb-2">
           תודה רבה. סיימת את השאלון בהצלחה.
         </p>
@@ -281,6 +330,9 @@ const StudentFlow = () => {
         <div className="intake-card mt-6">
           <p className="text-sm text-muted-foreground">💚 אנחנו שמחים שאת/ה איתנו</p>
         </div>
+        <button onClick={() => navigate("/")} className="btn-intake bg-secondary text-secondary-foreground mt-4">
+          חזרה למסך הראשי
+        </button>
       </div>
     </div>
   );
