@@ -158,11 +158,11 @@ const StudentFlow = () => {
 
   if (step === "welcome") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-background relative">
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 bg-background relative safe-top safe-bottom">
         <button onClick={() => navigate("/")} className="absolute top-4 left-4 p-2 rounded-xl hover:bg-muted transition-colors" title="התנתק">
           <LogOut className="w-5 h-5 text-muted-foreground" />
         </button>
-        <div className="w-full max-w-md animate-fade-in text-center">
+        <div className="w-full max-w-md md:max-w-lg animate-fade-in text-center">
           <img src={logo} alt="מרום" className="h-20 mx-auto mb-6" />
           <h1 className="text-3xl font-heading font-bold mb-2">ברוכים הבאים</h1>
           <h2 className="text-xl font-heading text-primary font-semibold mb-1">לבית ספר מרום בית אקשטיין</h2>
@@ -194,11 +194,11 @@ const StudentFlow = () => {
 
   if (step === "consent") {
     return (
-      <div className="min-h-screen px-4 py-6 bg-background relative">
+      <div className="min-h-screen px-4 sm:px-6 py-6 bg-background relative safe-top safe-bottom">
         <button onClick={() => navigate("/")} className="absolute top-4 left-4 p-2 rounded-xl hover:bg-muted transition-colors" title="התנתק">
           <LogOut className="w-5 h-5 text-muted-foreground" />
         </button>
-        <div className="max-w-md mx-auto animate-slide-up">
+        <div className="max-w-md md:max-w-lg mx-auto animate-slide-up">
           <div className="text-center mb-4">
             <img src={logo} alt="מרום" className="h-12 mx-auto mb-3" />
             <h2 className="text-xl font-heading font-bold">כללי בית הספר</h2>
@@ -233,7 +233,7 @@ const StudentFlow = () => {
             </div>
             <div className="border-2 border-dashed border-border rounded-xl bg-card overflow-hidden" style={{ touchAction: "none" }}>
               <SignatureCanvas ref={sigCanvasRef} penColor="hsl(220, 20%, 20%)"
-                canvasProps={{ width: 350, height: 120, className: "w-full", style: { width: "100%", height: "120px" } }}
+                canvasProps={{ width: 500, height: 150, className: "w-full", style: { width: "100%", height: "150px" } }}
                 onEnd={handleSignEnd} />
             </div>
             {hasSigned && (
@@ -257,11 +257,11 @@ const StudentFlow = () => {
 
   if (step === "explanation") {
     return (
-      <div className="min-h-screen px-4 py-8 bg-background relative">
+      <div className="min-h-screen px-4 sm:px-6 py-8 bg-background relative safe-top safe-bottom">
         <button onClick={() => navigate("/")} className="absolute top-4 left-4 p-2 rounded-xl hover:bg-muted transition-colors" title="התנתק">
           <LogOut className="w-5 h-5 text-muted-foreground" />
         </button>
-        <div className="max-w-md mx-auto animate-slide-up">
+        <div className="max-w-md md:max-w-lg mx-auto animate-slide-up">
           <h2 className="text-xl font-heading font-bold mb-1 text-center">מה אנחנו הולכים לעשות?</h2>
           <p className="text-sm text-muted-foreground text-center mb-6">הנה הסבר קצר על כל חלק</p>
           <div className="space-y-3">
@@ -292,7 +292,7 @@ const StudentFlow = () => {
   if (step === "questionnaire") {
     const responses = isReassessment ? ((session as any).reassessmentStudentResponses || {}) : session.studentResponses;
     return (
-      <div className="min-h-screen py-6 bg-background relative">
+      <div className="min-h-screen py-6 px-0 sm:px-2 bg-background relative safe-top safe-bottom">
         <button onClick={() => navigate("/")} className="absolute top-4 left-4 z-30 p-2 rounded-xl hover:bg-muted transition-colors" title="התנתק">
           <LogOut className="w-5 h-5 text-muted-foreground" />
         </button>

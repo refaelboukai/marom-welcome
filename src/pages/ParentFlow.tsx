@@ -72,11 +72,11 @@ const ParentFlow = () => {
 
   if (step === "welcome") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-background relative">
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 bg-background relative safe-top safe-bottom">
         <button onClick={() => navigate("/")} className="absolute top-4 left-4 p-2 rounded-xl hover:bg-muted transition-colors" title="התנתק">
           <LogOut className="w-5 h-5 text-muted-foreground" />
         </button>
-        <div className="w-full max-w-md animate-fade-in text-center">
+        <div className="w-full max-w-md md:max-w-lg animate-fade-in text-center">
           <img src={logo} alt="מרום" className="h-16 mx-auto mb-6" />
           <h1 className="text-2xl font-heading font-bold mb-3">שלום, הורה יקר</h1>
           <p className="text-muted-foreground leading-relaxed mb-2">
@@ -113,7 +113,7 @@ const ParentFlow = () => {
 
   if (step === "questionnaire") {
     return (
-      <div className="min-h-screen py-6 bg-background relative">
+      <div className="min-h-screen py-6 px-0 sm:px-2 bg-background relative safe-top safe-bottom">
         <button onClick={() => navigate("/")} className="absolute top-4 left-4 z-30 p-2 rounded-xl hover:bg-muted transition-colors" title="התנתק">
           <LogOut className="w-5 h-5 text-muted-foreground" />
         </button>
@@ -131,11 +131,11 @@ const ParentFlow = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-background relative">
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 bg-background relative safe-top safe-bottom">
       <button onClick={() => navigate("/")} className="absolute top-4 left-4 p-2 rounded-xl hover:bg-muted transition-colors" title="התנתק">
         <LogOut className="w-5 h-5 text-muted-foreground" />
       </button>
-      <div className="w-full max-w-md animate-fade-in text-center">
+      <div className="w-full max-w-md md:max-w-lg animate-fade-in text-center">
         <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-success/15 flex items-center justify-center">
           <Heart className="w-10 h-10 text-success" />
         </div>

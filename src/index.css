@@ -89,7 +89,12 @@
 
   body {
     @apply bg-background text-foreground font-body antialiased;
+    -webkit-tap-highlight-color: transparent;
   }
+
+  /* Safe area for notched phones */
+  .safe-top { padding-top: env(safe-area-inset-top, 0px); }
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-heading;
