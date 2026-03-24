@@ -34,12 +34,12 @@ const SupportPlans = ({ sessionId }: Props) => {
   const [saving, setSaving] = useState(false);
 
   const loadPlans = useCallback(async () => {
-    const { data } = await supabase
+    const { data } = await (supabase as any)
       .from("support_plans")
       .select("*")
       .eq("session_id", sessionId)
       .order("created_at", { ascending: true });
-    if (data) setPlans(data);
+    if (data) setPlans(data as SupportPlan[]);
   }, [sessionId]);
 
   useEffect(() => { loadPlans(); }, [loadPlans]);
@@ -47,7 +47,7 @@ const SupportPlans = ({ sessionId }: Props) => {
   const handleAdd = async () => {
     if (!newDescription.trim()) return;
     setSaving(true);
-    await supabase.from("support_plans").insert({
+    await (supabase as any).from("support_plans").insert({
       session_id: sessionId,
       domain: newDomain,
       description: newDescription.trim(),
@@ -58,13 +58,13 @@ const SupportPlans = ({ sessionId }: Props) => {
   };
 
   const handleDelete = async (id: string) => {
-    await supabase.from("support_plans").delete().eq("id", id);
+    await (supabase as any).from("support_plans").delete().eq("id", id);
     setPlans((prev) => prev.filter((p) => p.id !== id));
   };
 
   const handleToggleStatus = async (plan: SupportPlan) => {
     const newStatus = plan.status === "active" ? "completed" : "active";
-    await supabase.from("support_plans").update({ status: newStatus }).eq("id", plan.id);
+    await (supabase as any).from("support_plans").update({ status: newStatus }).eq("id", plan.id);
     setPlans((prev) => prev.map((p) => p.id === plan.id ? { ...p, status: newStatus } : p));
   };
 
@@ -95,12 +95,10 @@ const SupportPlans = ({ sessionId }: Props) => {
       )}
 
       <div className="space-y-2 p-3 bg-muted/20 rounded-xl border border-border/30">
-        <div className="flex gap-2">
-          <select value={newDomain} onChange={(e) => setNewDomain(e.target.value)}
-            className="bg-card border border-input rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-ring">
-            {DOMAIN_OPTIONS.map((d) => <option key={d} value={d}>{d}</option>)}
-          </select>
-        </div>
+        <select value={newDomain} onChange={(e) => setNewDomain(e.target.value)}
+          className="bg-card border border-input rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-ring">
+          {DOMAIN_OPTIONS.map((d) => <option key={d} value={d}>{d}</option>)}
+        </select>
         <textarea
           value={newDescription}
           onChange={(e) => setNewDescription(e.target.value)}
