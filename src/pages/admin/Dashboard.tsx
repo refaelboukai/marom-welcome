@@ -6,7 +6,7 @@ import { questionnaireItems } from "@/data/questionnaires";
 import { CLASS_GROUPS } from "@/data/students";
 import StatusBadge from "@/components/StatusBadge";
 import CodeManagement from "@/components/CodeManagement";
-import AIRecommendations from "@/components/AIRecommendations";
+
 import logo from "@/assets/logo.jpeg";
 import { Plus, Users, AlertTriangle, CheckCircle, Clock, Search, LogOut, XCircle, Loader2, Download, Key, FileText, Copy } from "lucide-react";
 import { calculateScores, generateRiskFlags, getCompletionPercentage } from "@/lib/scoring";
