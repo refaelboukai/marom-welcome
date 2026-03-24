@@ -1,5 +1,5 @@
 import { IntakeSession, IntakeStatus } from "./types";
-import { studentCodes, ADMIN_CODE } from "@/data/students";
+import { studentCodes, studentsData, ADMIN_CODE } from "@/data/students";
 
 const STORAGE_KEY = "marom_intake_sessions";
 
@@ -29,24 +29,32 @@ export function initializeSessions(): void {
   const existing = getAll();
   if (existing.length > 0) return;
 
-  const sessions: IntakeSession[] = studentCodes.map((sc, i) => ({
-    id: `session_${i + 1}`,
-    studentName: sc.name,
-    studentIdNumber: "",
-    grade: "",
-    intakeDate: new Date().toISOString().split("T")[0],
-    parentName: "",
-    parentPhone: "",
-    studentCode: sc.code,
-    parentCode: generateCode(),
-    status: "not_started" as IntakeStatus,
-    studentResponses: {},
-    studentOpenResponses: {},
-    parentResponses: {},
-    adminNotes: "",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  }));
+  const sessions: IntakeSession[] = studentCodes.map((sc, i) => {
+    // Try to find matching student data
+    const nameParts = sc.name.split(" ");
+    const studentData = studentsData.find(
+      (s) => s.firstName === nameParts[0] || `${s.firstName} ${s.lastName}` === sc.name
+    );
+
+    return {
+      id: `session_${i + 1}`,
+      studentName: sc.name,
+      studentIdNumber: studentData?.id || "",
+      grade: studentData?.grade || "",
+      intakeDate: new Date().toISOString().split("T")[0],
+      parentName: studentData ? [studentData.motherName, studentData.fatherName].filter(Boolean).join(" / ") : "",
+      parentPhone: studentData ? (studentData.motherPhone || studentData.fatherPhone) : "",
+      studentCode: sc.code,
+      parentCode: generateCode(),
+      status: "not_started" as IntakeStatus,
+      studentResponses: {},
+      studentOpenResponses: {},
+      parentResponses: {},
+      adminNotes: "",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+  });
 
   saveAll(sessions);
 }
@@ -112,4 +120,8 @@ export function createSession(data: Partial<IntakeSession>): IntakeSession {
 export function deleteSession(id: string): void {
   const sessions = getSessions().filter((s) => s.id !== id);
   saveAll(sessions);
+}
+
+export function resetSessions(): void {
+  localStorage.removeItem(STORAGE_KEY);
 }

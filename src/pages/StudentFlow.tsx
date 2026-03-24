@@ -4,7 +4,7 @@ import { getSession, updateSession } from "@/lib/storage";
 import { IntakeSession } from "@/lib/types";
 import QuestionnaireFlow from "@/components/QuestionnaireFlow";
 import logo from "@/assets/logo.jpeg";
-import { Heart, BookOpen, Brain, Lightbulb, Star } from "lucide-react";
+import { Heart, BookOpen, Brain, Lightbulb, Star, Sparkles } from "lucide-react";
 
 type Step = "welcome" | "explanation" | "questionnaire" | "complete";
 
@@ -13,7 +13,7 @@ const explanationCards = [
   { icon: Star, title: "מסוגלות עצמית", desc: "עד כמה אתה מאמין שאתה יכול להצליח, להתמודד, ולהשיג מטרות." },
   { icon: Lightbulb, title: "מיקוד שליטה", desc: "עד כמה אתה מרגיש שיש לך השפעה על מה שקורה לך." },
   { icon: Brain, title: "גמישות קוגניטיבית", desc: "עד כמה אתה מצליח לחשוב על אפשרויות שונות, לשנות כיוון כשצריך, ולהתמודד עם מצבים קשים." },
-  { icon: BookOpen, title: "למה זה חשוב?", desc: "השאלונים עוזרים לנו להבין איך לתמוך בך בצורה הכי טובה." },
+  { icon: Sparkles, title: "למה זה חשוב?", desc: "השאלונים עוזרים לנו להבין איך לתמוך בך בצורה הכי טובה." },
 ];
 
 const StudentFlow = () => {
@@ -30,8 +30,7 @@ const StudentFlow = () => {
       return;
     }
     setSession(s);
-    // Resume if already started
-    if (s.status === "student_completed" || s.status === "parent_started" || s.status === "parent_completed" || s.status === "under_review" || s.status === "completed") {
+    if (["student_completed", "parent_started", "parent_completed", "under_review", "completed"].includes(s.status)) {
       setStep("complete");
     } else if (Object.keys(s.studentResponses).length > 0) {
       setStep("questionnaire");
@@ -40,8 +39,10 @@ const StudentFlow = () => {
 
   const handleStartQuestionnaire = useCallback(() => {
     if (!session) return;
-    updateSession(session.id, { status: "student_started" });
-    setSession((prev) => prev ? { ...prev, status: "student_started" } : null);
+    if (session.status === "not_started") {
+      updateSession(session.id, { status: "student_started" });
+      setSession((prev) => prev ? { ...prev, status: "student_started" } : null);
+    }
     setStep("questionnaire");
   }, [session]);
 
@@ -65,6 +66,10 @@ const StudentFlow = () => {
     setSession((prev) => prev ? { ...prev, status: "student_completed" } : null);
     setStep("complete");
   }, [session]);
+
+  const handleSaveAndExit = useCallback(() => {
+    navigate("/");
+  }, [navigate]);
 
   if (!session) return null;
 
@@ -98,7 +103,7 @@ const StudentFlow = () => {
     return (
       <div className="min-h-screen px-4 py-8 bg-background">
         <div className="max-w-md mx-auto animate-slide-up">
-          <h2 className="text-xl font-heading font-bold mb-1 text-center">מה ענענה לעשות?</h2>
+          <h2 className="text-xl font-heading font-bold mb-1 text-center">מה אנחנו הולכים לעשות?</h2>
           <p className="text-sm text-muted-foreground text-center mb-6">הנה הסבר קצר על כל חלק</p>
           <div className="space-y-3">
             {explanationCards.map((card, i) => {
@@ -116,12 +121,20 @@ const StudentFlow = () => {
               );
             })}
           </div>
-          <button
-            onClick={handleStartQuestionnaire}
-            className="btn-intake w-full bg-primary text-primary-foreground shadow-md hover:shadow-lg text-lg py-4 mt-6"
-          >
-            המשך לשאלונים
-          </button>
+          <div className="flex gap-3 mt-6">
+            <button
+              onClick={() => setStep("welcome")}
+              className="btn-intake bg-secondary text-secondary-foreground flex-1"
+            >
+              חזרה
+            </button>
+            <button
+              onClick={handleStartQuestionnaire}
+              className="btn-intake flex-1 bg-primary text-primary-foreground shadow-md hover:shadow-lg text-lg py-4"
+            >
+              המשך לשאלונים
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -137,12 +150,12 @@ const StudentFlow = () => {
           onUpdateResponse={handleUpdateResponse}
           onUpdateOpenResponse={handleUpdateOpenResponse}
           onComplete={handleComplete}
+          onSaveAndExit={handleSaveAndExit}
         />
       </div>
     );
   }
 
-  // Complete
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-background">
       <div className="w-full max-w-md animate-fade-in text-center">
@@ -150,8 +163,12 @@ const StudentFlow = () => {
           <Star className="w-10 h-10 text-success" />
         </div>
         <h1 className="text-2xl font-heading font-bold mb-3">סיימת בהצלחה!</h1>
-        <p className="text-muted-foreground mb-2">תודה על השיתוף, {session.studentName}</p>
-        <p className="text-sm text-muted-foreground">התשובות שלך נשמרו. אנחנו נשתמש במידע כדי לעזור לך בצורה הכי טובה.</p>
+        <p className="text-muted-foreground leading-relaxed mb-2">
+          תודה רבה. סיימת את השאלון בהצלחה.
+        </p>
+        <p className="text-sm text-muted-foreground">
+          המידע יעזור לנו להכיר אותך טוב יותר ולתמוך בך בצורה המתאימה.
+        </p>
         <div className="intake-card mt-6">
           <p className="text-sm text-muted-foreground">💚 אנחנו שמחים שאת/ה איתנו</p>
         </div>
