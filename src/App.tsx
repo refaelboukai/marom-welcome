@@ -3,8 +3,13 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import Index from "./pages/Index.tsx";
-import NotFound from "./pages/NotFound.tsx";
+import Login from "./pages/Login";
+import StudentFlow from "./pages/StudentFlow";
+import ParentFlow from "./pages/ParentFlow";
+import Dashboard from "./pages/admin/Dashboard";
+import StudentProfile from "./pages/admin/StudentProfile";
+import NewIntake from "./pages/admin/NewIntake";
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
@@ -15,8 +20,12 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="/" element={<Login />} />
+          <Route path="/student/:sessionId" element={<StudentFlow />} />
+          <Route path="/parent/:sessionId" element={<ParentFlow />} />
+          <Route path="/admin" element={<Dashboard />} />
+          <Route path="/admin/student/:sessionId" element={<StudentProfile />} />
+          <Route path="/admin/new" element={<NewIntake />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
