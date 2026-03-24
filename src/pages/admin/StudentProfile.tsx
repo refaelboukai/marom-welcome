@@ -193,7 +193,7 @@ const StudentProfile = () => {
               <div key={key} className="intake-card-soft text-center">
                 <Icon className="w-5 h-5 mx-auto mb-1 text-primary/60" />
                 <p className="text-xs text-muted-foreground mb-1">{label}</p>
-                <p className={`text-2xl font-bold ${getScoreColor(s.normalized)}`}>{s.normalized >= 0 ? s.normalized : "—"}</p>
+                <p className={`text-2xl font-bold ${getScoreColor(s.normalized)}`}>{s.normalized >= 0 ? s.normalized.toFixed(2) : "—"}</p>
                 <p className="text-xs text-muted-foreground">{getScoreLabel(s.normalized)}</p>
                 {s.studentNormalized >= 0 && s.parentNormalized >= 0 && (
                   <div className="mt-2 text-[10px] text-muted-foreground space-y-0.5">
