@@ -113,7 +113,7 @@ const ParentFlow = () => {
 
   if (step === "questionnaire") {
     return (
-      <div className="min-h-screen py-6 bg-background relative">
+      <div className="min-h-screen py-6 px-0 sm:px-2 bg-background relative safe-top safe-bottom">
         <button onClick={() => navigate("/")} className="absolute top-4 left-4 z-30 p-2 rounded-xl hover:bg-muted transition-colors" title="התנתק">
           <LogOut className="w-5 h-5 text-muted-foreground" />
         </button>
