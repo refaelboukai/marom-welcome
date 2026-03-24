@@ -1,61 +1,13 @@
 import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 import { IntakeSession, SECTION_LABELS } from "@/lib/types";
 import { calculateScores, generateRiskFlags, generateInsights, getScoreLabel, getTopFocusAreas } from "@/lib/scoring";
 
-// Register Heebo font (using built-in helvetica for now; Hebrew rendered as RTL text)
-export function generateStudentPDF(session: IntakeSession, target: "staff" | "parent" = "staff") {
-  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-
+function buildReportHTML(session: IntakeSession, target: "staff" | "parent"): string {
   const scores = calculateScores(session.studentResponses, session.parentResponses);
   const riskFlags = generateRiskFlags(scores);
   const insights = generateInsights(scores);
   const focusAreas = getTopFocusAreas(scores);
-
-  let y = 20;
-  const pageWidth = 190;
-  const rightX = 200;
-
-  // Helper for RTL text
-  const addRTL = (text: string, x: number, yPos: number, size = 10, style: "normal" | "bold" = "normal") => {
-    doc.setFontSize(size);
-    doc.setFont("helvetica", style);
-    // Reverse for basic RTL display
-    const lines = doc.splitTextToSize(text, pageWidth - 20);
-    lines.forEach((line: string) => {
-      doc.text(line, x, yPos, { align: "right" });
-      yPos += size * 0.5;
-    });
-    return yPos;
-  };
-
-  const checkPage = (needed: number) => {
-    if (y + needed > 270) {
-      doc.addPage();
-      y = 20;
-    }
-  };
-
-  // Header
-  doc.setDrawColor(80, 150, 120);
-  doc.setLineWidth(0.5);
-  doc.line(10, 15, 200, 15);
-
-  y = addRTL("מרום בית אקשטיין — סיכום קליטה", rightX, y, 16, "bold");
-  y += 4;
-  y = addRTL(`תלמיד/ה: ${session.studentName}`, rightX, y, 12, "bold");
-  y += 2;
-  y = addRTL(`כיתה: ${session.grade || "—"} | ת.ז.: ${session.studentIdNumber || "—"}`, rightX, y, 9);
-  y += 2;
-  y = addRTL(`תאריך: ${new Date(session.createdAt).toLocaleDateString("he-IL")}`, rightX, y, 9);
-  y += 8;
-
-  doc.line(10, y, 200, y);
-  y += 8;
-
-  // Scores Table
-  checkPage(40);
-  y = addRTL("ציונים לפי תחום", rightX, y, 13, "bold");
-  y += 4;
 
   const scoreData = [
     { label: SECTION_LABELS.quality_of_life, s: scores.qualityOfLife },
@@ -64,114 +16,182 @@ export function generateStudentPDF(session: IntakeSession, target: "staff" | "pa
     { label: SECTION_LABELS.cognitive_flexibility, s: scores.cognitiveFlexibility },
   ];
 
-  // Table header
-  doc.setFillColor(240, 245, 240);
-  doc.rect(10, y - 3, 190, 8, "F");
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "bold");
-  doc.text("Level", 15, y + 2);
-  doc.text("Parent", 55, y + 2);
-  doc.text("Student", 90, y + 2);
-  doc.text("Score", 125, y + 2);
-  doc.text("Domain", rightX, y + 2, { align: "right" });
-  y += 10;
+  const fmt = (n: number) => n >= 0 ? n.toFixed(2) : "—";
 
-  scoreData.forEach(({ label, s }) => {
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.text(getScoreLabel(s.normalized), 15, y);
-    doc.text(s.parentNormalized >= 0 ? String(s.parentNormalized) : "—", 60, y);
-    doc.text(s.studentNormalized >= 0 ? String(s.studentNormalized) : "—", 95, y);
-    doc.text(s.normalized >= 0 ? String(s.normalized) : "—", 130, y);
-    doc.text(label, rightX, y, { align: "right" });
-    y += 7;
-  });
+  let html = `
+    <div style="font-family: 'Heebo', 'Rubik', 'Arial', sans-serif; direction: rtl; padding: 40px; max-width: 700px; margin: 0 auto; color: #1a1a2e; line-height: 1.6;">
+      <div style="border-bottom: 3px solid #4a9a7a; padding-bottom: 16px; margin-bottom: 24px;">
+        <h1 style="font-size: 22px; font-weight: 700; color: #1a1a2e; margin: 0 0 8px 0;">מרום בית אקשטיין — סיכום ${target === "parent" ? "להורים" : "לצוות"}</h1>
+        <p style="font-size: 16px; font-weight: 600; margin: 0 0 4px 0;">תלמיד/ה: ${session.studentName}</p>
+        <p style="font-size: 12px; color: #666; margin: 0;">כיתה: ${session.grade || "—"} &nbsp;|&nbsp; ת.ז.: ${session.studentIdNumber || "—"}</p>
+        <p style="font-size: 12px; color: #666; margin: 0;">תאריך: ${new Date(session.createdAt).toLocaleDateString("he-IL")}</p>
+      </div>
 
-  y += 6;
+      <div style="border-bottom: 2px solid #4a9a7a; padding-bottom: 12px; margin-bottom: 20px;">
+        <h2 style="font-size: 16px; font-weight: 700; margin: 0 0 12px 0;">ציונים לפי תחום</h2>
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+          <thead>
+            <tr style="background: #eef5f0;">
+              <th style="padding: 8px 12px; text-align: right; border-bottom: 2px solid #ccc;">תחום</th>
+              <th style="padding: 8px 12px; text-align: center; border-bottom: 2px solid #ccc;">ציון</th>
+              <th style="padding: 8px 12px; text-align: center; border-bottom: 2px solid #ccc;">תלמיד</th>
+              <th style="padding: 8px 12px; text-align: center; border-bottom: 2px solid #ccc;">הורה</th>
+              <th style="padding: 8px 12px; text-align: center; border-bottom: 2px solid #ccc;">רמה</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${scoreData.map(({ label, s }) => `
+              <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 8px 12px; font-weight: 600;">${label}</td>
+                <td style="padding: 8px 12px; text-align: center; font-weight: 700;">${fmt(s.normalized)}</td>
+                <td style="padding: 8px 12px; text-align: center;">${fmt(s.studentNormalized)}</td>
+                <td style="padding: 8px 12px; text-align: center;">${fmt(s.parentNormalized)}</td>
+                <td style="padding: 8px 12px; text-align: center;">${getScoreLabel(s.normalized)}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </div>`;
 
-  // Focus areas
   if (focusAreas.length > 0) {
-    checkPage(20);
-    y = addRTL("תחומי מיקוד מומלצים", rightX, y, 12, "bold");
-    y += 3;
-    focusAreas.forEach((area, i) => {
-      y = addRTL(`${i + 1}. ${area}`, rightX - 5, y, 10);
-      y += 2;
-    });
-    y += 4;
+    html += `
+      <div style="margin-bottom: 20px;">
+        <h2 style="font-size: 15px; font-weight: 700; margin: 0 0 8px 0;">תחומי מיקוד מומלצים</h2>
+        <ul style="margin: 0; padding: 0 20px; list-style: none;">
+          ${focusAreas.map((a, i) => `<li style="margin-bottom: 4px; font-size: 13px;">📌 ${i + 1}. ${a}</li>`).join("")}
+        </ul>
+      </div>`;
   }
 
-  // Risk flags
-  if (riskFlags.length > 0 && target === "staff") {
-    checkPage(25);
-    y = addRTL("דגלי זהירות", rightX, y, 12, "bold");
-    y += 3;
-    riskFlags.forEach((flag) => {
-      const severity = flag.severity === "urgent" ? "[!]" : flag.severity === "concern" ? "[?]" : "[i]";
-      y = addRTL(`${severity} ${flag.domain}: ${flag.message}`, rightX - 5, y, 9);
-      y += 3;
-    });
-    y += 4;
+  if (target === "staff" && riskFlags.length > 0) {
+    html += `
+      <div style="margin-bottom: 20px; background: #fff5f5; border: 1px solid #fdd; border-radius: 8px; padding: 16px;">
+        <h2 style="font-size: 15px; font-weight: 700; color: #c53030; margin: 0 0 8px 0;">⚠ דגלי זהירות</h2>
+        ${riskFlags.map(f => `
+          <p style="font-size: 12px; margin: 4px 0; color: #333;">
+            <strong>${f.severity === "urgent" ? "🔴" : f.severity === "concern" ? "🟡" : "🔵"} ${f.domain}:</strong> ${f.message}
+          </p>
+        `).join("")}
+      </div>`;
   }
 
-  // Insights - staff only
+  // Insights
+  html += `
+    <div style="margin-bottom: 20px;">
+      <h2 style="font-size: 15px; font-weight: 700; margin: 0 0 8px 0;">${target === "parent" ? "סיכום כללי" : "תמונת מצב"}</h2>
+      <p style="font-size: 13px; color: #444; margin: 0 0 12px 0;">${insights.summary}</p>
+    </div>`;
+
+  if (insights.strengths.length > 0) {
+    html += `
+      <div style="margin-bottom: 20px; background: #f0faf4; border: 1px solid #c6f6d5; border-radius: 8px; padding: 16px;">
+        <h3 style="font-size: 14px; font-weight: 700; color: #276749; margin: 0 0 8px 0;">💪 חוזקות</h3>
+        ${insights.strengths.map(s => `<p style="font-size: 12px; margin: 3px 0; color: #333;">• ${s}</p>`).join("")}
+      </div>`;
+  }
+
   if (target === "staff") {
-    checkPage(30);
-    y = addRTL("תמונת מצב", rightX, y, 12, "bold");
-    y += 3;
-    y = addRTL(insights.summary, rightX - 5, y, 9);
-    y += 6;
-
-    if (insights.strengths.length > 0) {
-      checkPage(20);
-      y = addRTL("חוזקות", rightX, y, 11, "bold");
-      y += 3;
-      insights.strengths.forEach((s) => {
-        y = addRTL(`• ${s}`, rightX - 5, y, 9);
-        y += 2;
-      });
-      y += 4;
+    if (insights.areasForSupport.length > 0) {
+      html += `
+        <div style="margin-bottom: 20px; background: #fffaf0; border: 1px solid #feebc8; border-radius: 8px; padding: 16px;">
+          <h3 style="font-size: 14px; font-weight: 700; color: #975a16; margin: 0 0 8px 0;">🎯 תחומים לקידום</h3>
+          ${insights.areasForSupport.map(s => `<p style="font-size: 12px; margin: 3px 0; color: #333;">• ${s}</p>`).join("")}
+        </div>`;
     }
 
     if (insights.recommendations.length > 0) {
-      checkPage(25);
-      y = addRTL("המלצות", rightX, y, 11, "bold");
-      y += 3;
-      insights.recommendations.forEach((s, i) => {
-        y = addRTL(`${i + 1}. ${s}`, rightX - 5, y, 9);
-        y += 3;
-      });
+      html += `
+        <div style="margin-bottom: 20px;">
+          <h2 style="font-size: 15px; font-weight: 700; margin: 0 0 8px 0;">💡 המלצות</h2>
+          ${insights.recommendations.map((s, i) => `<p style="font-size: 12px; margin: 4px 0; color: #333;">${i + 1}. ${s}</p>`).join("")}
+        </div>`;
+    }
+
+    if (insights.interpretation) {
+      html += `
+        <div style="margin-bottom: 20px; background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px;">
+          <h3 style="font-size: 14px; font-weight: 700; margin: 0 0 8px 0;">📋 פרשנות חינוכית-טיפולית</h3>
+          <p style="font-size: 12px; color: #444; white-space: pre-line;">${insights.interpretation}</p>
+        </div>`;
     }
   }
 
-  // Parent version - simpler
-  if (target === "parent") {
-    checkPage(20);
-    y = addRTL("סיכום כללי", rightX, y, 12, "bold");
-    y += 3;
-    y = addRTL(insights.summary, rightX - 5, y, 10);
-    y += 6;
+  // Open responses
+  const openEntries = Object.entries(session.studentOpenResponses).filter(([, v]) => v);
+  if (openEntries.length > 0) {
+    const labels: Record<string, string> = {
+      significant_figure: "דמות משמעותית בחיי",
+      interests: "תחומי עניין",
+      dream: "החלום שלי",
+      want_to_change: "מה הייתי רוצה לשנות",
+      areas_to_advance: "שלושה תחומים שאני רוצה לקדם",
+    };
+    html += `
+      <div style="margin-bottom: 20px;">
+        <h2 style="font-size: 15px; font-weight: 700; margin: 0 0 8px 0;">✍ תשובות פתוחות</h2>
+        ${openEntries.map(([k, v]) => `
+          <div style="background: #f7f7f9; border-radius: 6px; padding: 10px 14px; margin-bottom: 8px;">
+            <p style="font-size: 11px; color: #888; margin: 0 0 2px 0; font-weight: 600;">${labels[k] || k}</p>
+            <p style="font-size: 13px; margin: 0; color: #333;">${v}</p>
+          </div>
+        `).join("")}
+      </div>`;
+  }
 
-    if (insights.strengths.length > 0) {
-      y = addRTL("חוזקות שזוהו:", rightX, y, 11, "bold");
-      y += 3;
-      insights.strengths.forEach((s) => {
-        y = addRTL(`• ${s}`, rightX - 5, y, 9);
-        y += 2;
-      });
+  html += `
+      <div style="border-top: 1px solid #ddd; padding-top: 12px; margin-top: 24px; text-align: center;">
+        <p style="font-size: 10px; color: #999; margin: 0;">מרום בית אקשטיין — ${target === "parent" ? "דו\"ח להורים" : "דו\"ח לצוות"} — חסוי</p>
+      </div>
+    </div>`;
+
+  return html;
+}
+
+export async function generateStudentPDF(session: IntakeSession, target: "staff" | "parent" = "staff") {
+  // Create an off-screen container
+  const container = document.createElement("div");
+  container.style.position = "fixed";
+  container.style.left = "-9999px";
+  container.style.top = "0";
+  container.style.width = "700px";
+  container.style.background = "white";
+  container.innerHTML = buildReportHTML(session, target);
+  document.body.appendChild(container);
+
+  // Wait for fonts to load
+  await document.fonts.ready;
+
+  try {
+    const canvas = await html2canvas(container, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      backgroundColor: "#ffffff",
+    });
+
+    const pdf = new jsPDF("p", "mm", "a4");
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+    const imgWidth = pdfWidth;
+    const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+
+    const imgData = canvas.toDataURL("image/png");
+
+    // Multi-page support
+    let position = 0;
+    let remaining = imgHeight;
+    let pageNum = 0;
+
+    while (remaining > 0) {
+      if (pageNum > 0) pdf.addPage();
+      pdf.addImage(imgData, "PNG", 0, -position, imgWidth, imgHeight);
+      position += pdfHeight;
+      remaining -= pdfHeight;
+      pageNum++;
     }
-  }
 
-  // Footer
-  const totalPages = doc.getNumberOfPages();
-  for (let i = 1; i <= totalPages; i++) {
-    doc.setPage(i);
-    doc.setFontSize(7);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(150);
-    doc.text(`Marom Beit Ekstein — Confidential — Page ${i}/${totalPages}`, 105, 290, { align: "center" });
-    doc.setTextColor(0);
+    pdf.save(`${session.studentName}_${target === "staff" ? "staff_report" : "parent_report"}.pdf`);
+  } finally {
+    document.body.removeChild(container);
   }
-
-  doc.save(`${session.studentName}_${target === "staff" ? "staff_report" : "parent_report"}.pdf`);
 }
