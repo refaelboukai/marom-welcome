@@ -1,14 +1,14 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { getSessionsDB } from "@/lib/supabase-storage";
+import { getSessionsDB, resetAllSessionsDB } from "@/lib/supabase-storage";
 import { IntakeSession, IntakeStatus } from "@/lib/types";
 import { questionnaireItems } from "@/data/questionnaires";
-import { CLASS_GROUPS } from "@/data/students";
+import { CLASS_GROUPS, ADMIN_CODE } from "@/data/students";
 import StatusBadge from "@/components/StatusBadge";
 import CodeManagement from "@/components/CodeManagement";
 
 import logo from "@/assets/logo.jpeg";
-import { Plus, Users, AlertTriangle, CheckCircle, Clock, Search, LogOut, XCircle, Loader2, Download, Key, FileText, Copy, ClipboardList } from "lucide-react";
+import { Plus, Users, AlertTriangle, CheckCircle, Clock, Search, LogOut, XCircle, Loader2, Download, Key, FileText, Copy, ClipboardList, Trash2, ShieldAlert } from "lucide-react";
 import { calculateScores, generateRiskFlags, getCompletionPercentage } from "@/lib/scoring";
 import { exportToExcel } from "@/lib/export-utils";
 import { generateStudentPDF } from "@/lib/pdf-export";
