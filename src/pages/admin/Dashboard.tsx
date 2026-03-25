@@ -75,6 +75,25 @@ const Dashboard = () => {
     exportToExcel(classSessions, label);
   };
 
+  const handleReset = async () => {
+    if (resetPassword !== ADMIN_CODE) {
+      setResetError("סיסמה שגויה");
+      return;
+    }
+    setResetting(true);
+    const success = await resetAllSessionsDB();
+    if (success) {
+      const data = await getSessionsDB();
+      setSessions(data);
+      setShowResetDialog(false);
+      setResetPassword("");
+      setResetError("");
+    } else {
+      setResetError("שגיאה באיפוס הנתונים");
+    }
+    setResetting(false);
+  };
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
   }
