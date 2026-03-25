@@ -398,6 +398,11 @@ const StudentProfile = () => {
                   <p className="text-[10px] mt-1 font-medium" style={{ color: score.normalized >= 4 ? 'hsl(var(--success))' : score.normalized >= 3 ? 'hsl(var(--primary))' : score.normalized >= 2 ? 'hsl(var(--warning))' : score.normalized >= 0 ? 'hsl(var(--destructive))' : 'hsl(var(--muted-foreground))' }}>
                     {getScoreLabel(score.normalized)}
                   </p>
+                  {score.normalized >= 0 && (
+                    <p className="text-[10px] mt-1 text-muted-foreground italic leading-relaxed">
+                      {getScoreInterpretation(score.normalized, key)}
+                    </p>
+                  )}
                   {score.studentNormalized >= 0 && score.parentNormalized >= 0 && (
                     <p className="text-[9px] text-muted-foreground mt-1">
                       ת: {score.studentNormalized.toFixed(1)} | ה: {score.parentNormalized.toFixed(1)}
