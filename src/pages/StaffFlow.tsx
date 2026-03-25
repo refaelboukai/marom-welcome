@@ -67,6 +67,37 @@ const StaffFlow = () => {
 
   // Student selection screen
   if (!sessionId) {
+    const taliStudents = sessions.filter((s) => s.classGroup === "tali");
+    const edenStudents = sessions.filter((s) => s.classGroup === "eden");
+
+    const renderStudentCard = (s: IntakeSession) => {
+      const staffDone = Object.keys(s.staffResponses || {}).length;
+      const total = questionnaireItems.length;
+      return (
+        <button
+          key={s.id}
+          onClick={() => navigate(`/staff/${s.id}`)}
+          className="intake-card-soft w-full text-right hover:shadow-md transition-all group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <span className="text-primary font-bold text-sm">{s.studentName.charAt(0)}</span>
+            </div>
+            <div className="flex-1">
+              <p className="font-semibold text-sm group-hover:text-primary transition-colors">{s.studentName}</p>
+              <p className="text-xs text-muted-foreground">{s.grade ? `כיתה ${s.grade}` : ""}</p>
+            </div>
+            <div className="text-left">
+              <p className="text-xs font-medium">{Math.round((staffDone / total) * 100)}%</p>
+              <div className="w-12 h-1.5 bg-muted rounded-full overflow-hidden">
+                <div className="h-full bg-primary rounded-full" style={{ width: `${(staffDone / total) * 100}%` }} />
+              </div>
+            </div>
+          </div>
+        </button>
+      );
+    };
+
     return (
       <div className="min-h-screen bg-background">
         <div className="bg-card border-b border-border px-4 py-4">
@@ -79,34 +110,32 @@ const StaffFlow = () => {
             </div>
           </div>
         </div>
-        <div className="max-w-lg mx-auto px-4 py-6 space-y-2">
-          {sessions.map((s) => {
-            const staffDone = Object.keys(s.staffResponses || {}).length;
-            const total = questionnaireItems.length;
-            return (
-              <button
-                key={s.id}
-                onClick={() => navigate(`/staff/${s.id}`)}
-                className="intake-card-soft w-full text-right hover:shadow-md transition-all group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-primary font-bold text-sm">{s.studentName.charAt(0)}</span>
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-semibold text-sm group-hover:text-primary transition-colors">{s.studentName}</p>
-                    <p className="text-xs text-muted-foreground">{s.grade ? `כיתה ${s.grade}` : ""}</p>
-                  </div>
-                  <div className="text-left">
-                    <p className="text-xs font-medium">{Math.round((staffDone / total) * 100)}%</p>
-                    <div className="w-12 h-1.5 bg-muted rounded-full overflow-hidden">
-                      <div className="h-full bg-primary rounded-full" style={{ width: `${(staffDone / total) * 100}%` }} />
-                    </div>
-                  </div>
-                </div>
-              </button>
-            );
-          })}
+        <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
+          {/* הכיתה של טלי */}
+          <div>
+            <h2 className="text-sm font-heading font-bold text-primary mb-2 flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              הכיתה של טלי
+              <span className="text-xs text-muted-foreground font-normal">({taliStudents.length})</span>
+            </h2>
+            <div className="space-y-2">
+              {taliStudents.map(renderStudentCard)}
+              {taliStudents.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">אין תלמידים בכיתה זו</p>}
+            </div>
+          </div>
+
+          {/* הכיתה של עדן */}
+          <div>
+            <h2 className="text-sm font-heading font-bold text-primary mb-2 flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              הכיתה של עדן
+              <span className="text-xs text-muted-foreground font-normal">({edenStudents.length})</span>
+            </h2>
+            <div className="space-y-2">
+              {edenStudents.map(renderStudentCard)}
+              {edenStudents.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">אין תלמידים בכיתה זו</p>}
+            </div>
+          </div>
         </div>
       </div>
     );

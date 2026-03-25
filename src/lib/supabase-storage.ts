@@ -285,3 +285,19 @@ export async function generateAIInsights(
   if (error) throw error;
   return data;
 }
+
+export async function resetAllSessionsDB(): Promise<boolean> {
+  // Delete all related records first
+  const { error: spError } = await supabase.from("support_plans").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+  if (spError) { console.error("Error deleting support_plans:", spError); return false; }
+
+  const { error: aaError } = await supabase.from("academic_assessments").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+  if (aaError) { console.error("Error deleting academic_assessments:", aaError); return false; }
+
+  const { error: isError } = await supabase.from("intake_sessions").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+  if (isError) { console.error("Error deleting intake_sessions:", isError); return false; }
+
+  // Re-seed
+  await seedSessionsIfEmpty();
+  return true;
+}
