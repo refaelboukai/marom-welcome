@@ -6,7 +6,7 @@ import { questionnaireItems } from "@/data/questionnaires";
 import LikertScale from "@/components/LikertScale";
 import ProgressHeader from "@/components/ProgressHeader";
 import logo from "@/assets/logo.jpeg";
-import { Loader2, Star, ClipboardList, ChevronLeft, ChevronRight, LogOut } from "lucide-react";
+import { Loader2, Star, ClipboardList, ChevronLeft, ChevronRight, LogOut, Users } from "lucide-react";
 
 const ITEMS_PER_PAGE = 3;
 
