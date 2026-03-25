@@ -111,6 +111,17 @@ export const SECTION_LABELS: Record<QuestionnaireSection, string> = {
   cognitive_flexibility: "גמישות קוגניטיבית",
 };
 
+export const QOL_SUBDOMAIN_LABELS: Record<string, string> = {
+  general_wellbeing: "רווחה כללית",
+  social: "חברתי",
+  emotional: "רגשי",
+  independence: "עצמאות",
+  academic: "לימודי",
+  health_lifestyle: "בריאות ואורח חיים",
+  family_support: "משפחה ותמיכה",
+  self_view: "תפיסה עצמית",
+};
+
 export const OPEN_QUESTION_KEYS = [
   "significant_figure",
   "interests",

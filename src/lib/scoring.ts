@@ -55,6 +55,47 @@ export function calculateScores(
   };
 }
 
+export function calculateQoLSubdomains(
+  studentResponses: Record<string, number>,
+  parentResponses: Record<string, number>
+): Record<string, DomainScore> {
+  const subdomains = ["general_wellbeing", "social", "emotional", "independence", "academic", "health_lifestyle", "family_support", "self_view"];
+  const result: Record<string, DomainScore> = {};
+
+  for (const sub of subdomains) {
+    const items = questionnaireItems.filter(i => i.section === "quality_of_life" && i.subdomain === sub);
+    if (items.length === 0) continue;
+
+    const studentValues: number[] = [];
+    const parentValues: number[] = [];
+
+    for (const item of items) {
+      if (studentResponses[item.id] != null) {
+        studentValues.push(scoreItem(studentResponses[item.id], item.isReverse));
+      }
+      if (parentResponses[item.id] != null) {
+        parentValues.push(scoreItem(parentResponses[item.id], item.isReverse));
+      }
+    }
+
+    const studentAvg = studentValues.length > 0 ? studentValues.reduce((a, b) => a + b, 0) / studentValues.length : -1;
+    const parentAvg = parentValues.length > 0 ? parentValues.reduce((a, b) => a + b, 0) / parentValues.length : -1;
+    const allValues = [...studentValues, ...parentValues];
+    const rawAvg = allValues.length > 0 ? allValues.reduce((a, b) => a + b, 0) / allValues.length : -1;
+    const round2 = (v: number) => Math.round(v * 100) / 100;
+
+    result[sub] = {
+      raw: rawAvg >= 0 ? round2(rawAvg) : -1,
+      normalized: rawAvg >= 0 ? round2(rawAvg) : -1,
+      completionRate: Math.round(((studentValues.length + parentValues.length) / (items.length * 2)) * 100),
+      studentNormalized: studentAvg >= 0 ? round2(studentAvg) : -1,
+      parentNormalized: parentAvg >= 0 ? round2(parentAvg) : -1,
+    };
+  }
+
+  return result;
+}
+
 export function generateRiskFlags(scores: ScoreResults): RiskFlag[] {
   const flags: RiskFlag[] = [];
 

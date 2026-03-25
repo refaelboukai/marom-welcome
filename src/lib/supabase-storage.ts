@@ -148,6 +148,10 @@ export async function updateSessionDB(id: string, updates: Partial<IntakeSession
   if (updates.staffResponses !== undefined) dbUpdates.staff_responses = updates.staffResponses;
   if (updates.staffOpenResponses !== undefined) dbUpdates.staff_open_responses = updates.staffOpenResponses;
   if (updates.classGroup !== undefined) dbUpdates.class_group = updates.classGroup;
+  if (updates.reassessmentStatus !== undefined) dbUpdates.reassessment_status = updates.reassessmentStatus;
+  if (updates.reassessmentStudentResponses !== undefined) dbUpdates.reassessment_student_responses = updates.reassessmentStudentResponses;
+  if (updates.reassessmentParentResponses !== undefined) dbUpdates.reassessment_parent_responses = updates.reassessmentParentResponses;
+  if (updates.reassessmentDate !== undefined) dbUpdates.reassessment_date = updates.reassessmentDate;
 
   const { data, error } = await supabase
     .from("intake_sessions")
