@@ -298,6 +298,6 @@ export async function resetAllSessionsDB(): Promise<boolean> {
   if (isError) { console.error("Error deleting intake_sessions:", isError); return false; }
 
   // Re-seed
-  await seedSessionsIfEmpty();
+  await initializeSessionsDB();
   return true;
 }
