@@ -63,7 +63,6 @@ function buildReportHTML(session: IntakeSession, target: "staff" | "parent"): st
         </div>
       `).join("")}
     </div>`;
-  }
 
   if (target === "staff" && riskFlags.length > 0) {
     html += `
