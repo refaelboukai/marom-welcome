@@ -73,7 +73,7 @@ const AIRecommendations = ({ student, onResult }: AIRecommendationsProps) => {
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-heading font-semibold flex items-center gap-2">
           <Brain className="w-5 h-5 text-primary" />
-          המלצות AI אישיות — {student.name}
+          המלצות אישיות — {student.name}
         </h3>
         <button onClick={handleGenerate} disabled={loading}
           className="btn-intake bg-primary text-primary-foreground text-xs px-3 py-1.5 gap-1">
@@ -90,7 +90,7 @@ const AIRecommendations = ({ student, onResult }: AIRecommendationsProps) => {
 
       {!result && !loading && !error && (
         <p className="text-sm text-muted-foreground text-center py-4">
-          לחץ על "צור המלצות" לקבלת תובנות והמלצות אישיות מבוססות AI עבור התלמיד
+          לחץ על "צור המלצות" לקבלת תובנות והמלצות אישיות עבור התלמיד
         </p>
       )}
 
