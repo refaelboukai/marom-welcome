@@ -75,6 +75,7 @@ export type Database = {
       }
       intake_sessions: {
         Row: {
+          academic_year: string
           admin_notes: string | null
           class_group: string | null
           closed_at: string | null
@@ -107,6 +108,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          academic_year?: string
           admin_notes?: string | null
           class_group?: string | null
           closed_at?: string | null
@@ -139,6 +141,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          academic_year?: string
           admin_notes?: string | null
           class_group?: string | null
           closed_at?: string | null
