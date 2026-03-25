@@ -222,7 +222,7 @@ function buildPersonalPlanHTML(session: IntakeSession, planData: PersonalPlanDat
   if (ai?.personalInsight) {
     html += `
       <div data-section style="margin-bottom: 20px; background: #f0f7ff; border: 1px solid #bee3f8; border-radius: 8px; padding: 16px;">
-        <h2 style="font-size: 15px; font-weight: 700; color: #2b6cb0; margin: 0 0 8px 0;">🧠 תובנה אישית (AI)</h2>
+        <h2 style="font-size: 15px; font-weight: 700; color: #2b6cb0; margin: 0 0 8px 0;">🧠 תובנה אישית</h2>
         <p style="font-size: 13px; color: #333;">${ai.personalInsight}</p>
       </div>`;
   }
@@ -249,7 +249,7 @@ function buildPersonalPlanHTML(session: IntakeSession, planData: PersonalPlanDat
   if (ai?.recommendations && ai.recommendations.length > 0) {
     html += `
       <div data-section style="margin-bottom: 20px; background: #faf5ff; border: 1px solid #e9d8fd; border-radius: 8px; padding: 16px;">
-        <h2 style="font-size: 15px; font-weight: 700; color: #6b46c1; margin: 0 0 10px 0;">💡 המלצות מעשיות (AI)</h2>
+        <h2 style="font-size: 15px; font-weight: 700; color: #6b46c1; margin: 0 0 10px 0;">💡 המלצות מעשיות</h2>
         ${ai.recommendations.map((r, i) => `
           <div style="margin-bottom: 8px; padding: 8px 12px; background: white; border-radius: 6px;">
             <p style="font-size: 12px; margin: 0; color: #333;"><strong style="color: #6b46c1;">${i + 1}.</strong> ${r}</p>
@@ -295,7 +295,7 @@ function buildPersonalPlanHTML(session: IntakeSession, planData: PersonalPlanDat
   if (ai?.suggestedGoals && ai.suggestedGoals.length > 0) {
     html += `
       <div data-section style="margin-bottom: 20px; background: #f0f7ff; border: 1px solid #bee3f8; border-radius: 8px; padding: 16px;">
-        <h2 style="font-size: 15px; font-weight: 700; color: #2b6cb0; margin: 0 0 8px 0;">🌟 יעדים מוצעים (AI)</h2>
+        <h2 style="font-size: 15px; font-weight: 700; color: #2b6cb0; margin: 0 0 8px 0;">🌟 יעדים מוצעים</h2>
         ${ai.suggestedGoals.map((g, i) => `<p style="font-size: 12px; margin: 4px 0; color: #333;">${i + 1}. ${g}</p>`).join("")}
       </div>`;
   }

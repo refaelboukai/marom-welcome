@@ -81,20 +81,20 @@ serve(async (req) => {
 
     if (!response.ok) {
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "שירות ה-AI עמוס כרגע, נסה שוב מאוחר יותר" }), {
+        return new Response(JSON.stringify({ error: "השירות עמוס כרגע, נסה שוב מאוחר יותר" }), {
           status: 429,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "נדרש חידוש מנוי לשירות ה-AI" }), {
+        return new Response(JSON.stringify({ error: "נדרש חידוש מנוי לשירות" }), {
           status: 402,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       const t = await response.text();
       console.error("AI gateway error:", response.status, t);
-      return new Response(JSON.stringify({ error: "שגיאה בשירות ה-AI" }), {
+      return new Response(JSON.stringify({ error: "שגיאה בשירות ההמלצות" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
