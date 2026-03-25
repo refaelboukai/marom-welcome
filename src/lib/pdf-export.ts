@@ -205,26 +205,17 @@ function buildPersonalPlanHTML(session: IntakeSession, planData: PersonalPlanDat
   html += `
     <div data-section style="margin-bottom: 24px;">
       <h2 style="font-size: 15px; font-weight: 700; margin: 0 0 10px 0; color: #2b6cb0;">📋 פירוט מדדי איכות חיים</h2>
-      <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
-        <thead>
-          <tr style="background: #f0f7ff;">
-            <th style="padding: 6px 10px; text-align: right; border-bottom: 2px solid #bee3f8;">תחום</th>
-            <th style="padding: 6px 10px; text-align: center; border-bottom: 2px solid #bee3f8;">ציון</th>
-            <th style="padding: 6px 10px; text-align: center; border-bottom: 2px solid #bee3f8;">תלמיד</th>
-            <th style="padding: 6px 10px; text-align: center; border-bottom: 2px solid #bee3f8;">הורה</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${Object.entries(qolSubs).map(([key, s]) => `
-            <tr style="border-bottom: 1px solid #eee;">
-              <td style="padding: 6px 10px; font-weight: 600;">${QOL_SUBDOMAIN_LABELS[key] || key}</td>
-              <td style="padding: 6px 10px; text-align: center; font-weight: 700; color: ${s.normalized < 2.5 ? '#e53e3e' : '#333'};">${fmt(s.normalized)}</td>
-              <td style="padding: 6px 10px; text-align: center;">${fmt(s.studentNormalized)}</td>
-              <td style="padding: 6px 10px; text-align: center;">${fmt(s.parentNormalized)}</td>
-            </tr>
-          `).join("")}
-        </tbody>
-      </table>
+      <p style="font-size: 11px; color: #888; margin: 0 0 10px 0;">מדד איכות החיים מורכב משמונה תחומים. כל תחום מוסבר מילולית.</p>
+      ${Object.entries(qolSubs).map(([key, s]) => `
+        <div style="margin-bottom: 8px; padding: 8px 12px; border: 1px solid #e8f0fe; border-radius: 6px; background: #f8faff;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <strong style="font-size: 12px;">${QOL_SUBDOMAIN_LABELS[key] || key}</strong>
+            <span style="font-size: 14px; font-weight: 700; color: ${s.normalized < 2.5 ? '#e53e3e' : s.normalized < 3.0 ? '#d69e2e' : '#333'};">${fmt(s.normalized)} — ${getScoreLabel(s.normalized)}</span>
+          </div>
+          <p style="font-size: 10px; color: #666; margin: 2px 0 0 0;">${QOL_SUBDOMAIN_DESCRIPTIONS[key] || ""}</p>
+          <p style="font-size: 10px; color: #888; margin: 2px 0 0 0;">ת: ${fmt(s.studentNormalized)} | ה: ${fmt(s.parentNormalized)}</p>
+        </div>
+      `).join("")}
     </div>`;
 
   // AI Personal Insight
