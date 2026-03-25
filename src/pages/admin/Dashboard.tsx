@@ -177,6 +177,10 @@ const Dashboard = () => {
                 className="btn-intake bg-success/10 text-success text-xs px-3 py-2 gap-1 hover:bg-success/20">
                 <Download className="w-3.5 h-3.5" /> ייצוא Excel
               </button>
+              <button onClick={() => { setShowResetDialog(true); setResetPassword(""); setResetError(""); }}
+                className="btn-intake bg-destructive/10 text-destructive text-xs px-3 py-2 gap-1 hover:bg-destructive/20 mr-auto">
+                <Trash2 className="w-3.5 h-3.5" /> איפוס נתונים
+              </button>
             </div>
 
             {/* Search + Filter */}
