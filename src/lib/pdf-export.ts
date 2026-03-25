@@ -167,10 +167,10 @@ function buildPersonalPlanHTML(session: IntakeSession, planData: PersonalPlanDat
   const ai = planData.aiRecommendations;
 
   const scoreData = [
-    { label: SECTION_LABELS.quality_of_life, s: scores.qualityOfLife },
-    { label: SECTION_LABELS.self_efficacy, s: scores.selfEfficacy },
-    { label: SECTION_LABELS.locus_of_control, s: scores.locusOfControl },
-    { label: SECTION_LABELS.cognitive_flexibility, s: scores.cognitiveFlexibility },
+    { key: "qualityOfLife", label: SECTION_LABELS.quality_of_life, s: scores.qualityOfLife },
+    { key: "selfEfficacy", label: SECTION_LABELS.self_efficacy, s: scores.selfEfficacy },
+    { key: "locusOfControl", label: SECTION_LABELS.locus_of_control, s: scores.locusOfControl },
+    { key: "cognitiveFlexibility", label: SECTION_LABELS.cognitive_flexibility, s: scores.cognitiveFlexibility },
   ];
   const fmt = (n: number) => n >= 0 ? n.toFixed(2) : "—";
 
@@ -181,30 +181,24 @@ function buildPersonalPlanHTML(session: IntakeSession, planData: PersonalPlanDat
         <p style="font-size: 13px; color: #4a9a7a; font-weight: 600; margin: 0 0 12px 0;">מרום בית אקשטיין</p>
         <p style="font-size: 18px; font-weight: 700; margin: 0 0 4px 0;">תלמיד/ה: ${session.studentName}</p>
         <p style="font-size: 12px; color: #666; margin: 0;">כיתה: ${session.grade || "—"} &nbsp;|&nbsp; תאריך: ${new Date(session.createdAt).toLocaleDateString("he-IL")}</p>
+        <p style="font-size: 11px; color: #888; margin: 8px 0 0 0;">סולם הציונים: 1–5 (1 = נמוך, 5 = גבוה). כל ציון מלווה בהסבר מילולי ופרשנות.</p>
       </div>
 
       <div data-section style="margin-bottom: 24px;">
-        <h2 style="font-size: 16px; font-weight: 700; margin: 0 0 12px 0; color: #4a9a7a;">📊 סיכום ציונים — תחומים ראשיים</h2>
-        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-          <thead>
-            <tr style="background: #eef5f0;">
-              <th style="padding: 8px 12px; text-align: right; border-bottom: 2px solid #4a9a7a;">תחום</th>
-              <th style="padding: 8px 12px; text-align: center; border-bottom: 2px solid #4a9a7a;">תלמיד</th>
-              <th style="padding: 8px 12px; text-align: center; border-bottom: 2px solid #4a9a7a;">הורה</th>
-              <th style="padding: 8px 12px; text-align: center; border-bottom: 2px solid #4a9a7a;">ממוצע</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${scoreData.map(({ label, s }) => `
-              <tr style="border-bottom: 1px solid #eee;">
-                <td style="padding: 8px 12px; font-weight: 600;">${label}</td>
-                <td style="padding: 8px 12px; text-align: center;">${fmt(s.studentNormalized)}</td>
-                <td style="padding: 8px 12px; text-align: center;">${fmt(s.parentNormalized)}</td>
-                <td style="padding: 8px 12px; text-align: center; font-weight: 700;">${fmt(s.normalized)}</td>
-              </tr>
-            `).join("")}
-          </tbody>
-        </table>
+        <h2 style="font-size: 16px; font-weight: 700; margin: 0 0 12px 0; color: #4a9a7a;">📊 סיכום ציונים — עם פרשנות מילולית</h2>
+        ${scoreData.map(({ key, label, s }) => `
+          <div style="margin-bottom: 14px; border: 1px solid #d4edda; border-radius: 8px; padding: 12px 14px; background: #f8fdf9;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <strong style="font-size: 14px; color: #1a1a2e;">${label}</strong>
+              <span style="font-size: 18px; font-weight: 800; color: ${s.normalized < 2 ? '#e53e3e' : s.normalized < 3 ? '#d69e2e' : s.normalized < 4 ? '#333' : '#276749'};">${fmt(s.normalized)} — ${getScoreLabel(s.normalized)}</span>
+            </div>
+            <p style="font-size: 11px; color: #555; margin: 0 0 4px 0;">${DOMAIN_DESCRIPTIONS[key]?.description || ""}</p>
+            <p style="font-size: 11px; font-weight: 600; margin: 0 0 4px 0; color: ${s.normalized >= 4 ? '#276749' : s.normalized >= 3 ? '#4a9a7a' : s.normalized >= 2 ? '#d69e2e' : s.normalized >= 0 ? '#e53e3e' : '#888'};">
+              ${getScoreInterpretation(s.normalized, key)}
+            </p>
+            <p style="font-size: 10px; color: #888; margin: 0;">תלמיד: ${fmt(s.studentNormalized)} | הורה: ${fmt(s.parentNormalized)}</p>
+          </div>
+        `).join("")}
       </div>`;
 
   // QoL Subdomain Table
