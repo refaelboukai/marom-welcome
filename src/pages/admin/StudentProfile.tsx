@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getSessionDB, updateSessionDB } from "@/lib/supabase-storage";
-import { IntakeSession, SECTION_LABELS, OPEN_QUESTION_LABELS, GASGoal } from "@/lib/types";
-import { calculateScores, generateRiskFlags, generateInsights, generateGASGoals, getScoreLabel, getScoreColor, getTopFocusAreas } from "@/lib/scoring";
+import { IntakeSession, SECTION_LABELS, OPEN_QUESTION_LABELS, QOL_SUBDOMAIN_LABELS, GASGoal } from "@/lib/types";
+import { calculateScores, calculateQoLSubdomains, generateRiskFlags, generateInsights, generateGASGoals, getScoreLabel, getScoreColor, getTopFocusAreas } from "@/lib/scoring";
 import StatusBadge from "@/components/StatusBadge";
-import { ArrowRight, AlertTriangle, Copy, CheckCircle, Lock, Unlock, FileText, Target, Lightbulb, TrendingUp, Users, Printer, MessageSquare, BarChart3, Shield, Loader2, RefreshCw, Download, PenLine, ScrollText } from "lucide-react";
+import { ArrowRight, AlertTriangle, Copy, CheckCircle, Lock, Unlock, FileText, Target, Lightbulb, TrendingUp, Users, Printer, MessageSquare, BarChart3, Shield, Loader2, RefreshCw, Download, PenLine, ScrollText, ClipboardList, Heart } from "lucide-react";
 import SupportPlans from "@/components/SupportPlans";
 import AIRecommendations from "@/components/AIRecommendations";
 import { generateStudentPDF, generatePersonalPlanPDF, PersonalPlanData } from "@/lib/pdf-export";
@@ -20,7 +20,6 @@ const StudentProfile = () => {
   const [notesSaved, setNotesSaved] = useState(false);
   const [loading, setLoading] = useState(true);
   const [consentSignature, setConsentSignature] = useState<string | null>(null);
-  const [reassessmentData, setReassessmentData] = useState<any>(null);
   const [aiResult, setAiResult] = useState<PersonalPlanData["aiRecommendations"] | null>(null);
   const [supportPlansData, setSupportPlansData] = useState<PersonalPlanData["supportPlans"]>([]);
   const printRef = useRef<HTMLDivElement>(null);
@@ -32,13 +31,10 @@ const StudentProfile = () => {
     setSession(s);
     setNotes(s.adminNotes || "");
 
-    // Load extra fields via raw query
-    const { data: raw } = await (supabase as any).from("intake_sessions").select("consent_signature, consent_date, reassessment_student_responses, reassessment_parent_responses, reassessment_date, reassessment_status").eq("id", sessionId).maybeSingle();
+    // Load consent signature
+    const { data: raw } = await (supabase as any).from("intake_sessions").select("consent_signature").eq("id", sessionId).maybeSingle();
     if (raw) {
       setConsentSignature(raw.consent_signature);
-      if (raw.reassessment_student_responses && Object.keys(raw.reassessment_student_responses).length > 0) {
-        setReassessmentData(raw);
-      }
     }
     setLoading(false);
   }, [sessionId, navigate]);
@@ -54,14 +50,19 @@ const StudentProfile = () => {
   }
 
   const scores = calculateScores(session.studentResponses, session.parentResponses);
+  const qolSubdomains = calculateQoLSubdomains(session.studentResponses, session.parentResponses);
   const riskFlags = generateRiskFlags(scores);
   const insights = generateInsights(scores);
   const gasGoals = generateGASGoals(scores);
   const focusAreas = getTopFocusAreas(scores);
 
-  // Reassessment scores for comparison
-  const reassessmentScores = reassessmentData?.reassessment_student_responses && Object.keys(reassessmentData.reassessment_student_responses).length > 0
-    ? calculateScores(reassessmentData.reassessment_student_responses, reassessmentData.reassessment_parent_responses || {})
+  // Reassessment scores
+  const hasReassessment = session.reassessmentStudentResponses && Object.keys(session.reassessmentStudentResponses).length > 0;
+  const reassessmentScores = hasReassessment
+    ? calculateScores(session.reassessmentStudentResponses!, session.reassessmentParentResponses || {})
+    : null;
+  const reassessmentQoLSubdomains = hasReassessment
+    ? calculateQoLSubdomains(session.reassessmentStudentResponses!, session.reassessmentParentResponses || {})
     : null;
 
   const radarData = [
@@ -112,12 +113,18 @@ const StudentProfile = () => {
   };
 
   const handleOpenReassessment = async () => {
-    await (supabase as any).from("intake_sessions").update({
-      reassessment_status: "open_student",
-      reassessment_student_responses: {},
-      reassessment_parent_responses: {},
-    }).eq("id", session.id);
-    alert("סיכום שנתי נפתח — התלמיד יכול כעת למלא שאלונים מחדש עם אותו קוד");
+    await updateSessionDB(session.id, {
+      reassessmentStatus: "open",
+      reassessmentStudentResponses: {},
+      reassessmentParentResponses: {},
+    });
+    setSession((prev) => prev ? {
+      ...prev,
+      reassessmentStatus: "open",
+      reassessmentStudentResponses: {},
+      reassessmentParentResponses: {},
+    } : null);
+    alert("סיכום שנתי נפתח — התלמיד וההורה יכולים כעת למלא שאלונים מחדש עם אותם קודים");
   };
 
   const handlePrint = () => { window.print(); };
@@ -136,6 +143,17 @@ const StudentProfile = () => {
     סיכום: reassessmentScores[key].studentNormalized >= 0 ? reassessmentScores[key].studentNormalized : 0,
   })) : null;
 
+  // Reassessment status display
+  const reassessmentStatusLabel = (() => {
+    switch (session.reassessmentStatus) {
+      case "open": return "פתוח — ממתין למילוי";
+      case "student_completed": return "התלמיד מילא — ממתין להורה";
+      case "parent_completed": return "ההורה מילא — ממתין לתלמיד";
+      case "completed": return "הושלם";
+      default: return null;
+    }
+  })();
+
   return (
     <div className="min-h-screen bg-background print:bg-white" ref={printRef}>
       {/* Header */}
@@ -153,6 +171,9 @@ const StudentProfile = () => {
             </div>
           </div>
           <div className="flex items-center gap-1 print:hidden">
+            <button onClick={() => navigate(`/staff/${session.id}`)} className="p-2 rounded-lg hover:bg-muted" title="שאלון צוות">
+              <ClipboardList className="w-5 h-5 text-warning" />
+            </button>
             <button onClick={() => generateStudentPDF(session, "parent")} className="p-2 rounded-lg hover:bg-muted" title="PDF להורים">
               <Download className="w-5 h-5 text-info" />
             </button>
@@ -182,11 +203,20 @@ const StudentProfile = () => {
               );
             })}
           </div>
-          <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
+          <div className="flex gap-4 mt-2 text-xs text-muted-foreground flex-wrap">
             <span>נוצר: {new Date(session.createdAt).toLocaleDateString("he-IL")}</span>
             <span>עדכון: {new Date(session.updatedAt).toLocaleDateString("he-IL")}</span>
             {session.closedAt && <span>נסגר: {new Date(session.closedAt).toLocaleDateString("he-IL")}</span>}
           </div>
+          {reassessmentStatusLabel && (
+            <div className="mt-2 flex items-center gap-2">
+              <RefreshCw className="w-3.5 h-3.5 text-primary" />
+              <span className="text-xs font-medium text-primary">סיכום שנתי: {reassessmentStatusLabel}</span>
+              {session.reassessmentDate && (
+                <span className="text-xs text-muted-foreground">({new Date(session.reassessmentDate).toLocaleDateString("he-IL")})</span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Consent Signature */}
@@ -238,12 +268,24 @@ const StudentProfile = () => {
           </div>
         </div>
 
+        {/* Staff completion */}
+        {Object.keys(session.staffResponses).length > 0 && (
+          <div className="intake-card-soft text-center">
+            <ClipboardList className="w-5 h-5 mx-auto mb-1 text-warning" />
+            <p className="text-xs text-muted-foreground">הערכת צוות</p>
+            <p className="text-xl font-bold">{Object.keys(session.staffResponses).length}/52</p>
+            <div className="w-full h-1.5 bg-muted rounded-full mt-2 overflow-hidden">
+              <div className="h-full bg-warning rounded-full transition-all" style={{ width: `${(Object.keys(session.staffResponses).length / 52) * 100}%` }} />
+            </div>
+          </div>
+        )}
+
         {/* Radar Chart */}
         {(hasStudentData || hasParentData) && (
           <div className="intake-card">
             <h3 className="font-heading font-semibold mb-4 flex items-center gap-2">
               <BarChart3 className="w-5 h-5 text-primary" />
-              פרופיל תלמיד
+              פרופיל תלמיד — תחומים ראשיים
             </h3>
             <ResponsiveContainer width="100%" height={300}>
               <RadarChart data={radarData}>
@@ -258,15 +300,91 @@ const StudentProfile = () => {
           </div>
         )}
 
-        {/* Reassessment Comparison */}
+        {/* QoL Subdomain Breakdown */}
+        {hasStudentData && (
+          <div className="intake-card border-primary/20">
+            <h3 className="font-heading font-semibold mb-4 flex items-center gap-2">
+              <Heart className="w-5 h-5 text-primary" />
+              פירוט מדדי איכות חיים
+            </h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+              {Object.entries(qolSubdomains).map(([key, score]) => (
+                <div key={key} className="p-3 bg-muted/30 rounded-xl text-center">
+                  <p className="text-[10px] text-muted-foreground font-medium mb-1">{QOL_SUBDOMAIN_LABELS[key]}</p>
+                  <p className={`text-lg font-bold ${getScoreColor(score.normalized)}`}>
+                    {score.normalized >= 0 ? score.normalized.toFixed(2) : "—"}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">{getScoreLabel(score.normalized)}</p>
+                  {score.studentNormalized >= 0 && score.parentNormalized >= 0 && (
+                    <p className="text-[9px] text-muted-foreground mt-1">
+                      ת: {score.studentNormalized.toFixed(1)} | ה: {score.parentNormalized.toFixed(1)}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+            {/* Low QoL subdomain alerts */}
+            {Object.entries(qolSubdomains).filter(([, s]) => s.normalized >= 0 && s.normalized < 2.5).length > 0 && (
+              <div className="p-3 bg-warning/10 border border-warning/20 rounded-xl mt-2">
+                <p className="text-xs font-medium text-warning mb-1">⚠ תחומי איכות חיים הדורשים תשומת לב:</p>
+                {Object.entries(qolSubdomains)
+                  .filter(([, s]) => s.normalized >= 0 && s.normalized < 2.5)
+                  .map(([key, s]) => (
+                    <p key={key} className="text-xs text-muted-foreground">• {QOL_SUBDOMAIN_LABELS[key]} ({s.normalized.toFixed(2)})</p>
+                  ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Reassessment QoL Subdomain Comparison */}
+        {reassessmentQoLSubdomains && (
+          <div className="intake-card border-info/20">
+            <h3 className="font-heading font-semibold mb-4 flex items-center gap-2">
+              <RefreshCw className="w-5 h-5 text-info" />
+              השוואת מדדי איכות חיים — קליטה ← סיכום שנתי
+            </h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-xs text-muted-foreground border-b border-border">
+                    <th className="text-right py-2 px-2">תחום</th>
+                    <th className="text-center py-2 px-2">קליטה</th>
+                    <th className="text-center py-2 px-2">סיכום</th>
+                    <th className="text-center py-2 px-2">שינוי</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(qolSubdomains).map(([key, score]) => {
+                    const reassessScore = reassessmentQoLSubdomains[key];
+                    if (!reassessScore || score.normalized < 0 || reassessScore.normalized < 0) return null;
+                    const diff = reassessScore.normalized - score.normalized;
+                    return (
+                      <tr key={key} className="border-b border-border/50">
+                        <td className="py-2 px-2 font-medium text-xs">{QOL_SUBDOMAIN_LABELS[key]}</td>
+                        <td className="py-2 px-2 text-center text-xs">{score.normalized.toFixed(2)}</td>
+                        <td className="py-2 px-2 text-center text-xs">{reassessScore.normalized.toFixed(2)}</td>
+                        <td className={`py-2 px-2 text-center text-xs font-bold ${diff > 0 ? "text-success" : diff < 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                          {diff > 0 ? "+" : ""}{diff.toFixed(2)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Reassessment Comparison - Main Domains */}
         {comparisonData && (
           <div className="intake-card border-primary/20">
             <h3 className="font-heading font-semibold mb-4 flex items-center gap-2">
               <RefreshCw className="w-5 h-5 text-primary" />
               השוואת קליטה ← סיכום שנתי
             </h3>
-            {reassessmentData?.reassessment_date && (
-              <p className="text-xs text-muted-foreground mb-3">תאריך סיכום: {new Date(reassessmentData.reassessment_date).toLocaleDateString("he-IL")}</p>
+            {session.reassessmentDate && (
+              <p className="text-xs text-muted-foreground mb-3">תאריך סיכום: {new Date(session.reassessmentDate).toLocaleDateString("he-IL")}</p>
             )}
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={comparisonData} barGap={4}>
@@ -483,6 +601,32 @@ const StudentProfile = () => {
           />
         )}
 
+        {/* Staff Open Responses */}
+        {Object.values(session.staffOpenResponses).some(v => v) && (
+          <div className="intake-card border-warning/20">
+            <h3 className="font-heading font-semibold mb-3 flex items-center gap-2">
+              <ClipboardList className="w-5 h-5 text-warning" />
+              הערכת צוות חינוכי
+            </h3>
+            <div className="space-y-3">
+              {Object.entries(session.staffOpenResponses).map(([key, val]) => (
+                val ? (
+                  <div key={key} className="p-3 bg-warning/5 rounded-xl">
+                    <p className="text-xs text-warning font-medium mb-1">
+                      {key === "staff_behavioral" ? "תפקוד התנהגותי" :
+                       key === "staff_social" ? "תפקוד חברתי" :
+                       key === "staff_academic" ? "תפקוד לימודי" :
+                       key === "staff_emotional" ? "תפקוד רגשי" :
+                       key === "staff_recommendations" ? "המלצות הצוות" : key}
+                    </p>
+                    <p className="text-sm">{val}</p>
+                  </div>
+                ) : null
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Open-ended Responses */}
         {Object.keys(session.studentOpenResponses).length > 0 && (
           <div className="intake-card">
@@ -539,7 +683,7 @@ const StudentProfile = () => {
           </div>
         </div>
 
-        {/* Close / Reopen / Reassessment */}
+        {/* Close / Reopen / Reassessment / Staff */}
         <div className="flex flex-col gap-3 print:hidden">
           <div className="flex gap-3">
             {session.status !== "completed" ? (
@@ -552,10 +696,14 @@ const StudentProfile = () => {
               </button>
             )}
           </div>
+          <button onClick={() => navigate(`/staff/${session.id}`)}
+            className="btn-intake bg-warning/10 text-warning flex items-center justify-center gap-2 border border-warning/20">
+            <ClipboardList className="w-4 h-4" /> מלא שאלון צוות עבור {session.studentName}
+          </button>
           {(session.status === "completed" || session.status === "under_review") && (
             <button onClick={handleOpenReassessment}
               className="btn-intake bg-accent text-accent-foreground flex items-center justify-center gap-2 border border-primary/20">
-              <RefreshCw className="w-4 h-4" /> פתח סיכום שנתי — מילוי שאלונים חוזר
+              <RefreshCw className="w-4 h-4" /> פתח סיכום שנתי — תלמיד + הורה
             </button>
           )}
         </div>

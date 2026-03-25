@@ -49,6 +49,10 @@ export interface IntakeSession {
   createdAt: string;
   updatedAt: string;
   closedAt?: string;
+  reassessmentStatus?: string;
+  reassessmentStudentResponses?: Record<string, number>;
+  reassessmentParentResponses?: Record<string, number>;
+  reassessmentDate?: string;
 }
 
 export interface DomainScore {
@@ -105,6 +109,17 @@ export const SECTION_LABELS: Record<QuestionnaireSection, string> = {
   self_efficacy: "מסוגלות עצמית",
   locus_of_control: "מיקוד שליטה",
   cognitive_flexibility: "גמישות קוגניטיבית",
+};
+
+export const QOL_SUBDOMAIN_LABELS: Record<string, string> = {
+  general_wellbeing: "רווחה כללית",
+  social: "חברתי",
+  emotional: "רגשי",
+  independence: "עצמאות",
+  academic: "לימודי",
+  health_lifestyle: "בריאות ואורח חיים",
+  family_support: "משפחה ותמיכה",
+  self_view: "תפיסה עצמית",
 };
 
 export const OPEN_QUESTION_KEYS = [

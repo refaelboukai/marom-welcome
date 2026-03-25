@@ -29,6 +29,10 @@ function rowToSession(row: any): IntakeSession {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     closedAt: row.closed_at,
+    reassessmentStatus: row.reassessment_status || "not_started",
+    reassessmentStudentResponses: (row.reassessment_student_responses as Record<string, number>) || {},
+    reassessmentParentResponses: (row.reassessment_parent_responses as Record<string, number>) || {},
+    reassessmentDate: row.reassessment_date,
   };
 }
 
@@ -144,6 +148,10 @@ export async function updateSessionDB(id: string, updates: Partial<IntakeSession
   if (updates.staffResponses !== undefined) dbUpdates.staff_responses = updates.staffResponses;
   if (updates.staffOpenResponses !== undefined) dbUpdates.staff_open_responses = updates.staffOpenResponses;
   if (updates.classGroup !== undefined) dbUpdates.class_group = updates.classGroup;
+  if (updates.reassessmentStatus !== undefined) dbUpdates.reassessment_status = updates.reassessmentStatus;
+  if (updates.reassessmentStudentResponses !== undefined) dbUpdates.reassessment_student_responses = updates.reassessmentStudentResponses;
+  if (updates.reassessmentParentResponses !== undefined) dbUpdates.reassessment_parent_responses = updates.reassessmentParentResponses;
+  if (updates.reassessmentDate !== undefined) dbUpdates.reassessment_date = updates.reassessmentDate;
 
   const { data, error } = await supabase
     .from("intake_sessions")

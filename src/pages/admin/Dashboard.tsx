@@ -8,7 +8,7 @@ import StatusBadge from "@/components/StatusBadge";
 import CodeManagement from "@/components/CodeManagement";
 
 import logo from "@/assets/logo.jpeg";
-import { Plus, Users, AlertTriangle, CheckCircle, Clock, Search, LogOut, XCircle, Loader2, Download, Key, FileText, Copy } from "lucide-react";
+import { Plus, Users, AlertTriangle, CheckCircle, Clock, Search, LogOut, XCircle, Loader2, Download, Key, FileText, Copy, ClipboardList } from "lucide-react";
 import { calculateScores, generateRiskFlags, getCompletionPercentage } from "@/lib/scoring";
 import { exportToExcel } from "@/lib/export-utils";
 import { generateStudentPDF } from "@/lib/pdf-export";
@@ -231,6 +231,9 @@ const Dashboard = () => {
                               <div className="flex gap-1">
                                 <button onClick={() => navigate(`/admin/student/${session.id}`)} className="p-1.5 rounded-lg hover:bg-muted" title="פרופיל">
                                   <Users className="w-3.5 h-3.5" />
+                                </button>
+                                <button onClick={() => navigate(`/staff/${session.id}`)} className="p-1.5 rounded-lg hover:bg-muted" title="שאלון צוות">
+                                  <ClipboardList className="w-3.5 h-3.5 text-warning" />
                                 </button>
                                 <button onClick={() => generateStudentPDF(session, "staff")} className="p-1.5 rounded-lg hover:bg-muted" title="PDF צוות">
                                   <FileText className="w-3.5 h-3.5 text-primary" />

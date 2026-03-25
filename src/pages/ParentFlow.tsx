@@ -14,6 +14,7 @@ const ParentFlow = () => {
   const [session, setSession] = useState<IntakeSession | null>(null);
   const [step, setStep] = useState<Step>("welcome");
   const [loading, setLoading] = useState(true);
+  const [isReassessment, setIsReassessment] = useState(false);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -21,6 +22,18 @@ const ParentFlow = () => {
       setLoading(false);
       if (!s) { navigate("/"); return; }
       setSession(s);
+
+      // Check if this is a reassessment flow
+      const rStatus = s.reassessmentStatus;
+      if (rStatus === "open" || rStatus === "student_completed") {
+        // Parent can fill if reassessment is open or only student completed
+        if (!s.reassessmentParentResponses || Object.keys(s.reassessmentParentResponses).length < 52) {
+          setIsReassessment(true);
+          setStep("welcome");
+          return;
+        }
+      }
+
       if (["parent_completed", "under_review", "completed"].includes(s.status)) {
         setStep("complete");
       } else if (Object.keys(s.parentResponses).length > 0) {
@@ -31,19 +44,30 @@ const ParentFlow = () => {
 
   const handleStart = useCallback(async () => {
     if (!session) return;
+    if (isReassessment) {
+      setStep("questionnaire");
+      return;
+    }
     if (!["parent_started", "parent_completed"].includes(session.status)) {
       await updateSessionDB(session.id, { status: "parent_started" });
       setSession((prev) => prev ? { ...prev, status: "parent_started" } : null);
     }
     setStep("questionnaire");
-  }, [session]);
+  }, [session, isReassessment]);
 
   const handleUpdateResponse = useCallback(async (itemId: string, value: number) => {
     if (!session) return;
+    if (isReassessment) {
+      const current = session.reassessmentParentResponses || {};
+      const updated = { ...current, [itemId]: value };
+      setSession((prev) => prev ? { ...prev, reassessmentParentResponses: updated } : null);
+      await updateSessionDB(session.id, { reassessmentParentResponses: updated });
+      return;
+    }
     const updated = { ...session.parentResponses, [itemId]: value };
     setSession((prev) => prev ? { ...prev, parentResponses: updated } : null);
     await updateSessionDB(session.id, { parentResponses: updated });
-  }, [session]);
+  }, [session, isReassessment]);
 
   const handleUpdateOpenResponse = useCallback(async (key: string, value: string) => {
     if (!session) return;
@@ -53,10 +77,20 @@ const ParentFlow = () => {
 
   const handleComplete = useCallback(async () => {
     if (!session) return;
+    if (isReassessment) {
+      const studentDone = session.reassessmentStatus === "student_completed";
+      const newStatus = studentDone ? "completed" : "parent_completed";
+      await updateSessionDB(session.id, {
+        reassessmentStatus: newStatus,
+        reassessmentDate: new Date().toISOString(),
+      });
+      setStep("complete");
+      return;
+    }
     await updateSessionDB(session.id, { status: "parent_completed" });
     setSession((prev) => prev ? { ...prev, status: "parent_completed" } : null);
     setStep("complete");
-  }, [session]);
+  }, [session, isReassessment]);
 
   const handleSaveAndExit = useCallback(() => { navigate("/"); }, [navigate]);
 
@@ -79,8 +113,14 @@ const ParentFlow = () => {
         <div className="w-full max-w-md md:max-w-lg animate-fade-in text-center">
           <img src={logo} alt="מרום" className="h-16 mx-auto mb-6" />
           <h1 className="text-2xl font-heading font-bold mb-3">שלום, הורה יקר</h1>
+          {isReassessment && (
+            <div className="intake-card border-primary/30 mb-4">
+              <p className="text-sm text-primary font-medium">📋 סיכום שנתי — מילוי שאלונים חוזר</p>
+              <p className="text-xs text-muted-foreground mt-1">השאלונים ישמשו להשוואה עם תוצאות הקליטה ולבדיקת התקדמות {session.studentName}</p>
+            </div>
+          )}
           <p className="text-muted-foreground leading-relaxed mb-2">
-            כחלק מתהליך הקליטה של <strong>{session.studentName}</strong>, נשמח לשמוע את התפיסה שלך בנוגע לתפקוד ילדך.
+            כחלק מ{isReassessment ? "הסיכום השנתי" : "תהליך הקליטה"} של <strong>{session.studentName}</strong>, נשמח לשמוע את התפיסה שלך בנוגע לתפקוד ילדך.
           </p>
           <div className="intake-card mt-6 text-right space-y-2 text-sm text-muted-foreground">
             <p>✓ השאלון קצר וממוקד</p>
@@ -104,7 +144,7 @@ const ParentFlow = () => {
           </div>
           <button onClick={handleStart}
             className="btn-intake w-full bg-primary text-primary-foreground shadow-md hover:shadow-lg text-lg py-4 mt-6">
-            התחל
+            {isReassessment ? "המשך לשאלונים" : "התחל"}
           </button>
         </div>
       </div>
@@ -112,6 +152,7 @@ const ParentFlow = () => {
   }
 
   if (step === "questionnaire") {
+    const responses = isReassessment ? (session.reassessmentParentResponses || {}) : session.parentResponses;
     return (
       <div className="min-h-screen py-6 px-0 sm:px-2 bg-background relative safe-top safe-bottom">
         <button onClick={() => navigate("/")} className="absolute top-4 left-4 z-30 p-2 rounded-xl hover:bg-muted transition-colors" title="התנתק">
@@ -119,8 +160,8 @@ const ParentFlow = () => {
         </button>
         <QuestionnaireFlow
           role="parent"
-          responses={session.parentResponses}
-          openResponses={session.parentOpenResponse ? { parent_comment: session.parentOpenResponse } : {}}
+          responses={responses}
+          openResponses={isReassessment ? {} : (session.parentOpenResponse ? { parent_comment: session.parentOpenResponse } : {})}
           onUpdateResponse={handleUpdateResponse}
           onUpdateOpenResponse={handleUpdateOpenResponse}
           onComplete={handleComplete}
@@ -141,7 +182,9 @@ const ParentFlow = () => {
         </div>
         <h1 className="text-2xl font-heading font-bold mb-3">תודה רבה!</h1>
         <p className="text-muted-foreground leading-relaxed mb-2">
-          תודה על שיתוף הפעולה. המידע שמסרת חשוב לתהליך ההיכרות והתמיכה בתלמיד.
+          {isReassessment
+            ? "תודה על מילוי השאלונים לסיכום השנתי. המידע יעזור לנו לבדוק את ההתקדמות."
+            : "תודה על שיתוף הפעולה. המידע שמסרת חשוב לתהליך ההיכרות והתמיכה בתלמיד."}
         </p>
         <div className="intake-card mt-6">
           <p className="text-sm text-muted-foreground">💚 אנחנו מעריכים את המעורבות שלך</p>
