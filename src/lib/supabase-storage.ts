@@ -29,6 +29,10 @@ function rowToSession(row: any): IntakeSession {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     closedAt: row.closed_at,
+    reassessmentStatus: row.reassessment_status || "not_started",
+    reassessmentStudentResponses: (row.reassessment_student_responses as Record<string, number>) || {},
+    reassessmentParentResponses: (row.reassessment_parent_responses as Record<string, number>) || {},
+    reassessmentDate: row.reassessment_date,
   };
 }
 
