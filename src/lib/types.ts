@@ -49,6 +49,10 @@ export interface IntakeSession {
   createdAt: string;
   updatedAt: string;
   closedAt?: string;
+  reassessmentStatus?: string;
+  reassessmentStudentResponses?: Record<string, number>;
+  reassessmentParentResponses?: Record<string, number>;
+  reassessmentDate?: string;
 }
 
 export interface DomainScore {
