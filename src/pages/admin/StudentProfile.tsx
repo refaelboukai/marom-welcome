@@ -96,6 +96,7 @@ const StudentProfile = () => {
 
   const handleSaveNotes = async () => {
     await updateSessionDB(session.id, { adminNotes: notes });
+    setSession((prev) => prev ? { ...prev, adminNotes: notes } : null);
     setNotesSaved(true);
     setTimeout(() => setNotesSaved(false), 2000);
   };
