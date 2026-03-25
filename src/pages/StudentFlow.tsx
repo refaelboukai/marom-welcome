@@ -55,11 +55,14 @@ const StudentFlow = () => {
       setSession(s);
 
       // Check if this is a reassessment flow
-      const reassessmentStatus = (s as any).reassessmentStatus;
-      if (reassessmentStatus === "open_student" || reassessmentStatus === "open_both") {
-        setIsReassessment(true);
-        setStep("welcome");
-        return;
+      const rStatus = s.reassessmentStatus;
+      if (rStatus === "open" || rStatus === "parent_completed") {
+        // Student can still fill if reassessment is open or only parent completed
+        if (!s.reassessmentStudentResponses || Object.keys(s.reassessmentStudentResponses).length < 52) {
+          setIsReassessment(true);
+          setStep("welcome");
+          return;
+        }
       }
 
       if (["student_completed", "parent_started", "parent_completed", "under_review", "completed"].includes(s.status)) {
@@ -73,7 +76,6 @@ const StudentFlow = () => {
   const handleConsentAndContinue = useCallback(async () => {
     if (!session || !sigCanvasRef.current) return;
     const signatureData = sigCanvasRef.current.toDataURL("image/png");
-    // Save signature to DB
     await (supabase as any).from("intake_sessions").update({
       consent_signature: signatureData,
       consent_date: new Date().toISOString(),
@@ -97,13 +99,10 @@ const StudentFlow = () => {
   const handleUpdateResponse = useCallback(async (itemId: string, value: number) => {
     if (!session) return;
     if (isReassessment) {
-      const current = (session as any).reassessmentStudentResponses || {};
+      const current = session.reassessmentStudentResponses || {};
       const updated = { ...current, [itemId]: value };
-      (session as any).reassessmentStudentResponses = updated;
-      setSession({ ...session });
-      await (supabase as any).from("intake_sessions").update({
-        reassessment_student_responses: updated,
-      }).eq("id", session.id);
+      setSession((prev) => prev ? { ...prev, reassessmentStudentResponses: updated } : null);
+      await updateSessionDB(session.id, { reassessmentStudentResponses: updated });
       return;
     }
     const updated = { ...session.studentResponses, [itemId]: value };
@@ -121,10 +120,13 @@ const StudentFlow = () => {
   const handleComplete = useCallback(async () => {
     if (!session) return;
     if (isReassessment) {
-      await (supabase as any).from("intake_sessions").update({
-        reassessment_status: "student_completed",
-        reassessment_date: new Date().toISOString(),
-      }).eq("id", session.id);
+      // Check if parent already completed reassessment
+      const parentDone = session.reassessmentStatus === "parent_completed";
+      const newStatus = parentDone ? "completed" : "student_completed";
+      await updateSessionDB(session.id, {
+        reassessmentStatus: newStatus,
+        reassessmentDate: new Date().toISOString(),
+      });
       setStep("complete");
       return;
     }
@@ -290,7 +292,7 @@ const StudentFlow = () => {
   }
 
   if (step === "questionnaire") {
-    const responses = isReassessment ? ((session as any).reassessmentStudentResponses || {}) : session.studentResponses;
+    const responses = isReassessment ? (session.reassessmentStudentResponses || {}) : session.studentResponses;
     return (
       <div className="min-h-screen py-6 px-0 sm:px-2 bg-background relative safe-top safe-bottom">
         <button onClick={() => navigate("/")} className="absolute top-4 left-4 z-30 p-2 rounded-xl hover:bg-muted transition-colors" title="התנתק">
@@ -328,7 +330,7 @@ const StudentFlow = () => {
           המידע יעזור לנו להכיר אותך טוב יותר ולתמוך בך בצורה המתאימה.
         </p>
         <div className="intake-card mt-6">
-          <p className="text-sm text-muted-foreground">💚 אנחנו שמחים שאת/ה איתנו</p>
+          <p className="text-sm text-muted-foreground">🌟 אתם חלק חשוב מהתהליך — תודה על השיתוף!</p>
         </div>
         <button onClick={() => navigate("/")} className="btn-intake bg-secondary text-secondary-foreground mt-4">
           חזרה למסך הראשי
