@@ -3,8 +3,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getSessionDB, updateSessionDB } from "@/lib/supabase-storage";
 import { IntakeSession, SECTION_LABELS, OPEN_QUESTION_LABELS, QOL_SUBDOMAIN_LABELS, GASGoal } from "@/lib/types";
 import { calculateScores, calculateQoLSubdomains, generateRiskFlags, generateInsights, generateGASGoals, getScoreLabel, getScoreColor, getTopFocusAreas } from "@/lib/scoring";
+import { DOMAIN_DESCRIPTIONS, QOL_SUBDOMAIN_DESCRIPTIONS, getScoreInterpretation } from "@/lib/domain-descriptions";
 import StatusBadge from "@/components/StatusBadge";
-import { ArrowRight, AlertTriangle, Copy, CheckCircle, Lock, Unlock, FileText, Target, Lightbulb, TrendingUp, Users, Printer, MessageSquare, BarChart3, Shield, Loader2, RefreshCw, Download, PenLine, ScrollText, ClipboardList, Heart } from "lucide-react";
+import { ArrowRight, AlertTriangle, Copy, CheckCircle, Lock, Unlock, FileText, Target, Lightbulb, TrendingUp, Users, Printer, MessageSquare, BarChart3, Shield, Loader2, RefreshCw, Download, PenLine, ScrollText, ClipboardList, Heart, Info } from "lucide-react";
 import SupportPlans from "@/components/SupportPlans";
 import AIRecommendations from "@/components/AIRecommendations";
 import { generateStudentPDF, generatePersonalPlanPDF, PersonalPlanData } from "@/lib/pdf-export";
@@ -31,7 +32,6 @@ const StudentProfile = () => {
     setSession(s);
     setNotes(s.adminNotes || "");
 
-    // Load consent signature
     const { data: raw } = await (supabase as any).from("intake_sessions").select("consent_signature").eq("id", sessionId).maybeSingle();
     if (raw) {
       setConsentSignature(raw.consent_signature);
@@ -56,7 +56,6 @@ const StudentProfile = () => {
   const gasGoals = generateGASGoals(scores);
   const focusAreas = getTopFocusAreas(scores);
 
-  // Reassessment scores
   const hasReassessment = session.reassessmentStudentResponses && Object.keys(session.reassessmentStudentResponses).length > 0;
   const reassessmentScores = hasReassessment
     ? calculateScores(session.reassessmentStudentResponses!, session.reassessmentParentResponses || {})
@@ -75,7 +74,6 @@ const StudentProfile = () => {
   const hasStudentData = scores.qualityOfLife.studentNormalized >= 0;
   const hasParentData = scores.qualityOfLife.parentNormalized >= 0;
 
-  // Timeline data for progress tracking
   const timelineData = reassessmentScores ? [
     { label: SECTION_LABELS.quality_of_life, קליטה: scores.qualityOfLife.studentNormalized >= 0 ? scores.qualityOfLife.studentNormalized : 0, סיכום: reassessmentScores.qualityOfLife.studentNormalized >= 0 ? reassessmentScores.qualityOfLife.studentNormalized : 0 },
     { label: SECTION_LABELS.self_efficacy, קליטה: scores.selfEfficacy.studentNormalized >= 0 ? scores.selfEfficacy.studentNormalized : 0, סיכום: reassessmentScores.selfEfficacy.studentNormalized >= 0 ? reassessmentScores.selfEfficacy.studentNormalized : 0 },
@@ -136,14 +134,12 @@ const StudentProfile = () => {
     { key: "cognitiveFlexibility" as const, label: SECTION_LABELS.cognitive_flexibility, icon: Lightbulb },
   ];
 
-  // Comparison data for bar chart
   const comparisonData = reassessmentScores ? scoreCards.map(({ key, label }) => ({
     name: label,
     קליטה: scores[key].studentNormalized >= 0 ? scores[key].studentNormalized : 0,
     סיכום: reassessmentScores[key].studentNormalized >= 0 ? reassessmentScores[key].studentNormalized : 0,
   })) : null;
 
-  // Reassessment status display
   const reassessmentStatusLabel = (() => {
     switch (session.reassessmentStatus) {
       case "open": return "פתוח — ממתין למילוי";
@@ -157,7 +153,7 @@ const StudentProfile = () => {
   return (
     <div className="min-h-screen bg-background print:bg-white" ref={printRef}>
       {/* Header */}
-      <div className="bg-card border-b border-border px-4 py-3 sticky top-0 z-20 print:static">
+      <div className="bg-card border-b border-border px-4 py-3 sticky top-0 z-20 print:static shadow-sm">
         <div className="max-w-4xl mx-auto flex items-center gap-3">
           <button onClick={() => navigate("/admin")} className="p-2 rounded-lg hover:bg-muted print:hidden">
             <ArrowRight className="w-5 h-5" />
@@ -188,6 +184,18 @@ const StudentProfile = () => {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+        {/* Info Banner */}
+        <div className="flex items-start gap-3 p-4 bg-primary/5 border border-primary/15 rounded-2xl">
+          <Info className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-foreground">פרופיל תלמיד — תכנית אישית</p>
+            <p className="text-xs text-muted-foreground leading-relaxed mt-1">
+              דף זה מציג את תוצאות ההערכה בארבעה מדדים מרכזיים. כל ציון מלווה בפרשנות מילולית המסבירה את המשמעות ואת ההמלצות הנגזרות.
+              סולם הציונים: 1–5 (1 = נמוך, 5 = גבוה).
+            </p>
+          </div>
+        </div>
+
         {/* Status Timeline */}
         <div className="intake-card-soft">
           <h3 className="font-heading font-semibold mb-3 text-sm">מעקב תהליך</h3>
@@ -235,13 +243,19 @@ const StudentProfile = () => {
         {/* Codes */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 print:hidden">
           <div className="intake-card-soft flex items-center justify-between">
-            <div><p className="text-xs text-muted-foreground">קוד תלמיד</p><p className="font-mono font-bold text-sm" dir="ltr">{session.studentCode}</p></div>
+            <div>
+              <p className="text-xs text-muted-foreground">קוד תלמיד</p>
+              <p className="font-mono font-bold text-sm" dir="ltr">{session.studentCode}</p>
+            </div>
             <button onClick={() => handleCopy(session.studentCode, "student")} className="p-2 rounded-lg hover:bg-muted">
               {copied === "student" ? <CheckCircle className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4 text-muted-foreground" />}
             </button>
           </div>
           <div className="intake-card-soft flex items-center justify-between">
-            <div><p className="text-xs text-muted-foreground">קוד הורה</p><p className="font-mono font-bold text-sm" dir="ltr">{session.parentCode}</p></div>
+            <div>
+              <p className="text-xs text-muted-foreground">קוד הורה</p>
+              <p className="font-mono font-bold text-sm" dir="ltr">{session.parentCode}</p>
+            </div>
             <button onClick={() => handleCopy(session.parentCode, "parent")} className="p-2 rounded-lg hover:bg-muted">
               {copied === "parent" ? <CheckCircle className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4 text-muted-foreground" />}
             </button>
@@ -283,10 +297,13 @@ const StudentProfile = () => {
         {/* Radar Chart */}
         {(hasStudentData || hasParentData) && (
           <div className="intake-card">
-            <h3 className="font-heading font-semibold mb-4 flex items-center gap-2">
+            <h3 className="font-heading font-semibold mb-2 flex items-center gap-2">
               <BarChart3 className="w-5 h-5 text-primary" />
               פרופיל תלמיד — תחומים ראשיים
             </h3>
+            <p className="text-xs text-muted-foreground mb-4">
+              הגרף מציג את הציונים בארבעת המדדים המרכזיים. ככל שהנקודה קרובה יותר לקצה — הציון גבוה יותר (סולם 1–5).
+            </p>
             <ResponsiveContainer width="100%" height={300}>
               <RadarChart data={radarData}>
                 <PolarGrid stroke="hsl(var(--border))" />
@@ -300,21 +317,87 @@ const StudentProfile = () => {
           </div>
         )}
 
+        {/* Main Score Cards WITH verbal descriptions */}
+        <div className="space-y-4">
+          <h3 className="font-heading font-semibold text-base flex items-center gap-2">
+            <Target className="w-5 h-5 text-primary" />
+            ציוני המדדים — עם פרשנות מילולית
+          </h3>
+          {scoreCards.map(({ key, label, icon: Icon }) => {
+            const s = scores[key];
+            const desc = DOMAIN_DESCRIPTIONS[key];
+            return (
+              <div key={key} className="intake-card border-primary/10">
+                <div className="flex items-start gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Icon className="w-7 h-7 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <h4 className="font-heading font-semibold text-sm">{label}</h4>
+                      <span className={`text-2xl font-bold ${getScoreColor(s.normalized)}`}>
+                        {s.normalized >= 0 ? s.normalized.toFixed(2) : "—"}
+                      </span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                        s.normalized >= 4 ? "bg-success/15 text-success" :
+                        s.normalized >= 3 ? "bg-primary/10 text-primary" :
+                        s.normalized >= 2 ? "bg-warning/15 text-warning" :
+                        s.normalized >= 0 ? "bg-destructive/15 text-destructive" :
+                        "bg-muted text-muted-foreground"
+                      }`}>
+                        {getScoreLabel(s.normalized)}
+                      </span>
+                    </div>
+                    {/* Verbal description */}
+                    <p className="text-xs text-muted-foreground leading-relaxed mt-2">
+                      {desc?.description}
+                    </p>
+                    {/* Score interpretation */}
+                    <p className="text-xs font-medium mt-1.5 leading-relaxed" style={{ color: s.normalized >= 4 ? 'hsl(var(--success))' : s.normalized >= 3 ? 'hsl(var(--primary))' : s.normalized >= 2 ? 'hsl(var(--warning))' : s.normalized >= 0 ? 'hsl(var(--destructive))' : 'hsl(var(--muted-foreground))' }}>
+                      {getScoreInterpretation(s.normalized, key)}
+                    </p>
+                    {/* Student vs Parent */}
+                    {s.studentNormalized >= 0 && s.parentNormalized >= 0 && (
+                      <div className="flex gap-4 mt-2 text-[11px] text-muted-foreground">
+                        <span>תלמיד: <strong>{s.studentNormalized.toFixed(2)}</strong></span>
+                        <span>הורה: <strong>{s.parentNormalized.toFixed(2)}</strong></span>
+                        <span className={Math.abs(s.studentNormalized - s.parentNormalized) > 1.0 ? "text-warning font-semibold" : ""}>
+                          פער: {Math.abs(s.studentNormalized - s.parentNormalized).toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
         {/* QoL Subdomain Breakdown */}
         {hasStudentData && (
           <div className="intake-card border-primary/20">
-            <h3 className="font-heading font-semibold mb-4 flex items-center gap-2">
+            <h3 className="font-heading font-semibold mb-2 flex items-center gap-2">
               <Heart className="w-5 h-5 text-primary" />
               פירוט מדדי איכות חיים
             </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+            <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
+              מדד איכות החיים מורכב משמונה תחומים. כל תחום נבדק בנפרד כדי לאפשר הבנה מעמיקה של תפקוד התלמיד.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
               {Object.entries(qolSubdomains).map(([key, score]) => (
-                <div key={key} className="p-3 bg-muted/30 rounded-xl text-center">
-                  <p className="text-[10px] text-muted-foreground font-medium mb-1">{QOL_SUBDOMAIN_LABELS[key]}</p>
-                  <p className={`text-lg font-bold ${getScoreColor(score.normalized)}`}>
-                    {score.normalized >= 0 ? score.normalized.toFixed(2) : "—"}
+                <div key={key} className="p-3 bg-muted/30 rounded-xl">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-xs font-semibold">{QOL_SUBDOMAIN_LABELS[key]}</p>
+                    <span className={`text-lg font-bold ${getScoreColor(score.normalized)}`}>
+                      {score.normalized >= 0 ? score.normalized.toFixed(2) : "—"}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground leading-relaxed">
+                    {QOL_SUBDOMAIN_DESCRIPTIONS[key]}
                   </p>
-                  <p className="text-[10px] text-muted-foreground">{getScoreLabel(score.normalized)}</p>
+                  <p className="text-[10px] mt-1 font-medium" style={{ color: score.normalized >= 4 ? 'hsl(var(--success))' : score.normalized >= 3 ? 'hsl(var(--primary))' : score.normalized >= 2 ? 'hsl(var(--warning))' : score.normalized >= 0 ? 'hsl(var(--destructive))' : 'hsl(var(--muted-foreground))' }}>
+                    {getScoreLabel(score.normalized)}
+                  </p>
                   {score.studentNormalized >= 0 && score.parentNormalized >= 0 && (
                     <p className="text-[9px] text-muted-foreground mt-1">
                       ת: {score.studentNormalized.toFixed(1)} | ה: {score.parentNormalized.toFixed(1)}
@@ -330,7 +413,7 @@ const StudentProfile = () => {
                 {Object.entries(qolSubdomains)
                   .filter(([, s]) => s.normalized >= 0 && s.normalized < 2.5)
                   .map(([key, s]) => (
-                    <p key={key} className="text-xs text-muted-foreground">• {QOL_SUBDOMAIN_LABELS[key]} ({s.normalized.toFixed(2)})</p>
+                    <p key={key} className="text-xs text-muted-foreground">• {QOL_SUBDOMAIN_LABELS[key]} ({s.normalized.toFixed(2)}) — {QOL_SUBDOMAIN_DESCRIPTIONS[key]}</p>
                   ))}
               </div>
             )}
@@ -340,10 +423,13 @@ const StudentProfile = () => {
         {/* Reassessment QoL Subdomain Comparison */}
         {reassessmentQoLSubdomains && (
           <div className="intake-card border-info/20">
-            <h3 className="font-heading font-semibold mb-4 flex items-center gap-2">
+            <h3 className="font-heading font-semibold mb-2 flex items-center gap-2">
               <RefreshCw className="w-5 h-5 text-info" />
               השוואת מדדי איכות חיים — קליטה ← סיכום שנתי
             </h3>
+            <p className="text-xs text-muted-foreground mb-3">
+              הטבלה משווה את הציונים מתחילת השנה לסוף השנה. שינוי חיובי מעיד על שיפור.
+            </p>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -379,7 +465,7 @@ const StudentProfile = () => {
         {/* Reassessment Comparison - Main Domains */}
         {comparisonData && (
           <div className="intake-card border-primary/20">
-            <h3 className="font-heading font-semibold mb-4 flex items-center gap-2">
+            <h3 className="font-heading font-semibold mb-2 flex items-center gap-2">
               <RefreshCw className="w-5 h-5 text-primary" />
               השוואת קליטה ← סיכום שנתי
             </h3>
@@ -400,7 +486,6 @@ const StudentProfile = () => {
               <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-[hsl(200,60%,50%)]" /> קליטה</span>
               <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-[hsl(165,35%,42%)]" /> סיכום שנתי</span>
             </div>
-            {/* Score changes */}
             <div className="grid grid-cols-2 gap-2 mt-4">
               {scoreCards.map(({ key, label }) => {
                 const initial = scores[key].studentNormalized;
@@ -423,10 +508,13 @@ const StudentProfile = () => {
         {/* Progress Timeline */}
         {timelineData && (
           <div className="intake-card border-info/20">
-            <h3 className="font-heading font-semibold mb-4 flex items-center gap-2">
+            <h3 className="font-heading font-semibold mb-2 flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-info" />
               ציר התקדמות — קליטה ← סיכום שנתי
             </h3>
+            <p className="text-xs text-muted-foreground mb-3">
+              הגרף מציג את ההתקדמות בין שתי נקודות המדידה לאורך השנה.
+            </p>
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={timelineData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -441,33 +529,16 @@ const StudentProfile = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-3">
-          {scoreCards.map(({ key, label, icon: Icon }) => {
-            const s = scores[key];
-            return (
-              <div key={key} className="intake-card-soft text-center">
-                <Icon className="w-5 h-5 mx-auto mb-1 text-primary/60" />
-                <p className="text-xs text-muted-foreground mb-1">{label}</p>
-                <p className={`text-2xl font-bold ${getScoreColor(s.normalized)}`}>{s.normalized >= 0 ? s.normalized.toFixed(2) : "—"}</p>
-                <p className="text-xs text-muted-foreground">{getScoreLabel(s.normalized)}</p>
-                {s.studentNormalized >= 0 && s.parentNormalized >= 0 && (
-                  <div className="mt-2 text-[10px] text-muted-foreground space-y-0.5">
-                    <p>תלמיד: {s.studentNormalized.toFixed(2)} | הורה: {s.parentNormalized.toFixed(2)}</p>
-                    <p className={Math.abs(s.studentNormalized - s.parentNormalized) > 1.0 ? "text-warning font-medium" : ""}>פער: {Math.abs(s.studentNormalized - s.parentNormalized).toFixed(2)}</p>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
         {/* Discrepancy Table */}
         {hasStudentData && hasParentData && (
           <div className="intake-card">
-            <h3 className="font-heading font-semibold mb-3 flex items-center gap-2">
+            <h3 className="font-heading font-semibold mb-2 flex items-center gap-2">
               <Users className="w-5 h-5 text-info" />
               השוואת תלמיד-הורה
             </h3>
+            <p className="text-xs text-muted-foreground mb-3">
+              פער גדול בין תפיסת התלמיד להורה (מעל 1.0) מומלץ לבירור בשיח משותף.
+            </p>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -507,18 +578,21 @@ const StudentProfile = () => {
             {insights.strengths.length > 0 && (
               <div className="intake-card border-success/20">
                 <h3 className="font-heading font-semibold mb-2 flex items-center gap-2 text-success"><TrendingUp className="w-5 h-5" />חוזקות</h3>
+                <p className="text-xs text-muted-foreground mb-2">תחומים שבהם התלמיד מפגין ציונים גבוהים ויכולות שניתן לבנות עליהן.</p>
                 <ul className="space-y-1">{insights.strengths.map((s, i) => (<li key={i} className="text-sm text-muted-foreground flex items-start gap-2"><span className="text-success mt-0.5">•</span>{s}</li>))}</ul>
               </div>
             )}
             {insights.areasForSupport.length > 0 && (
               <div className="intake-card border-warning/20">
                 <h3 className="font-heading font-semibold mb-2 flex items-center gap-2 text-warning"><Target className="w-5 h-5" />תחומים לקידום</h3>
+                <p className="text-xs text-muted-foreground mb-2">תחומים שבהם מומלץ לבנות תכנית ליווי ותמיכה מותאמת.</p>
                 <ul className="space-y-1">{insights.areasForSupport.map((s, i) => (<li key={i} className="text-sm text-muted-foreground flex items-start gap-2"><span className="text-warning mt-0.5">•</span>{s}</li>))}</ul>
               </div>
             )}
             {insights.discrepancies.length > 0 && (
               <div className="intake-card border-info/20">
                 <h3 className="font-heading font-semibold mb-2 flex items-center gap-2 text-info"><Users className="w-5 h-5" />פערים בין דיווחים</h3>
+                <p className="text-xs text-muted-foreground mb-2">פערים בין תפיסת התלמיד לתפיסת ההורה. מומלץ לבחון בשיח משותף.</p>
                 <ul className="space-y-1">{insights.discrepancies.map((s, i) => (<li key={i} className="text-sm text-muted-foreground flex items-start gap-2"><span className="text-info mt-0.5">•</span>{s}</li>))}</ul>
               </div>
             )}
@@ -535,6 +609,7 @@ const StudentProfile = () => {
             {focusAreas.length > 0 && (
               <div className="intake-card-soft border-primary/30">
                 <h3 className="font-heading font-semibold mb-2 text-sm">תחומי מיקוד מומלצים (Top 3)</h3>
+                <p className="text-xs text-muted-foreground mb-2">תחומים בעלי הציון הנמוך ביותר — יש להם עדיפות בתכנית האישית.</p>
                 <div className="flex flex-wrap gap-2">
                   {focusAreas.map((area, i) => (
                     <span key={i} className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-primary/10 text-primary">{i + 1}. {area}</span>
@@ -548,7 +623,10 @@ const StudentProfile = () => {
         {/* Risk Flags */}
         {riskFlags.length > 0 && (
           <div className="intake-card border-warning/30">
-            <h3 className="font-heading font-semibold mb-3 flex items-center gap-2"><AlertTriangle className="w-5 h-5 text-warning" />דגלי זהירות</h3>
+            <h3 className="font-heading font-semibold mb-2 flex items-center gap-2"><AlertTriangle className="w-5 h-5 text-warning" />דגלי זהירות</h3>
+            <p className="text-xs text-muted-foreground mb-3">
+              דגלים אלה מזהים דפוסים או ציונים הדורשים תשומת לב. מומלץ לשוחח עם התלמיד וההורים.
+            </p>
             <div className="space-y-2">
               {riskFlags.map((flag, i) => (
                 <div key={i} className={`p-3 rounded-xl text-sm ${flag.severity === "urgent" ? "bg-destructive/10 border border-destructive/20" : flag.severity === "concern" ? "bg-warning/10 border border-warning/20" : "bg-accent border border-accent"}`}>
@@ -568,7 +646,10 @@ const StudentProfile = () => {
         {/* GAS Goals */}
         {gasGoals.length > 0 && (
           <div className="intake-card">
-            <h3 className="font-heading font-semibold mb-3 flex items-center gap-2"><Target className="w-5 h-5 text-primary" />יעדי GAS מוצעים</h3>
+            <h3 className="font-heading font-semibold mb-2 flex items-center gap-2"><Target className="w-5 h-5 text-primary" />יעדי GAS מוצעים</h3>
+            <p className="text-xs text-muted-foreground mb-3">
+              יעדים מבוססי GAS (Goal Attainment Scaling) — סולם מדורג להערכת התקדמות. כל יעד מציג את המצב הנוכחי ושלוש רמות התקדמות צפויות.
+            </p>
             <div className="space-y-4">
               {gasGoals.map((goal) => (
                 <div key={goal.id} className="p-4 bg-muted/30 rounded-xl space-y-2">
@@ -655,22 +736,23 @@ const StudentProfile = () => {
         {/* PDF Export Buttons */}
         <div className="grid grid-cols-3 gap-3 print:hidden">
           <button onClick={() => generateStudentPDF(session, "parent")}
-            className="btn-intake bg-info/10 text-info text-sm flex items-center justify-center gap-2">
+            className="btn-intake bg-info/10 text-info text-sm flex items-center justify-center gap-2 hover:bg-info/20 transition-colors">
             <Download className="w-4 h-4" /> PDF להורים
           </button>
           <button onClick={() => generateStudentPDF(session, "staff")}
-            className="btn-intake bg-primary/10 text-primary text-sm flex items-center justify-center gap-2">
+            className="btn-intake bg-primary/10 text-primary text-sm flex items-center justify-center gap-2 hover:bg-primary/20 transition-colors">
             <FileText className="w-4 h-4" /> PDF לצוות
           </button>
           <button onClick={handleExportPersonalPlan}
-            className="btn-intake bg-success/10 text-success text-sm flex items-center justify-center gap-2">
+            className="btn-intake bg-success/10 text-success text-sm flex items-center justify-center gap-2 hover:bg-success/20 transition-colors">
             <ScrollText className="w-4 h-4" /> תכנית אישית
           </button>
         </div>
 
         {/* Admin Notes */}
         <div className="intake-card print:hidden">
-          <h3 className="font-heading font-semibold mb-3">הערות צוות</h3>
+          <h3 className="font-heading font-semibold mb-2">הערות צוות</h3>
+          <p className="text-xs text-muted-foreground mb-3">הערות פנימיות — גלויות רק לצוות המנהל ולא מופיעות ב-PDF.</p>
           <textarea
             className="w-full bg-background border border-input rounded-xl p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
             rows={4} value={notes}
@@ -697,12 +779,12 @@ const StudentProfile = () => {
             )}
           </div>
           <button onClick={() => navigate(`/staff/${session.id}`)}
-            className="btn-intake bg-warning/10 text-warning flex items-center justify-center gap-2 border border-warning/20">
+            className="btn-intake bg-warning/10 text-warning flex items-center justify-center gap-2 border border-warning/20 hover:bg-warning/20 transition-colors">
             <ClipboardList className="w-4 h-4" /> מלא שאלון צוות עבור {session.studentName}
           </button>
           {(session.status === "completed" || session.status === "under_review") && (
             <button onClick={handleOpenReassessment}
-              className="btn-intake bg-accent text-accent-foreground flex items-center justify-center gap-2 border border-primary/20">
+              className="btn-intake bg-accent text-accent-foreground flex items-center justify-center gap-2 border border-primary/20 hover:bg-accent/80 transition-colors">
               <RefreshCw className="w-4 h-4" /> פתח סיכום שנתי — תלמיד + הורה
             </button>
           )}
