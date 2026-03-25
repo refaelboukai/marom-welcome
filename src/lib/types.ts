@@ -36,6 +36,7 @@ export interface IntakeSession {
   parentCode: string;
   staffCode?: string;
   classGroup?: string;
+  academicYear?: string;
   status: IntakeStatus;
   studentResponses: Record<string, number>;
   studentOpenResponses: Record<string, string>;

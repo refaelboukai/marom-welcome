@@ -18,6 +18,7 @@ function rowToSession(row: any): IntakeSession {
     parentCode: row.parent_code,
     staffCode: row.staff_code,
     classGroup: row.class_group || "",
+    academicYear: row.academic_year || 'תשפ"ו',
     status: row.status as IntakeStatus,
     studentResponses: (row.student_responses as Record<string, number>) || {},
     studentOpenResponses: (row.student_open_responses as Record<string, string>) || {},
@@ -148,6 +149,7 @@ export async function updateSessionDB(id: string, updates: Partial<IntakeSession
   if (updates.staffResponses !== undefined) dbUpdates.staff_responses = updates.staffResponses;
   if (updates.staffOpenResponses !== undefined) dbUpdates.staff_open_responses = updates.staffOpenResponses;
   if (updates.classGroup !== undefined) dbUpdates.class_group = updates.classGroup;
+  if (updates.academicYear !== undefined) dbUpdates.academic_year = updates.academicYear;
   if (updates.reassessmentStatus !== undefined) dbUpdates.reassessment_status = updates.reassessmentStatus;
   if (updates.reassessmentStudentResponses !== undefined) dbUpdates.reassessment_student_responses = updates.reassessmentStudentResponses;
   if (updates.reassessmentParentResponses !== undefined) dbUpdates.reassessment_parent_responses = updates.reassessmentParentResponses;
@@ -181,6 +183,7 @@ export async function createSessionDB(data: Partial<IntakeSession>): Promise<Int
     parent_code: generateCode(),
     staff_code: generateCode(),
     class_group: data.classGroup || "",
+    academic_year: data.academicYear || 'תשפ"ו',
     status: "not_started",
   };
 

@@ -8,12 +8,14 @@ import StatusBadge from "@/components/StatusBadge";
 import CodeManagement from "@/components/CodeManagement";
 
 import logo from "@/assets/logo.jpeg";
-import { Plus, Users, AlertTriangle, CheckCircle, Clock, Search, LogOut, XCircle, Loader2, Download, Key, FileText, Copy, ClipboardList, Trash2, ShieldAlert } from "lucide-react";
+import { Plus, Users, AlertTriangle, CheckCircle, Clock, Search, LogOut, XCircle, Loader2, Download, Key, FileText, Copy, ClipboardList, Trash2, ShieldAlert, Calendar } from "lucide-react";
 import { calculateScores, generateRiskFlags, getCompletionPercentage } from "@/lib/scoring";
 import { exportToExcel } from "@/lib/export-utils";
 import { generateStudentPDF } from "@/lib/pdf-export";
 
 type Tab = "all" | "tali" | "eden" | "codes";
+
+const ACADEMIC_YEARS = ['תשפ"ו', 'תשפ"ז', 'תשפ"ח', 'תשפ"ט'];
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -24,6 +26,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>("all");
   const [copied, setCopied] = useState<string | null>(null);
+  const [selectedYear, setSelectedYear] = useState<string>('תשפ"ו');
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [resetPassword, setResetPassword] = useState("");
   const [resetError, setResetError] = useState("");
@@ -32,15 +35,19 @@ const Dashboard = () => {
     getSessionsDB().then((data) => { setSessions(data); setLoading(false); });
   }, []);
 
+  const sessionsForYear = useMemo(() => {
+    return sessions.filter((s) => (s.academicYear || 'תשפ"ו') === selectedYear);
+  }, [sessions, selectedYear]);
+
   const sessionsWithMeta = useMemo(() => {
-    return sessions.map((s) => {
+    return sessionsForYear.map((s) => {
       const scores = calculateScores(s.studentResponses, s.parentResponses);
       const riskFlags = generateRiskFlags(scores);
       const studentCompletion = getCompletionPercentage(s.studentResponses, questionnaireItems.length);
       const parentCompletion = getCompletionPercentage(s.parentResponses, questionnaireItems.length);
       return { ...s, scores, riskFlags, studentCompletion, parentCompletion };
     });
-  }, [sessions]);
+  }, [sessionsForYear]);
 
   const filtered = useMemo(() => {
     return sessionsWithMeta.filter((s) => {
@@ -129,6 +136,24 @@ const Dashboard = () => {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-6">
+        {/* Year Selector */}
+        <div className="flex items-center gap-2 mb-5">
+          <Calendar className="w-4 h-4 text-primary" />
+          <span className="text-sm font-medium text-muted-foreground">שנת לימודים:</span>
+          <div className="flex gap-1">
+            {ACADEMIC_YEARS.map((year) => (
+              <button key={year} onClick={() => setSelectedYear(year)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  selectedYear === year
+                    ? "bg-primary text-primary-foreground shadow-md"
+                    : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                }`}>
+                {year}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           {[

@@ -14,6 +14,7 @@ const NewIntake = () => {
     parentPhone: "",
     secondParentName: "",
     classGroup: "",
+    academicYear: 'תשפ"ו',
     notes: "",
   });
   const [created, setCreated] = useState<{ studentCode: string; parentCode: string } | null>(null);
@@ -76,7 +77,7 @@ const NewIntake = () => {
               <button
                 onClick={() => {
                   setCreated(null);
-                  setForm({ studentName: "", studentIdNumber: "", grade: "", intakeDate: new Date().toISOString().split("T")[0], parentName: "", parentPhone: "", secondParentName: "", classGroup: "", notes: "" });
+                  setForm({ studentName: "", studentIdNumber: "", grade: "", intakeDate: new Date().toISOString().split("T")[0], parentName: "", parentPhone: "", secondParentName: "", classGroup: "", academicYear: 'תשפ"ו', notes: "" });
                 }}
                 className="btn-intake bg-secondary text-secondary-foreground flex-1"
               >
@@ -137,6 +138,18 @@ const NewIntake = () => {
               <option value="">ללא שיוך</option>
               <option value="tali">הכיתה של טלי</option>
               <option value="eden">הכיתה של עדן</option>
+            </select>
+          </div>
+
+          {/* Academic year selector */}
+          <div>
+            <label className="block text-sm font-medium mb-1.5">שנת לימודים</label>
+            <select value={form.academicYear} onChange={(e) => updateField("academicYear", e.target.value)}
+              className="w-full bg-card border border-input rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+              <option value='תשפ"ו'>תשפ״ו</option>
+              <option value='תשפ"ז'>תשפ״ז</option>
+              <option value='תשפ"ח'>תשפ״ח</option>
+              <option value='תשפ"ט'>תשפ״ט</option>
             </select>
           </div>
 
