@@ -310,6 +310,42 @@ const Dashboard = () => {
           </>
         )}
       </div>
+
+      {/* Reset Dialog */}
+      {showResetDialog && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowResetDialog(false)}>
+          <div className="bg-card rounded-2xl shadow-xl max-w-sm w-full p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3 text-destructive">
+              <ShieldAlert className="w-8 h-8" />
+              <h2 className="text-lg font-heading font-bold">איפוס כל הנתונים</h2>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              פעולה זו תמחק את כל נתוני השאלונים, תשובות התלמידים וההורים, ותאתחל את המערכת מחדש.
+              <strong className="text-destructive block mt-1">פעולה זו אינה הפיכה!</strong>
+            </p>
+            <div>
+              <label className="block text-sm font-medium mb-1">הזן סיסמת מנהל לאישור:</label>
+              <input
+                type="password"
+                value={resetPassword}
+                onChange={(e) => { setResetPassword(e.target.value); setResetError(""); }}
+                className="w-full bg-background border border-input rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                placeholder="סיסמת מנהל"
+                dir="ltr"
+              />
+              {resetError && <p className="text-xs text-destructive mt-1">{resetError}</p>}
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => setShowResetDialog(false)} className="btn-intake bg-muted text-muted-foreground flex-1">ביטול</button>
+              <button onClick={handleReset} disabled={resetting || !resetPassword}
+                className="btn-intake bg-destructive text-destructive-foreground flex-1 disabled:opacity-50">
+                {resetting ? <Loader2 className="w-4 h-4 animate-spin inline ml-1" /> : <Trash2 className="w-4 h-4 inline ml-1" />}
+                אפס הכל
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
