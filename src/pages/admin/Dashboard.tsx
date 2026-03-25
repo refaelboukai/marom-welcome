@@ -136,6 +136,24 @@ const Dashboard = () => {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-6">
+        {/* Year Selector */}
+        <div className="flex items-center gap-2 mb-5">
+          <Calendar className="w-4 h-4 text-primary" />
+          <span className="text-sm font-medium text-muted-foreground">שנת לימודים:</span>
+          <div className="flex gap-1">
+            {ACADEMIC_YEARS.map((year) => (
+              <button key={year} onClick={() => setSelectedYear(year)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  selectedYear === year
+                    ? "bg-primary text-primary-foreground shadow-md"
+                    : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                }`}>
+                {year}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           {[
