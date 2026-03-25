@@ -360,6 +360,39 @@ function buildPersonalPlanHTML(session: IntakeSession, planData: PersonalPlanDat
       </div>`;
   }
 
+  // Staff open responses in personal plan
+  const staffLabels2: Record<string, string> = {
+    staff_behavioral: "תפקוד התנהגותי",
+    staff_social: "תפקוד חברתי",
+    staff_academic: "תפקוד לימודי",
+    staff_emotional: "תפקוד רגשי",
+    staff_recommendations: "המלצות הצוות",
+  };
+  const staffEntries2 = Object.entries(session.staffOpenResponses || {}).filter(([, v]) => v);
+  if (staffEntries2.length > 0) {
+    html += `
+      <div data-section style="margin-bottom: 20px;">
+        <h2 style="font-size: 15px; font-weight: 700; margin: 0 0 8px 0;">📋 הערכת צוות חינוכי</h2>
+        ${staffEntries2.map(([k, v]) => `
+          <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 14px; margin-bottom: 8px;">
+            <p style="font-size: 11px; color: #92400e; margin: 0 0 2px 0; font-weight: 600;">${staffLabels2[k] || k}</p>
+            <p style="font-size: 13px; margin: 0; color: #333;">${v}</p>
+          </div>
+        `).join("")}
+      </div>`;
+  }
+
+  // Admin notes in personal plan
+  if (session.adminNotes) {
+    html += `
+      <div data-section style="margin-bottom: 20px;">
+        <h2 style="font-size: 15px; font-weight: 700; margin: 0 0 8px 0;">📝 הערות צוות</h2>
+        <div style="background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px 14px;">
+          <p style="font-size: 13px; margin: 0; color: #333; white-space: pre-line;">${session.adminNotes}</p>
+        </div>
+      </div>`;
+  }
+
   const openEntries = Object.entries(session.studentOpenResponses).filter(([, v]) => v);
   if (openEntries.length > 0) {
     const labels: Record<string, string> = {
