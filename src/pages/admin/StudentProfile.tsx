@@ -757,7 +757,7 @@ const StudentProfile = () => {
         {/* Admin Notes */}
         <div className="intake-card print:hidden">
           <h3 className="font-heading font-semibold mb-2">הערות צוות</h3>
-          <p className="text-xs text-muted-foreground mb-3">הערות פנימיות — גלויות רק לצוות המנהל ולא מופיעות ב-PDF.</p>
+          <p className="text-xs text-muted-foreground mb-3">הערות פנימיות — מופיעות בדוח הצוות ובתכנית האישית.</p>
           <textarea
             className="w-full bg-background border border-input rounded-xl p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
             rows={4} value={notes}
