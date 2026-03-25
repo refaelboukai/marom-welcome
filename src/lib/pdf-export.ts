@@ -2,6 +2,7 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { IntakeSession, SECTION_LABELS, QOL_SUBDOMAIN_LABELS } from "@/lib/types";
 import { calculateScores, calculateQoLSubdomains, generateRiskFlags, generateInsights, generateGASGoals, getScoreLabel, getTopFocusAreas } from "@/lib/scoring";
+import { DOMAIN_DESCRIPTIONS, QOL_SUBDOMAIN_DESCRIPTIONS, getScoreInterpretation } from "@/lib/domain-descriptions";
 
 function buildReportHTML(session: IntakeSession, target: "staff" | "parent"): string {
   const scores = calculateScores(session.studentResponses, session.parentResponses);
