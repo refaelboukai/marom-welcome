@@ -11,7 +11,7 @@ const LikertScale = ({ value, onChange, questionText, questionNumber }: LikertSc
   return (
     <div className="intake-card-soft animate-fade-in mb-3">
       <p className="text-sm sm:text-base font-medium mb-3 sm:mb-4 leading-relaxed">
-        <span className="text-muted-foreground ml-2">{questionNumber}.</span>
+        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold ml-2">{questionNumber}</span>
         {questionText}
       </p>
       <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
@@ -29,6 +29,9 @@ const LikertScale = ({ value, onChange, questionText, questionNumber }: LikertSc
           </button>
         ))}
       </div>
+      {value != null && (
+        <p className="text-[10px] text-success mt-1.5 text-center">✓ נשמר</p>
+      )}
     </div>
   );
 };
