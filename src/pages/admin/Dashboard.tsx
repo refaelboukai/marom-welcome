@@ -1,14 +1,14 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { getSessionsDB } from "@/lib/supabase-storage";
+import { getSessionsDB, resetAllSessionsDB } from "@/lib/supabase-storage";
 import { IntakeSession, IntakeStatus } from "@/lib/types";
 import { questionnaireItems } from "@/data/questionnaires";
-import { CLASS_GROUPS } from "@/data/students";
+import { CLASS_GROUPS, ADMIN_CODE } from "@/data/students";
 import StatusBadge from "@/components/StatusBadge";
 import CodeManagement from "@/components/CodeManagement";
 
 import logo from "@/assets/logo.jpeg";
-import { Plus, Users, AlertTriangle, CheckCircle, Clock, Search, LogOut, XCircle, Loader2, Download, Key, FileText, Copy, ClipboardList } from "lucide-react";
+import { Plus, Users, AlertTriangle, CheckCircle, Clock, Search, LogOut, XCircle, Loader2, Download, Key, FileText, Copy, ClipboardList, Trash2, ShieldAlert } from "lucide-react";
 import { calculateScores, generateRiskFlags, getCompletionPercentage } from "@/lib/scoring";
 import { exportToExcel } from "@/lib/export-utils";
 import { generateStudentPDF } from "@/lib/pdf-export";
@@ -24,7 +24,10 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>("all");
   const [copied, setCopied] = useState<string | null>(null);
-
+  const [showResetDialog, setShowResetDialog] = useState(false);
+  const [resetPassword, setResetPassword] = useState("");
+  const [resetError, setResetError] = useState("");
+  const [resetting, setResetting] = useState(false);
   useEffect(() => {
     getSessionsDB().then((data) => { setSessions(data); setLoading(false); });
   }, []);
@@ -70,6 +73,25 @@ const Dashboard = () => {
     const classSessions = sessions.filter((s) => s.classGroup === classKey);
     const label = classKey === "tali" ? "הכיתה_של_טלי" : "הכיתה_של_עדן";
     exportToExcel(classSessions, label);
+  };
+
+  const handleReset = async () => {
+    if (resetPassword !== ADMIN_CODE) {
+      setResetError("סיסמה שגויה");
+      return;
+    }
+    setResetting(true);
+    const success = await resetAllSessionsDB();
+    if (success) {
+      const data = await getSessionsDB();
+      setSessions(data);
+      setShowResetDialog(false);
+      setResetPassword("");
+      setResetError("");
+    } else {
+      setResetError("שגיאה באיפוס הנתונים");
+    }
+    setResetting(false);
   };
 
   if (loading) {
@@ -154,6 +176,10 @@ const Dashboard = () => {
               <button onClick={() => exportToExcel(tab === "all" ? sessions : filtered, tab === "tali" ? "הכיתה_של_טלי" : tab === "eden" ? "הכיתה_של_עדן" : "כל_התלמידים")}
                 className="btn-intake bg-success/10 text-success text-xs px-3 py-2 gap-1 hover:bg-success/20">
                 <Download className="w-3.5 h-3.5" /> ייצוא Excel
+              </button>
+              <button onClick={() => { setShowResetDialog(true); setResetPassword(""); setResetError(""); }}
+                className="btn-intake bg-destructive/10 text-destructive text-xs px-3 py-2 gap-1 hover:bg-destructive/20 mr-auto">
+                <Trash2 className="w-3.5 h-3.5" /> איפוס נתונים
               </button>
             </div>
 
@@ -284,6 +310,42 @@ const Dashboard = () => {
           </>
         )}
       </div>
+
+      {/* Reset Dialog */}
+      {showResetDialog && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowResetDialog(false)}>
+          <div className="bg-card rounded-2xl shadow-xl max-w-sm w-full p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3 text-destructive">
+              <ShieldAlert className="w-8 h-8" />
+              <h2 className="text-lg font-heading font-bold">איפוס כל הנתונים</h2>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              פעולה זו תמחק את כל נתוני השאלונים, תשובות התלמידים וההורים, ותאתחל את המערכת מחדש.
+              <strong className="text-destructive block mt-1">פעולה זו אינה הפיכה!</strong>
+            </p>
+            <div>
+              <label className="block text-sm font-medium mb-1">הזן סיסמת מנהל לאישור:</label>
+              <input
+                type="password"
+                value={resetPassword}
+                onChange={(e) => { setResetPassword(e.target.value); setResetError(""); }}
+                className="w-full bg-background border border-input rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                placeholder="סיסמת מנהל"
+                dir="ltr"
+              />
+              {resetError && <p className="text-xs text-destructive mt-1">{resetError}</p>}
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => setShowResetDialog(false)} className="btn-intake bg-muted text-muted-foreground flex-1">ביטול</button>
+              <button onClick={handleReset} disabled={resetting || !resetPassword}
+                className="btn-intake bg-destructive text-destructive-foreground flex-1 disabled:opacity-50">
+                {resetting ? <Loader2 className="w-4 h-4 animate-spin inline ml-1" /> : <Trash2 className="w-4 h-4 inline ml-1" />}
+                אפס הכל
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
