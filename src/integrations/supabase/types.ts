@@ -73,6 +73,56 @@ export type Database = {
           },
         ]
       }
+      assessment_rounds: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          parent_responses: Json
+          parent_status: string
+          participants: string
+          round_label: string
+          round_number: number
+          session_id: string
+          student_responses: Json
+          student_status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          parent_responses?: Json
+          parent_status?: string
+          participants?: string
+          round_label?: string
+          round_number?: number
+          session_id: string
+          student_responses?: Json
+          student_status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          parent_responses?: Json
+          parent_status?: string
+          participants?: string
+          round_label?: string
+          round_number?: number
+          session_id?: string
+          student_responses?: Json
+          student_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_rounds_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "intake_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       intake_sessions: {
         Row: {
           academic_year: string
