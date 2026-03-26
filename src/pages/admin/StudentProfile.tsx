@@ -820,13 +820,128 @@ const StudentProfile = () => {
             className="btn-intake bg-warning/10 text-warning flex items-center justify-center gap-2 border border-warning/20 hover:bg-warning/20 transition-colors">
             <ClipboardList className="w-4 h-4" /> מלא שאלון צוות עבור {session.studentName}
           </button>
-          {(session.status === "completed" || session.status === "under_review") && (
-            <button onClick={handleOpenReassessment}
-              className="btn-intake bg-accent text-accent-foreground flex items-center justify-center gap-2 border border-primary/20 hover:bg-accent/80 transition-colors">
-              <RefreshCw className="w-4 h-4" /> פתח סיכום שנתי — תלמיד + הורה
+        </div>
+
+        {/* Assessment Rounds Management */}
+        <div className="intake-card border-primary/20 print:hidden">
+          <h3 className="font-heading font-semibold mb-3 flex items-center gap-2">
+            <RefreshCw className="w-5 h-5 text-primary" />
+            סבבי הערכה — מעקב מגמות
+          </h3>
+          <p className="text-xs text-muted-foreground mb-4">
+            ניתן לפתוח סבבי הערכה חוזרים לאורך השנה כדי למדוד שיפור והתקדמות. התלמיד וההורה ימלאו את השאלונים מחדש עם אותם קודים.
+          </p>
+
+          {/* Existing rounds */}
+          {rounds.length > 0 && (
+            <div className="space-y-2 mb-4">
+              {rounds.map((r) => {
+                const studentDone = r.student_status === 'completed' || r.student_status === 'not_required';
+                const parentDone = r.parent_status === 'completed' || r.parent_status === 'not_required';
+                const allDone = studentDone && parentDone;
+                const studentCount = Object.keys(r.student_responses).length;
+                const parentCount = Object.keys(r.parent_responses).length;
+                return (
+                  <div key={r.id} className={`p-3 rounded-xl border ${allDone ? "bg-success/5 border-success/20" : "bg-accent border-primary/10"}`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold">{r.round_label}</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">סבב {r.round_number}</span>
+                      </div>
+                      <span className={`text-xs font-medium ${allDone ? "text-success" : "text-primary"}`}>
+                        {allDone ? "✓ הושלם" : "ממתין"}
+                      </span>
+                    </div>
+                    <div className="flex gap-4 mt-1 text-[11px] text-muted-foreground">
+                      {r.participants !== 'parent' && (
+                        <span>תלמיד: {studentDone ? `✓ ${studentCount}/52` : `${studentCount}/52`}</span>
+                      )}
+                      {r.participants !== 'student' && (
+                        <span>הורה: {parentDone ? `✓ ${parentCount}/52` : `${parentCount}/52`}</span>
+                      )}
+                      <span>{new Date(r.created_at).toLocaleDateString("he-IL")}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* New round form */}
+          {showNewRound ? (
+            <div className="p-4 bg-muted/30 rounded-xl space-y-3">
+              <input
+                type="text"
+                placeholder='שם הסבב (למשל: "אמצע שנה", "סוף שנה")'
+                value={newRoundLabel}
+                onChange={(e) => setNewRoundLabel(e.target.value)}
+                className="w-full bg-background border border-input rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+              <div className="flex gap-2">
+                {[
+                  { value: "both", label: "תלמיד + הורה" },
+                  { value: "student", label: "תלמיד בלבד" },
+                  { value: "parent", label: "הורה בלבד" },
+                ].map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setNewRoundParticipants(opt.value)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                      newRoundParticipants === opt.value
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <button onClick={handleCreateRound} className="btn-intake bg-primary text-primary-foreground text-sm flex-1">
+                  פתח סבב
+                </button>
+                <button onClick={() => setShowNewRound(false)} className="btn-intake bg-muted text-muted-foreground text-sm">
+                  ביטול
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowNewRound(true)}
+              className="btn-intake bg-accent text-accent-foreground flex items-center justify-center gap-2 border border-primary/20 hover:bg-accent/80 transition-colors w-full"
+            >
+              <RefreshCw className="w-4 h-4" /> פתח סבב הערכה חדש
             </button>
           )}
         </div>
+
+        {/* Multi-Round Trend Chart */}
+        {multiRoundTimelineData && multiRoundTimelineData.data.length > 1 && (
+          <div className="intake-card border-info/20">
+            <h3 className="font-heading font-semibold mb-2 flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-info" />
+              מגמות לאורך זמן — כל סבבי ההערכה
+            </h3>
+            <p className="text-xs text-muted-foreground mb-3">
+              הגרף מציג את ההתקדמות בארבעת המדדים לאורך כל סבבי ההערכה.
+            </p>
+            <ResponsiveContainer width="100%" height={280}>
+              <LineChart data={multiRoundTimelineData.data}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                <YAxis domain={[0, 5]} tick={{ fontSize: 10 }} />
+                <Tooltip />
+                <Legend />
+                {multiRoundTimelineData.domains.map((d, i) => {
+                  const colors = ["hsl(165, 35%, 42%)", "hsl(200, 60%, 50%)", "hsl(35, 80%, 50%)", "hsl(280, 50%, 55%)"];
+                  return (
+                    <Line key={d.key} type="monotone" dataKey={d.label} stroke={colors[i]} strokeWidth={2} dot={{ r: 4 }} />
+                  );
+                })}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </div>
     </div>
   );
