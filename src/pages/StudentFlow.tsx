@@ -317,7 +317,7 @@ const StudentFlow = () => {
   }
 
   if (step === "questionnaire") {
-    const responses = isReassessment ? (session.reassessmentStudentResponses || {}) : session.studentResponses;
+    const responses = isReassessment && activeRound ? activeRound.student_responses : isReassessment ? (session.reassessmentStudentResponses || {}) : session.studentResponses;
     return (
       <div className="min-h-screen py-6 px-0 sm:px-2 bg-background relative safe-top safe-bottom">
         <button onClick={() => navigate("/")} className="absolute top-4 left-4 z-30 p-2 rounded-xl hover:bg-muted transition-colors" title="התנתק">
