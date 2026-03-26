@@ -36,10 +36,14 @@ const StudentProfile = () => {
     setSession(s);
     setNotes(s.adminNotes || "");
 
-    const { data: raw } = await (supabase as any).from("intake_sessions").select("consent_signature").eq("id", sessionId).maybeSingle();
-    if (raw) {
-      setConsentSignature(raw.consent_signature);
+    const [consentResult, roundsData] = await Promise.all([
+      (supabase as any).from("intake_sessions").select("consent_signature").eq("id", sessionId).maybeSingle(),
+      getAssessmentRounds(sessionId),
+    ]);
+    if (consentResult.data) {
+      setConsentSignature(consentResult.data.consent_signature);
     }
+    setRounds(roundsData);
     setLoading(false);
   }, [sessionId, navigate]);
 
