@@ -72,6 +72,15 @@ const StudentProfile = () => {
     ? calculateQoLSubdomains(session.reassessmentStudentResponses!, session.reassessmentParentResponses || {})
     : null;
 
+  // Compute scores for all completed rounds
+  const completedRounds = rounds.filter(r => 
+    Object.keys(r.student_responses).length > 0 || Object.keys(r.parent_responses).length > 0
+  );
+  const roundsScores = completedRounds.map(r => ({
+    round: r,
+    scores: calculateScores(r.student_responses, r.parent_responses),
+  }));
+
   const radarData = [
     { subject: "איכות חיים", student: scores.qualityOfLife.studentNormalized, parent: scores.qualityOfLife.parentNormalized },
     { subject: "מסוגלות עצמית", student: scores.selfEfficacy.studentNormalized, parent: scores.selfEfficacy.parentNormalized },
@@ -82,7 +91,26 @@ const StudentProfile = () => {
   const hasStudentData = scores.qualityOfLife.studentNormalized >= 0;
   const hasParentData = scores.qualityOfLife.parentNormalized >= 0;
 
-  const timelineData = reassessmentScores ? [
+  // Build multi-round timeline data
+  const multiRoundTimelineData = roundsScores.length > 0 ? (() => {
+    const domains = [
+      { key: "qualityOfLife" as const, label: SECTION_LABELS.quality_of_life },
+      { key: "selfEfficacy" as const, label: SECTION_LABELS.self_efficacy },
+      { key: "locusOfControl" as const, label: SECTION_LABELS.locus_of_control },
+      { key: "cognitiveFlexibility" as const, label: SECTION_LABELS.cognitive_flexibility },
+    ];
+    // Each data point is a round
+    const data = [
+      { name: "קליטה", ...Object.fromEntries(domains.map(d => [d.label, scores[d.key].studentNormalized >= 0 ? scores[d.key].studentNormalized : 0])) },
+      ...roundsScores.map(rs => ({
+        name: rs.round.round_label,
+        ...Object.fromEntries(domains.map(d => [d.label, rs.scores[d.key].studentNormalized >= 0 ? rs.scores[d.key].studentNormalized : 0])),
+      })),
+    ];
+    return { data, domains };
+  })() : null;
+
+  const timelineData = !multiRoundTimelineData && reassessmentScores ? [
     { label: SECTION_LABELS.quality_of_life, קליטה: scores.qualityOfLife.studentNormalized >= 0 ? scores.qualityOfLife.studentNormalized : 0, סיכום: reassessmentScores.qualityOfLife.studentNormalized >= 0 ? reassessmentScores.qualityOfLife.studentNormalized : 0 },
     { label: SECTION_LABELS.self_efficacy, קליטה: scores.selfEfficacy.studentNormalized >= 0 ? scores.selfEfficacy.studentNormalized : 0, סיכום: reassessmentScores.selfEfficacy.studentNormalized >= 0 ? reassessmentScores.selfEfficacy.studentNormalized : 0 },
     { label: SECTION_LABELS.locus_of_control, קליטה: scores.locusOfControl.studentNormalized >= 0 ? scores.locusOfControl.studentNormalized : 0, סיכום: reassessmentScores.locusOfControl.studentNormalized >= 0 ? reassessmentScores.locusOfControl.studentNormalized : 0 },
