@@ -119,19 +119,15 @@ const StudentProfile = () => {
     setSession((prev) => prev ? { ...prev, status: "under_review", closedAt: undefined } : null);
   };
 
-  const handleOpenReassessment = async () => {
-    await updateSessionDB(session.id, {
-      reassessmentStatus: "open",
-      reassessmentStudentResponses: {},
-      reassessmentParentResponses: {},
-    });
-    setSession((prev) => prev ? {
-      ...prev,
-      reassessmentStatus: "open",
-      reassessmentStudentResponses: {},
-      reassessmentParentResponses: {},
-    } : null);
-    alert("סיכום שנתי נפתח — התלמיד וההורה יכולים כעת למלא שאלונים מחדש עם אותם קודים");
+  const handleCreateRound = async () => {
+    if (!newRoundLabel.trim()) return;
+    const round = await createAssessmentRound(session.id, newRoundLabel, newRoundParticipants);
+    if (round) {
+      setRounds((prev) => [...prev, round]);
+      setShowNewRound(false);
+      setNewRoundLabel("");
+      setNewRoundParticipants("both");
+    }
   };
 
   const handlePrint = () => { window.print(); };
