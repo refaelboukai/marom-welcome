@@ -108,8 +108,8 @@ export function generateSemesterSummary(
   const dateStr = new Date().toLocaleDateString("he-IL");
   const semesterLabel = SEMESTER_LABELS[semesterType];
 
-  let summary = `${semesterLabel} — ${session.studentName}\n`;
-  summary += `כיתה: ${session.grade || "—"} | תאריך: ${dateStr}\n`;
+  let summary = `סיכום רגשי-חברתי — ${semesterLabel}\n`;
+  summary += `${session.studentName} | כיתה ${session.grade || "—"} | ${dateStr}\n`;
   summary += `${"─".repeat(40)}\n\n`;
 
   for (const t of trends) {
