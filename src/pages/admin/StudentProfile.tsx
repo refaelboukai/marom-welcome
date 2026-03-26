@@ -164,6 +164,20 @@ const StudentProfile = () => {
 
   const handlePrint = () => { window.print(); };
 
+  const handleGenerateSummary = (type: SemesterType) => {
+    if (!session) return;
+    const text = generateSemesterSummary(session, rounds, type);
+    setSummaryType(type);
+    setSummaryText(text);
+    setSummaryCopied(false);
+  };
+
+  const handleCopySummary = () => {
+    navigator.clipboard.writeText(summaryText);
+    setSummaryCopied(true);
+    setTimeout(() => setSummaryCopied(false), 2000);
+  };
+
   const scoreCards = [
     { key: "qualityOfLife" as const, label: SECTION_LABELS.quality_of_life, icon: BarChart3 },
     { key: "selfEfficacy" as const, label: SECTION_LABELS.self_efficacy, icon: TrendingUp },
