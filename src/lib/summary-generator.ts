@@ -1,6 +1,5 @@
 import { IntakeSession, SECTION_LABELS } from "@/lib/types";
-import { calculateScores, getScoreLabel } from "@/lib/scoring";
-import { getScoreInterpretation } from "@/lib/domain-descriptions";
+import { calculateScores } from "@/lib/scoring";
 import { AssessmentRound } from "@/lib/supabase-storage";
 
 type SemesterType = "semester_a" | "semester_b" | "annual";
@@ -11,31 +10,60 @@ const SEMESTER_LABELS: Record<SemesterType, string> = {
   annual: "סיכום שנתי",
 };
 
-interface DomainTrend {
-  label: string;
-  intakeScore: number;
-  latestScore: number;
-  change: number;
-  arrow: string;
-  interpretation: string;
+/** Positive, growth-oriented interpretation — no score labels */
+function getPositiveInterpretation(score: number, domain: string): string {
+  const map: Record<string, { high: string; mid: string; growing: string; emerging: string }> = {
+    qualityOfLife: {
+      high: "התלמיד מביע שביעות רצון ותחושת רווחה בתחומי חיים מגוונים — חברתי, רגשי ולימודי. זהו בסיס חשוב להמשך צמיחה.",
+      mid: "התלמיד מזהה תחומים בהם הוא מרגיש טוב לצד תחומים שבהם הוא שואף להתפתח. הליווי מאפשר חיזוק המשאבים הקיימים.",
+      growing: "התלמיד נמצא בתהליך של בניית תחושת רווחה. עם ליווי מתאים וחוויות חיוביות, ניתן לחזק את תחושת השייכות והסיפוק.",
+      emerging: "התלמיד מתחיל לזהות את הצרכים שלו בתחומי חיים שונים. זוהי נקודת מוצא חשובה לבניית תכנית ליווי אישית שתתמוך בהתפתחותו.",
+    },
+    selfEfficacy: {
+      high: "התלמיד מאמין ביכולתו להתמודד עם אתגרים ולהצליח. תחושת מסוגלות זו מהווה משאב משמעותי לקידום בכל תחום.",
+      mid: "התלמיד מפתח את תחושת המסוגלות שלו ומתחיל לזהות חוזקות אישיות. חיזוק חוויות הצלחה יתמוך בהמשך ההתקדמות.",
+      growing: "התלמיד נמצא בדרך לבניית ביטחון ביכולותיו. משימות הדרגתיות עם חוויות הצלחה יסייעו לחזק את תחושת המסוגלות.",
+      emerging: "התלמיד בתחילת הדרך של גילוי היכולות שלו. ליווי אישי המדגיש הצלחות קטנות יבנה בהדרגה את הביטחון העצמי.",
+    },
+    locusOfControl: {
+      high: "התלמיד חש שיש לו השפעה על מה שקורה לו ומקשר בין מאמץ לתוצאות. תפיסה זו מחזקת מוטיבציה ואחריות אישית.",
+      mid: "התלמיד מתחיל לזהות קשרים בין הפעולות שלו לתוצאות. חיזוק תחושת השליטה יתמוך ביוזמה עצמית ובמוטיבציה.",
+      growing: "התלמיד בתהליך של פיתוח תחושת שליטה על חייו. מתן הזדמנויות לבחירה וקבלת החלטות יחזק את תחושת ההשפעה.",
+      emerging: "התלמיד לומד לזהות את ההשפעה שלו על סביבתו. ליווי שמדגיש קשר בין מאמץ לתוצאה יבנה תחושת משמעות ושליטה.",
+    },
+    cognitiveFlexibility: {
+      high: "התלמיד מגלה יכולת לחשוב על חלופות ולהסתגל למצבים שונים. גמישות זו מהווה כלי חשוב להתמודדות יעילה.",
+      mid: "התלמיד מפתח את יכולת החשיבה הגמישה ולומד לשקול אפשרויות שונות. תרגול ממוקד יחזק מיומנות חשובה זו.",
+      growing: "התלמיד בתהליך של הרחבת דרכי החשיבה שלו. חשיפה למצבים מגוונים ותרגול פתרון בעיות יתמכו בפיתוח הגמישות.",
+      emerging: "התלמיד מתחיל להכיר דרכי חשיבה חדשות. ליווי שמעודד הסתכלות ממספר זוויות יסייע בפיתוח חשיבה יצירתית ופתוחה.",
+    },
+  };
+
+  const d = map[domain] || map.qualityOfLife;
+  if (score < 0) return "טרם נאספו מספיק נתונים בתחום זה. המשך המעקב יאפשר תמונה מלאה יותר.";
+  if (score >= 4.0) return d.high;
+  if (score >= 3.0) return d.mid;
+  if (score >= 2.0) return d.growing;
+  return d.emerging;
+}
+
+/** Positive trend description */
+function getPositiveTrendLabel(change: number): string {
+  if (change > 0.5) return "נראית התקדמות משמעותית — יש להמשיך ולחזק את הכיוון";
+  if (change > 0.2) return "ניכרת התקדמות חיובית";
+  if (change > 0) return "ניכרת מגמה חיובית עדינה";
+  if (change < -0.5) return "תחום זה מצריך תשומת לב מוגברת וליווי ממוקד";
+  if (change < -0.2) return "תחום זה דורש חיזוק — מומלץ להתמקד בו בתקופה הקרובה";
+  if (change < 0) return "תחום זה יכול להרוויח מתשומת לב נוספת";
+  return "יציבות בתחום זה — ניתן לשאוף להתקדמות נוספת";
 }
 
 function getTrendArrow(change: number): string {
   if (change > 0.3) return "⬆️";
   if (change > 0) return "↗️";
-  if (change < -0.3) return "⬇️";
-  if (change < 0) return "↘️";
+  if (change < -0.3) return "🔄";
+  if (change < 0) return "🔄";
   return "➡️";
-}
-
-function getTrendLabel(change: number): string {
-  if (change > 0.5) return "שיפור משמעותי";
-  if (change > 0.2) return "שיפור";
-  if (change > 0) return "שיפור קל";
-  if (change < -0.5) return "ירידה משמעותית";
-  if (change < -0.2) return "ירידה";
-  if (change < 0) return "ירידה קלה";
-  return "ללא שינוי";
 }
 
 export function generateSemesterSummary(
@@ -50,13 +78,12 @@ export function generateSemesterSummary(
     .sort((a, b) => a.round_number - b.round_number);
 
   const domains = [
-    { key: "qualityOfLife" as const, label: SECTION_LABELS.quality_of_life, domainKey: "qualityOfLife" },
-    { key: "selfEfficacy" as const, label: SECTION_LABELS.self_efficacy, domainKey: "selfEfficacy" },
-    { key: "locusOfControl" as const, label: SECTION_LABELS.locus_of_control, domainKey: "locusOfControl" },
-    { key: "cognitiveFlexibility" as const, label: SECTION_LABELS.cognitive_flexibility, domainKey: "cognitiveFlexibility" },
+    { key: "qualityOfLife" as const, label: SECTION_LABELS.quality_of_life },
+    { key: "selfEfficacy" as const, label: SECTION_LABELS.self_efficacy },
+    { key: "locusOfControl" as const, label: SECTION_LABELS.locus_of_control },
+    { key: "cognitiveFlexibility" as const, label: SECTION_LABELS.cognitive_flexibility },
   ];
 
-  // Determine which rounds belong to this semester
   let relevantRounds: AssessmentRound[];
   if (semesterType === "semester_a") {
     relevantRounds = completedRounds.slice(0, Math.ceil(completedRounds.length / 2));
@@ -71,70 +98,58 @@ export function generateSemesterSummary(
     ? calculateScores(latestRound.student_responses as Record<string, number>, latestRound.parent_responses as Record<string, number>)
     : null;
 
-  const trends: DomainTrend[] = domains.map(d => {
+  const trends = domains.map(d => {
     const intake = intakeScores[d.key].normalized;
     const latest = latestScores ? latestScores[d.key].normalized : intake;
     const change = (intake >= 0 && latest >= 0) ? latest - intake : 0;
-    return {
-      label: d.label,
-      intakeScore: intake,
-      latestScore: latest,
-      change,
-      arrow: getTrendArrow(change),
-      interpretation: getScoreInterpretation(latest, d.domainKey),
-    };
+    return { ...d, intake, latest, change };
   });
 
   const dateStr = new Date().toLocaleDateString("he-IL");
   const semesterLabel = SEMESTER_LABELS[semesterType];
 
-  let summary = `📋 ${semesterLabel} — ${session.studentName}\n`;
+  let summary = `${semesterLabel} — ${session.studentName}\n`;
   summary += `כיתה: ${session.grade || "—"} | תאריך: ${dateStr}\n`;
   summary += `${"─".repeat(40)}\n\n`;
 
   for (const t of trends) {
-    summary += `${t.arrow} ${t.label}\n`;
-    summary += `   ${t.interpretation}\n`;
-    if (t.intakeScore >= 0 && t.latestScore >= 0 && Math.abs(t.change) > 0.01) {
-      summary += `   מגמה: ${getTrendLabel(t.change)}\n`;
+    summary += `${getTrendArrow(t.change)} ${t.label}\n`;
+    summary += `   ${getPositiveInterpretation(t.latest, t.key)}\n`;
+    if (t.intake >= 0 && t.latest >= 0 && Math.abs(t.change) > 0.01) {
+      summary += `   ${getPositiveTrendLabel(t.change)}\n`;
     }
     summary += `\n`;
   }
 
-  // Overall trend
-  const validTrends = trends.filter(t => t.intakeScore >= 0 && t.latestScore >= 0);
+  // Overall
+  const validTrends = trends.filter(t => t.intake >= 0 && t.latest >= 0);
   if (validTrends.length > 0) {
     const avgChange = validTrends.reduce((s, t) => s + t.change, 0) / validTrends.length;
     summary += `${"─".repeat(40)}\n`;
-    summary += `📈 מגמה כללית: ${getTrendArrow(avgChange)} ${getTrendLabel(avgChange)}\n`;
+    if (avgChange > 0.2) {
+      summary += `📈 סיכום: ניכרת מגמת התקדמות חיובית. התלמיד מגלה צמיחה והתפתחות.\n`;
+    } else if (avgChange > 0) {
+      summary += `📈 סיכום: נראים ניצנים של התקדמות. המשך הליווי יתמוך בהעמקת השינוי.\n`;
+    } else if (avgChange > -0.2) {
+      summary += `📈 סיכום: התלמיד שומר על יציבות. ניתן להתמקד בתחומים ספציפיים לקידום.\n`;
+    } else {
+      summary += `📈 סיכום: ישנם תחומים שמצריכים חיזוק וליווי. עם תכנית ממוקדת, ניתן לקדם התפתחות משמעותית.\n`;
+    }
   }
 
-  // Strengths and areas
-  const strengths = trends.filter(t => t.latestScore >= 4.0);
-  const concerns = trends.filter(t => t.latestScore >= 0 && t.latestScore < 2.5);
+  // Highlights
+  const strengths = trends.filter(t => t.latest >= 4.0);
   const improved = validTrends.filter(t => t.change > 0.2);
-  const declined = validTrends.filter(t => t.change < -0.2);
+  const needsAttention = validTrends.filter(t => t.change < -0.2);
 
   if (strengths.length > 0) {
-    summary += `\n💪 חוזקות: ${strengths.map(t => t.label).join(", ")}\n`;
-  }
-  if (concerns.length > 0) {
-    summary += `⚠️ דורש תשומת לב: ${concerns.map(t => t.label).join(", ")}\n`;
+    summary += `\n💪 חוזקות בולטות: ${strengths.map(t => t.label).join(", ")}\n`;
   }
   if (improved.length > 0) {
-    summary += `✅ שיפור: ${improved.map(t => t.label).join(", ")}\n`;
+    summary += `✅ תחומים בהתקדמות: ${improved.map(t => t.label).join(", ")}\n`;
   }
-  if (declined.length > 0) {
-    summary += `🔻 ירידה: ${declined.map(t => t.label).join(", ")}\n`;
-  }
-
-  // Rounds info
-  if (completedRounds.length > 0) {
-    summary += `\n📝 סבבי הערכה שבוצעו: ${completedRounds.length}\n`;
-    for (const r of completedRounds) {
-      const rDate = new Date(r.created_at).toLocaleDateString("he-IL");
-      summary += `   • ${r.round_label} (${rDate})\n`;
-    }
+  if (needsAttention.length > 0) {
+    summary += `🎯 תחומי מיקוד לתקופה הקרובה: ${needsAttention.map(t => t.label).join(", ")}\n`;
   }
 
   return summary;
