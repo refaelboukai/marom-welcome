@@ -887,7 +887,6 @@ const StudentProfile = () => {
             </div>
           )}
         </div>
-        </div>
 
         {/* Assessment Rounds Management */}
         <div className="intake-card border-primary/20 print:hidden">
