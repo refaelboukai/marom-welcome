@@ -289,6 +289,86 @@ export async function generateAIInsights(
   return data;
 }
 
+// Assessment Rounds
+export interface AssessmentRound {
+  id: string;
+  session_id: string;
+  round_number: number;
+  round_label: string;
+  participants: string; // 'both' | 'student' | 'parent'
+  student_responses: Record<string, number>;
+  parent_responses: Record<string, number>;
+  student_status: string;
+  parent_status: string;
+  created_at: string;
+  completed_at: string | null;
+}
+
+export async function getAssessmentRounds(sessionId: string): Promise<AssessmentRound[]> {
+  const { data, error } = await supabase
+    .from("assessment_rounds")
+    .select("*")
+    .eq("session_id", sessionId)
+    .order("round_number", { ascending: true });
+  if (error) { console.error("Error fetching rounds:", error); return []; }
+  return (data || []).map((r: any) => ({
+    ...r,
+    student_responses: r.student_responses || {},
+    parent_responses: r.parent_responses || {},
+  }));
+}
+
+export async function createAssessmentRound(sessionId: string, roundLabel: string, participants: string): Promise<AssessmentRound | null> {
+  // Get next round number
+  const { data: existing } = await supabase
+    .from("assessment_rounds")
+    .select("round_number")
+    .eq("session_id", sessionId)
+    .order("round_number", { ascending: false })
+    .limit(1);
+  const nextNum = existing && existing.length > 0 ? (existing[0] as any).round_number + 1 : 1;
+
+  const { data, error } = await (supabase as any)
+    .from("assessment_rounds")
+    .insert({
+      session_id: sessionId,
+      round_number: nextNum,
+      round_label: roundLabel,
+      participants,
+      student_status: participants === 'parent' ? 'not_required' : 'pending',
+      parent_status: participants === 'student' ? 'not_required' : 'pending',
+    })
+    .select()
+    .single();
+  if (error) { console.error("Error creating round:", error); return null; }
+  return { ...data, student_responses: {}, parent_responses: {} };
+}
+
+export async function updateAssessmentRound(id: string, updates: Partial<AssessmentRound>): Promise<void> {
+  const { error } = await (supabase as any)
+    .from("assessment_rounds")
+    .update(updates)
+    .eq("id", id);
+  if (error) console.error("Error updating round:", error);
+}
+
+export async function getActiveRoundForSession(sessionId: string, role: 'student' | 'parent'): Promise<AssessmentRound | null> {
+  const statusField = role === 'student' ? 'student_status' : 'parent_status';
+  const { data, error } = await (supabase as any)
+    .from("assessment_rounds")
+    .select("*")
+    .eq("session_id", sessionId)
+    .eq(statusField, "pending")
+    .order("round_number", { ascending: false })
+    .limit(1);
+  if (error || !data || data.length === 0) return null;
+  const r = data[0];
+  // Check participants field
+  if (role === 'student' && r.participants === 'parent') return null;
+  if (role === 'parent' && r.participants === 'student') return null;
+  return { ...r, student_responses: r.student_responses || {}, parent_responses: r.parent_responses || {} };
+}
+
 export async function resetAllSessionsDB(): Promise<boolean> {
   // Delete all related records first
   const { error: spError } = await supabase.from("support_plans").delete().neq("id", "00000000-0000-0000-0000-000000000000");
