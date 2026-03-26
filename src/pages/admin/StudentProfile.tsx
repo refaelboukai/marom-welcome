@@ -23,6 +23,10 @@ const StudentProfile = () => {
   const [consentSignature, setConsentSignature] = useState<string | null>(null);
   const [aiResult, setAiResult] = useState<PersonalPlanData["aiRecommendations"] | null>(null);
   const [supportPlansData, setSupportPlansData] = useState<PersonalPlanData["supportPlans"]>([]);
+  const [rounds, setRounds] = useState<AssessmentRound[]>([]);
+  const [showNewRound, setShowNewRound] = useState(false);
+  const [newRoundLabel, setNewRoundLabel] = useState("");
+  const [newRoundParticipants, setNewRoundParticipants] = useState<string>("both");
   const printRef = useRef<HTMLDivElement>(null);
 
   const loadData = useCallback(async () => {
