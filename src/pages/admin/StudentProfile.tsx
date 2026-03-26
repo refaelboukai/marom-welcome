@@ -840,6 +840,55 @@ const StudentProfile = () => {
           </button>
         </div>
 
+        {/* Semester Summary Generator */}
+        <div className="intake-card border-info/20 print:hidden">
+          <h3 className="font-heading font-semibold mb-3 flex items-center gap-2">
+            <FileBarChart className="w-5 h-5 text-info" />
+            תקציר לתעודה — Student Compass
+          </h3>
+          <p className="text-xs text-muted-foreground mb-4">
+            הפקת תקציר מגמות וציונים למחצית א׳, מחצית ב׳ או סיכום שנתי. ניתן להעתיק ולהדביק באפליקציית התעודות.
+          </p>
+          <div className="flex gap-2 mb-4">
+            {(["semester_a", "semester_b", "annual"] as SemesterType[]).map((type) => (
+              <button
+                key={type}
+                onClick={() => handleGenerateSummary(type)}
+                className={`px-4 py-2 rounded-xl text-xs font-medium transition-all flex-1 ${
+                  summaryType === type
+                    ? "bg-info text-white shadow-md"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                }`}
+              >
+                {SEMESTER_LABELS[type]}
+              </button>
+            ))}
+          </div>
+
+          {summaryText && (
+            <div className="space-y-3">
+              <div className="relative">
+                <pre className="bg-card border border-border rounded-xl p-4 text-xs leading-relaxed whitespace-pre-wrap overflow-auto max-h-80 font-sans" dir="rtl">
+                  {summaryText}
+                </pre>
+                <button
+                  onClick={handleCopySummary}
+                  className="absolute top-2 left-2 p-2 rounded-lg bg-background/80 hover:bg-muted border border-border transition-colors"
+                  title="העתק תקציר"
+                >
+                  {summaryCopied ? <CheckCircle className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4 text-muted-foreground" />}
+                </button>
+              </div>
+              {summaryCopied && (
+                <p className="text-xs text-success flex items-center gap-1 animate-fade-in">
+                  <CheckCircle className="w-3 h-3" /> התקציר הועתק ללוח — ניתן להדביק ב-Student Compass
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+        </div>
+
         {/* Assessment Rounds Management */}
         <div className="intake-card border-primary/20 print:hidden">
           <h3 className="font-heading font-semibold mb-3 flex items-center gap-2">
