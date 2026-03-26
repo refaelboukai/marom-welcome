@@ -45,6 +45,7 @@ const StudentFlow = () => {
   const [consentChecked, setConsentChecked] = useState(false);
   const [hasSigned, setHasSigned] = useState(false);
   const [isReassessment, setIsReassessment] = useState(false);
+  const [activeRound, setActiveRound] = useState<AssessmentRound | null>(null);
   const sigCanvasRef = useRef<SignatureCanvas>(null);
 
   useEffect(() => {
