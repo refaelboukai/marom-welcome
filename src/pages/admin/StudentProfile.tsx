@@ -5,7 +5,8 @@ import { IntakeSession, SECTION_LABELS, OPEN_QUESTION_LABELS, QOL_SUBDOMAIN_LABE
 import { calculateScores, calculateQoLSubdomains, generateRiskFlags, generateInsights, generateGASGoals, getScoreLabel, getScoreColor, getTopFocusAreas } from "@/lib/scoring";
 import { DOMAIN_DESCRIPTIONS, QOL_SUBDOMAIN_DESCRIPTIONS, getScoreInterpretation } from "@/lib/domain-descriptions";
 import StatusBadge from "@/components/StatusBadge";
-import { ArrowRight, AlertTriangle, Copy, CheckCircle, Lock, Unlock, FileText, Target, Lightbulb, TrendingUp, Users, Printer, MessageSquare, BarChart3, Shield, Loader2, RefreshCw, Download, PenLine, ScrollText, ClipboardList, Heart, Info } from "lucide-react";
+import { ArrowRight, AlertTriangle, Copy, CheckCircle, Lock, Unlock, FileText, Target, Lightbulb, TrendingUp, Users, Printer, MessageSquare, BarChart3, Shield, Loader2, RefreshCw, Download, PenLine, ScrollText, ClipboardList, Heart, Info, FileBarChart } from "lucide-react";
+import { generateSemesterSummary, SEMESTER_LABELS, type SemesterType } from "@/lib/summary-generator";
 import SupportPlans from "@/components/SupportPlans";
 import AIRecommendations from "@/components/AIRecommendations";
 import { generateStudentPDF, generatePersonalPlanPDF, PersonalPlanData } from "@/lib/pdf-export";
@@ -28,6 +29,9 @@ const StudentProfile = () => {
   const [newRoundLabel, setNewRoundLabel] = useState("");
   const [newRoundParticipants, setNewRoundParticipants] = useState<string>("both");
   const printRef = useRef<HTMLDivElement>(null);
+  const [summaryType, setSummaryType] = useState<SemesterType | null>(null);
+  const [summaryText, setSummaryText] = useState("");
+  const [summaryCopied, setSummaryCopied] = useState(false);
 
   const loadData = useCallback(async () => {
     if (!sessionId) return;
@@ -159,6 +163,20 @@ const StudentProfile = () => {
   };
 
   const handlePrint = () => { window.print(); };
+
+  const handleGenerateSummary = (type: SemesterType) => {
+    if (!session) return;
+    const text = generateSemesterSummary(session, rounds, type);
+    setSummaryType(type);
+    setSummaryText(text);
+    setSummaryCopied(false);
+  };
+
+  const handleCopySummary = () => {
+    navigator.clipboard.writeText(summaryText);
+    setSummaryCopied(true);
+    setTimeout(() => setSummaryCopied(false), 2000);
+  };
 
   const scoreCards = [
     { key: "qualityOfLife" as const, label: SECTION_LABELS.quality_of_life, icon: BarChart3 },
@@ -820,6 +838,54 @@ const StudentProfile = () => {
             className="btn-intake bg-warning/10 text-warning flex items-center justify-center gap-2 border border-warning/20 hover:bg-warning/20 transition-colors">
             <ClipboardList className="w-4 h-4" /> מלא שאלון צוות עבור {session.studentName}
           </button>
+        </div>
+
+        {/* Semester Summary Generator */}
+        <div className="intake-card border-info/20 print:hidden">
+          <h3 className="font-heading font-semibold mb-3 flex items-center gap-2">
+            <FileBarChart className="w-5 h-5 text-info" />
+            תקציר לתעודה — Student Compass
+          </h3>
+          <p className="text-xs text-muted-foreground mb-4">
+            הפקת תקציר מגמות וציונים למחצית א׳, מחצית ב׳ או סיכום שנתי. ניתן להעתיק ולהדביק באפליקציית התעודות.
+          </p>
+          <div className="flex gap-2 mb-4">
+            {(["semester_a", "semester_b", "annual"] as SemesterType[]).map((type) => (
+              <button
+                key={type}
+                onClick={() => handleGenerateSummary(type)}
+                className={`px-4 py-2 rounded-xl text-xs font-medium transition-all flex-1 ${
+                  summaryType === type
+                    ? "bg-info text-white shadow-md"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                }`}
+              >
+                {SEMESTER_LABELS[type]}
+              </button>
+            ))}
+          </div>
+
+          {summaryText && (
+            <div className="space-y-3">
+              <div className="relative">
+                <pre className="bg-card border border-border rounded-xl p-4 text-xs leading-relaxed whitespace-pre-wrap overflow-auto max-h-80 font-sans" dir="rtl">
+                  {summaryText}
+                </pre>
+                <button
+                  onClick={handleCopySummary}
+                  className="absolute top-2 left-2 p-2 rounded-lg bg-background/80 hover:bg-muted border border-border transition-colors"
+                  title="העתק תקציר"
+                >
+                  {summaryCopied ? <CheckCircle className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4 text-muted-foreground" />}
+                </button>
+              </div>
+              {summaryCopied && (
+                <p className="text-xs text-success flex items-center gap-1 animate-fade-in">
+                  <CheckCircle className="w-3 h-3" /> התקציר הועתק ללוח — ניתן להדביק ב-Student Compass
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Assessment Rounds Management */}
