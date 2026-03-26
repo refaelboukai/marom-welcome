@@ -844,7 +844,7 @@ const StudentProfile = () => {
         <div className="intake-card border-info/20 print:hidden">
           <h3 className="font-heading font-semibold mb-3 flex items-center gap-2">
             <FileBarChart className="w-5 h-5 text-info" />
-            תקציר לתעודה — Student Compass
+            תקציר לתעודה
           </h3>
           <p className="text-xs text-muted-foreground mb-4">
             הפקת תקציר מגמות וציונים למחצית א׳, מחצית ב׳ או סיכום שנתי. ניתן להעתיק ולהדביק באפליקציית התעודות.
@@ -881,7 +881,7 @@ const StudentProfile = () => {
               </div>
               {summaryCopied && (
                 <p className="text-xs text-success flex items-center gap-1 animate-fade-in">
-                  <CheckCircle className="w-3 h-3" /> התקציר הועתק ללוח — ניתן להדביק ב-Student Compass
+                  <CheckCircle className="w-3 h-3" /> התקציר הועתק ללוח
                 </p>
               )}
             </div>
