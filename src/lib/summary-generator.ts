@@ -85,7 +85,6 @@ export function generateSemesterSummary(
     };
   });
 
-  const fmt = (n: number) => n >= 0 ? n.toFixed(2) : "—";
   const dateStr = new Date().toLocaleDateString("he-IL");
   const semesterLabel = SEMESTER_LABELS[semesterType];
 
@@ -93,16 +92,13 @@ export function generateSemesterSummary(
   summary += `כיתה: ${session.grade || "—"} | תאריך: ${dateStr}\n`;
   summary += `${"─".repeat(40)}\n\n`;
 
-  // Scores table
-  summary += `📊 ציונים ומגמות:\n\n`;
   for (const t of trends) {
     summary += `${t.arrow} ${t.label}\n`;
-    summary += `   קליטה: ${fmt(t.intakeScore)} → עכשיו: ${fmt(t.latestScore)}`;
-    if (t.intakeScore >= 0 && t.latestScore >= 0) {
-      const changeStr = t.change > 0 ? `+${t.change.toFixed(2)}` : t.change.toFixed(2);
-      summary += ` (${changeStr}, ${getTrendLabel(t.change)})`;
+    summary += `   ${t.interpretation}\n`;
+    if (t.intakeScore >= 0 && t.latestScore >= 0 && Math.abs(t.change) > 0.01) {
+      summary += `   מגמה: ${getTrendLabel(t.change)}\n`;
     }
-    summary += `\n   ${t.interpretation}\n\n`;
+    summary += `\n`;
   }
 
   // Overall trend
@@ -110,7 +106,7 @@ export function generateSemesterSummary(
   if (validTrends.length > 0) {
     const avgChange = validTrends.reduce((s, t) => s + t.change, 0) / validTrends.length;
     summary += `${"─".repeat(40)}\n`;
-    summary += `📈 מגמה כללית: ${getTrendArrow(avgChange)} ${getTrendLabel(avgChange)} (${avgChange > 0 ? "+" : ""}${avgChange.toFixed(2)})\n`;
+    summary += `📈 מגמה כללית: ${getTrendArrow(avgChange)} ${getTrendLabel(avgChange)}\n`;
   }
 
   // Strengths and areas
@@ -126,10 +122,10 @@ export function generateSemesterSummary(
     summary += `⚠️ דורש תשומת לב: ${concerns.map(t => t.label).join(", ")}\n`;
   }
   if (improved.length > 0) {
-    summary += `✅ שיפור: ${improved.map(t => `${t.label} (${t.change > 0 ? "+" : ""}${t.change.toFixed(2)})`).join(", ")}\n`;
+    summary += `✅ שיפור: ${improved.map(t => t.label).join(", ")}\n`;
   }
   if (declined.length > 0) {
-    summary += `🔻 ירידה: ${declined.map(t => `${t.label} (${t.change.toFixed(2)})`).join(", ")}\n`;
+    summary += `🔻 ירידה: ${declined.map(t => t.label).join(", ")}\n`;
   }
 
   // Rounds info
