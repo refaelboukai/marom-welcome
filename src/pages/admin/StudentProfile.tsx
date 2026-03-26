@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getSessionDB, updateSessionDB } from "@/lib/supabase-storage";
+import { getSessionDB, updateSessionDB, getAssessmentRounds, createAssessmentRound, AssessmentRound } from "@/lib/supabase-storage";
 import { IntakeSession, SECTION_LABELS, OPEN_QUESTION_LABELS, QOL_SUBDOMAIN_LABELS, GASGoal } from "@/lib/types";
 import { calculateScores, calculateQoLSubdomains, generateRiskFlags, generateInsights, generateGASGoals, getScoreLabel, getScoreColor, getTopFocusAreas } from "@/lib/scoring";
 import { DOMAIN_DESCRIPTIONS, QOL_SUBDOMAIN_DESCRIPTIONS, getScoreInterpretation } from "@/lib/domain-descriptions";
@@ -23,6 +23,10 @@ const StudentProfile = () => {
   const [consentSignature, setConsentSignature] = useState<string | null>(null);
   const [aiResult, setAiResult] = useState<PersonalPlanData["aiRecommendations"] | null>(null);
   const [supportPlansData, setSupportPlansData] = useState<PersonalPlanData["supportPlans"]>([]);
+  const [rounds, setRounds] = useState<AssessmentRound[]>([]);
+  const [showNewRound, setShowNewRound] = useState(false);
+  const [newRoundLabel, setNewRoundLabel] = useState("");
+  const [newRoundParticipants, setNewRoundParticipants] = useState<string>("both");
   const printRef = useRef<HTMLDivElement>(null);
 
   const loadData = useCallback(async () => {
@@ -32,10 +36,14 @@ const StudentProfile = () => {
     setSession(s);
     setNotes(s.adminNotes || "");
 
-    const { data: raw } = await (supabase as any).from("intake_sessions").select("consent_signature").eq("id", sessionId).maybeSingle();
-    if (raw) {
-      setConsentSignature(raw.consent_signature);
+    const [consentResult, roundsData] = await Promise.all([
+      (supabase as any).from("intake_sessions").select("consent_signature").eq("id", sessionId).maybeSingle(),
+      getAssessmentRounds(sessionId),
+    ]);
+    if (consentResult.data) {
+      setConsentSignature(consentResult.data.consent_signature);
     }
+    setRounds(roundsData);
     setLoading(false);
   }, [sessionId, navigate]);
 
@@ -64,6 +72,15 @@ const StudentProfile = () => {
     ? calculateQoLSubdomains(session.reassessmentStudentResponses!, session.reassessmentParentResponses || {})
     : null;
 
+  // Compute scores for all completed rounds
+  const completedRounds = rounds.filter(r => 
+    Object.keys(r.student_responses).length > 0 || Object.keys(r.parent_responses).length > 0
+  );
+  const roundsScores = completedRounds.map(r => ({
+    round: r,
+    scores: calculateScores(r.student_responses, r.parent_responses),
+  }));
+
   const radarData = [
     { subject: "איכות חיים", student: scores.qualityOfLife.studentNormalized, parent: scores.qualityOfLife.parentNormalized },
     { subject: "מסוגלות עצמית", student: scores.selfEfficacy.studentNormalized, parent: scores.selfEfficacy.parentNormalized },
@@ -74,7 +91,26 @@ const StudentProfile = () => {
   const hasStudentData = scores.qualityOfLife.studentNormalized >= 0;
   const hasParentData = scores.qualityOfLife.parentNormalized >= 0;
 
-  const timelineData = reassessmentScores ? [
+  // Build multi-round timeline data
+  const multiRoundTimelineData = roundsScores.length > 0 ? (() => {
+    const domains = [
+      { key: "qualityOfLife" as const, label: SECTION_LABELS.quality_of_life },
+      { key: "selfEfficacy" as const, label: SECTION_LABELS.self_efficacy },
+      { key: "locusOfControl" as const, label: SECTION_LABELS.locus_of_control },
+      { key: "cognitiveFlexibility" as const, label: SECTION_LABELS.cognitive_flexibility },
+    ];
+    // Each data point is a round
+    const data = [
+      { name: "קליטה", ...Object.fromEntries(domains.map(d => [d.label, scores[d.key].studentNormalized >= 0 ? scores[d.key].studentNormalized : 0])) },
+      ...roundsScores.map(rs => ({
+        name: rs.round.round_label,
+        ...Object.fromEntries(domains.map(d => [d.label, rs.scores[d.key].studentNormalized >= 0 ? rs.scores[d.key].studentNormalized : 0])),
+      })),
+    ];
+    return { data, domains };
+  })() : null;
+
+  const timelineData = !multiRoundTimelineData && reassessmentScores ? [
     { label: SECTION_LABELS.quality_of_life, קליטה: scores.qualityOfLife.studentNormalized >= 0 ? scores.qualityOfLife.studentNormalized : 0, סיכום: reassessmentScores.qualityOfLife.studentNormalized >= 0 ? reassessmentScores.qualityOfLife.studentNormalized : 0 },
     { label: SECTION_LABELS.self_efficacy, קליטה: scores.selfEfficacy.studentNormalized >= 0 ? scores.selfEfficacy.studentNormalized : 0, סיכום: reassessmentScores.selfEfficacy.studentNormalized >= 0 ? reassessmentScores.selfEfficacy.studentNormalized : 0 },
     { label: SECTION_LABELS.locus_of_control, קליטה: scores.locusOfControl.studentNormalized >= 0 ? scores.locusOfControl.studentNormalized : 0, סיכום: reassessmentScores.locusOfControl.studentNormalized >= 0 ? reassessmentScores.locusOfControl.studentNormalized : 0 },
@@ -111,19 +147,15 @@ const StudentProfile = () => {
     setSession((prev) => prev ? { ...prev, status: "under_review", closedAt: undefined } : null);
   };
 
-  const handleOpenReassessment = async () => {
-    await updateSessionDB(session.id, {
-      reassessmentStatus: "open",
-      reassessmentStudentResponses: {},
-      reassessmentParentResponses: {},
-    });
-    setSession((prev) => prev ? {
-      ...prev,
-      reassessmentStatus: "open",
-      reassessmentStudentResponses: {},
-      reassessmentParentResponses: {},
-    } : null);
-    alert("סיכום שנתי נפתח — התלמיד וההורה יכולים כעת למלא שאלונים מחדש עם אותם קודים");
+  const handleCreateRound = async () => {
+    if (!newRoundLabel.trim()) return;
+    const round = await createAssessmentRound(session.id, newRoundLabel, newRoundParticipants);
+    if (round) {
+      setRounds((prev) => [...prev, round]);
+      setShowNewRound(false);
+      setNewRoundLabel("");
+      setNewRoundParticipants("both");
+    }
   };
 
   const handlePrint = () => { window.print(); };
@@ -788,13 +820,128 @@ const StudentProfile = () => {
             className="btn-intake bg-warning/10 text-warning flex items-center justify-center gap-2 border border-warning/20 hover:bg-warning/20 transition-colors">
             <ClipboardList className="w-4 h-4" /> מלא שאלון צוות עבור {session.studentName}
           </button>
-          {(session.status === "completed" || session.status === "under_review") && (
-            <button onClick={handleOpenReassessment}
-              className="btn-intake bg-accent text-accent-foreground flex items-center justify-center gap-2 border border-primary/20 hover:bg-accent/80 transition-colors">
-              <RefreshCw className="w-4 h-4" /> פתח סיכום שנתי — תלמיד + הורה
+        </div>
+
+        {/* Assessment Rounds Management */}
+        <div className="intake-card border-primary/20 print:hidden">
+          <h3 className="font-heading font-semibold mb-3 flex items-center gap-2">
+            <RefreshCw className="w-5 h-5 text-primary" />
+            סבבי הערכה — מעקב מגמות
+          </h3>
+          <p className="text-xs text-muted-foreground mb-4">
+            ניתן לפתוח סבבי הערכה חוזרים לאורך השנה כדי למדוד שיפור והתקדמות. התלמיד וההורה ימלאו את השאלונים מחדש עם אותם קודים.
+          </p>
+
+          {/* Existing rounds */}
+          {rounds.length > 0 && (
+            <div className="space-y-2 mb-4">
+              {rounds.map((r) => {
+                const studentDone = r.student_status === 'completed' || r.student_status === 'not_required';
+                const parentDone = r.parent_status === 'completed' || r.parent_status === 'not_required';
+                const allDone = studentDone && parentDone;
+                const studentCount = Object.keys(r.student_responses).length;
+                const parentCount = Object.keys(r.parent_responses).length;
+                return (
+                  <div key={r.id} className={`p-3 rounded-xl border ${allDone ? "bg-success/5 border-success/20" : "bg-accent border-primary/10"}`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold">{r.round_label}</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">סבב {r.round_number}</span>
+                      </div>
+                      <span className={`text-xs font-medium ${allDone ? "text-success" : "text-primary"}`}>
+                        {allDone ? "✓ הושלם" : "ממתין"}
+                      </span>
+                    </div>
+                    <div className="flex gap-4 mt-1 text-[11px] text-muted-foreground">
+                      {r.participants !== 'parent' && (
+                        <span>תלמיד: {studentDone ? `✓ ${studentCount}/52` : `${studentCount}/52`}</span>
+                      )}
+                      {r.participants !== 'student' && (
+                        <span>הורה: {parentDone ? `✓ ${parentCount}/52` : `${parentCount}/52`}</span>
+                      )}
+                      <span>{new Date(r.created_at).toLocaleDateString("he-IL")}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* New round form */}
+          {showNewRound ? (
+            <div className="p-4 bg-muted/30 rounded-xl space-y-3">
+              <input
+                type="text"
+                placeholder='שם הסבב (למשל: "אמצע שנה", "סוף שנה")'
+                value={newRoundLabel}
+                onChange={(e) => setNewRoundLabel(e.target.value)}
+                className="w-full bg-background border border-input rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+              <div className="flex gap-2">
+                {[
+                  { value: "both", label: "תלמיד + הורה" },
+                  { value: "student", label: "תלמיד בלבד" },
+                  { value: "parent", label: "הורה בלבד" },
+                ].map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setNewRoundParticipants(opt.value)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                      newRoundParticipants === opt.value
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <button onClick={handleCreateRound} className="btn-intake bg-primary text-primary-foreground text-sm flex-1">
+                  פתח סבב
+                </button>
+                <button onClick={() => setShowNewRound(false)} className="btn-intake bg-muted text-muted-foreground text-sm">
+                  ביטול
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowNewRound(true)}
+              className="btn-intake bg-accent text-accent-foreground flex items-center justify-center gap-2 border border-primary/20 hover:bg-accent/80 transition-colors w-full"
+            >
+              <RefreshCw className="w-4 h-4" /> פתח סבב הערכה חדש
             </button>
           )}
         </div>
+
+        {/* Multi-Round Trend Chart */}
+        {multiRoundTimelineData && multiRoundTimelineData.data.length > 1 && (
+          <div className="intake-card border-info/20">
+            <h3 className="font-heading font-semibold mb-2 flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-info" />
+              מגמות לאורך זמן — כל סבבי ההערכה
+            </h3>
+            <p className="text-xs text-muted-foreground mb-3">
+              הגרף מציג את ההתקדמות בארבעת המדדים לאורך כל סבבי ההערכה.
+            </p>
+            <ResponsiveContainer width="100%" height={280}>
+              <LineChart data={multiRoundTimelineData.data}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                <YAxis domain={[0, 5]} tick={{ fontSize: 10 }} />
+                <Tooltip />
+                <Legend />
+                {multiRoundTimelineData.domains.map((d, i) => {
+                  const colors = ["hsl(165, 35%, 42%)", "hsl(200, 60%, 50%)", "hsl(35, 80%, 50%)", "hsl(280, 50%, 55%)"];
+                  return (
+                    <Line key={d.key} type="monotone" dataKey={d.label} stroke={colors[i]} strokeWidth={2} dot={{ r: 4 }} />
+                  );
+                })}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </div>
     </div>
   );

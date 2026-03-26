@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getSessionDB, updateSessionDB } from "@/lib/supabase-storage";
+import { getSessionDB, updateSessionDB, getActiveRoundForSession, updateAssessmentRound, AssessmentRound } from "@/lib/supabase-storage";
 import { IntakeSession } from "@/lib/types";
 import QuestionnaireFlow from "@/components/QuestionnaireFlow";
 import logo from "@/assets/logo.jpeg";
@@ -15,20 +15,30 @@ const ParentFlow = () => {
   const [step, setStep] = useState<Step>("welcome");
   const [loading, setLoading] = useState(true);
   const [isReassessment, setIsReassessment] = useState(false);
+  const [activeRound, setActiveRound] = useState<AssessmentRound | null>(null);
 
   useEffect(() => {
     if (!sessionId) return;
-    getSessionDB(sessionId).then((s) => {
-      setLoading(false);
-      if (!s) { navigate("/"); return; }
+    getSessionDB(sessionId).then(async (s) => {
+      if (!s) { setLoading(false); navigate("/"); return; }
       setSession(s);
 
-      // Check if this is a reassessment flow
+      // Check for active assessment round
+      const round = await getActiveRoundForSession(sessionId, 'parent');
+      if (round) {
+        setActiveRound(round);
+        setIsReassessment(true);
+        setLoading(false);
+        setStep("welcome");
+        return;
+      }
+
+      // Legacy reassessment check
       const rStatus = s.reassessmentStatus;
       if (rStatus === "open" || rStatus === "student_completed") {
-        // Parent can fill if reassessment is open or only student completed
         if (!s.reassessmentParentResponses || Object.keys(s.reassessmentParentResponses).length < 52) {
           setIsReassessment(true);
+          setLoading(false);
           setStep("welcome");
           return;
         }
@@ -39,6 +49,7 @@ const ParentFlow = () => {
       } else if (Object.keys(s.parentResponses).length > 0) {
         setStep("questionnaire");
       }
+      setLoading(false);
     });
   }, [sessionId, navigate]);
 
@@ -57,6 +68,12 @@ const ParentFlow = () => {
 
   const handleUpdateResponse = useCallback(async (itemId: string, value: number) => {
     if (!session) return;
+    if (isReassessment && activeRound) {
+      const updated = { ...activeRound.parent_responses, [itemId]: value };
+      setActiveRound((prev) => prev ? { ...prev, parent_responses: updated } : null);
+      await updateAssessmentRound(activeRound.id, { parent_responses: updated } as any);
+      return;
+    }
     if (isReassessment) {
       const current = session.reassessmentParentResponses || {};
       const updated = { ...current, [itemId]: value };
@@ -67,7 +84,7 @@ const ParentFlow = () => {
     const updated = { ...session.parentResponses, [itemId]: value };
     setSession((prev) => prev ? { ...prev, parentResponses: updated } : null);
     await updateSessionDB(session.id, { parentResponses: updated });
-  }, [session, isReassessment]);
+  }, [session, isReassessment, activeRound]);
 
   const handleUpdateOpenResponse = useCallback(async (key: string, value: string) => {
     if (!session) return;
@@ -77,6 +94,15 @@ const ParentFlow = () => {
 
   const handleComplete = useCallback(async () => {
     if (!session) return;
+    if (isReassessment && activeRound) {
+      const studentDone = activeRound.student_status === 'completed' || activeRound.student_status === 'not_required';
+      await updateAssessmentRound(activeRound.id, {
+        parent_status: 'completed',
+        completed_at: studentDone ? new Date().toISOString() : undefined,
+      } as any);
+      setStep("complete");
+      return;
+    }
     if (isReassessment) {
       const studentDone = session.reassessmentStatus === "student_completed";
       const newStatus = studentDone ? "completed" : "parent_completed";
@@ -90,7 +116,7 @@ const ParentFlow = () => {
     await updateSessionDB(session.id, { status: "parent_completed" });
     setSession((prev) => prev ? { ...prev, status: "parent_completed" } : null);
     setStep("complete");
-  }, [session, isReassessment]);
+  }, [session, isReassessment, activeRound]);
 
   const handleSaveAndExit = useCallback(() => { navigate("/"); }, [navigate]);
 
