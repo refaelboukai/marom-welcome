@@ -351,6 +351,15 @@ export async function createAssessmentRound(sessionId: string, roundLabel: strin
     .select()
     .single();
   if (error) { console.error("Error creating round:", error); return null; }
+
+  // Auto-enable codes for relevant participants
+  const codeUpdates: any = {};
+  if (participants !== 'parent') codeUpdates.student_code_active = true;
+  if (participants !== 'student') codeUpdates.parent_code_active = true;
+  if (Object.keys(codeUpdates).length > 0) {
+    await (supabase as any).from("intake_sessions").update(codeUpdates).eq("id", sessionId);
+  }
+
   return { ...data, student_responses: {}, parent_responses: {} };
 }
 
