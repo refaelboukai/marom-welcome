@@ -51,6 +51,10 @@ const StudentFlow = () => {
   const [activeRound, setActiveRound] = useState<AssessmentRound | null>(null);
   const sigCanvasRef = useRef<SignatureCanvas>(null);
 
+  const gender = useMemo(() => session ? getStudentGender(session.studentName) : "unknown" as Gender, [session?.studentName]);
+  const g = useMemo(() => createGenderedText(gender), [gender]);
+  const explanationCards = useMemo(() => getExplanationCards(g), [g]);
+
   useEffect(() => {
     if (!sessionId) return;
     getSessionDB(sessionId).then(async (s) => {
@@ -194,7 +198,7 @@ const StudentFlow = () => {
         </button>
         <div className="w-full max-w-md md:max-w-lg animate-fade-in text-center">
           <img src={logo} alt="מרום" className="h-20 mx-auto mb-6" />
-          <h1 className="text-3xl font-heading font-bold mb-2">ברוכים הבאים</h1>
+          <h1 className="text-3xl font-heading font-bold mb-2">{g("ברוך הבא", "ברוכה הבאה")}</h1>
           <h2 className="text-xl font-heading text-primary font-semibold mb-1">לבית ספר מרום בית אקשטיין</h2>
           <h3 className="text-lg text-muted-foreground mb-4">{session.studentName}</h3>
           {isReassessment && (
@@ -204,7 +208,7 @@ const StudentFlow = () => {
             </div>
           )}
           <p className="text-muted-foreground leading-relaxed mb-2">
-            אנחנו רוצים להכיר אותך טוב יותר כדי לעזור לך להרגיש טוב, להצליח ולהתקדם בבית הספר.
+            {g("אנחנו רוצים להכיר אותך טוב יותר כדי לעזור לך להרגיש טוב, להצליח ולהתקדם בבית הספר.", "אנחנו רוצות להכיר אותך טוב יותר כדי לעזור לך להרגיש טוב, להצליח ולהתקדם בבית הספר.")}
           </p>
           <div className="intake-card mt-6 text-right space-y-2 text-sm text-muted-foreground">
             <p>✓ אין תשובות נכונות או לא נכונות</p>
@@ -215,7 +219,7 @@ const StudentFlow = () => {
             onClick={() => isReassessment ? setStep("explanation") : setStep("consent")}
             className="btn-intake w-full bg-primary text-primary-foreground shadow-md hover:shadow-lg text-lg py-4 mt-6"
           >
-            {isReassessment ? "המשך לשאלונים" : "התחל"}
+            {isReassessment ? "המשך לשאלונים" : g("התחל", "התחילי")}
           </button>
         </div>
       </div>
@@ -232,7 +236,7 @@ const StudentFlow = () => {
           <div className="text-center mb-4">
             <img src={logo} alt="מרום" className="h-12 mx-auto mb-3" />
             <h2 className="text-xl font-heading font-bold">כללי בית הספר</h2>
-            <p className="text-sm text-muted-foreground">אנא קרא/י בעיון ואשר/י בחתימתך</p>
+            <p className="text-sm text-muted-foreground">{g("אנא קרא בעיון ואשר בחתימתך", "אנא קראי בעיון ואשרי בחתימתך")}</p>
           </div>
 
           <div className="intake-card max-h-[45vh] overflow-y-auto text-right space-y-3 text-sm leading-relaxed mb-4">
@@ -251,12 +255,12 @@ const StudentFlow = () => {
           <label className="flex items-start gap-3 p-3 rounded-xl bg-muted/30 border border-border/50 cursor-pointer mb-4">
             <input type="checkbox" checked={consentChecked} onChange={(e) => setConsentChecked(e.target.checked)}
               className="mt-1 w-4 h-4 rounded border-input accent-primary" />
-            <span className="text-sm text-foreground leading-relaxed">קראתי את הכללים ואני מסכים/ה להם</span>
+            <span className="text-sm text-foreground leading-relaxed">{g("קראתי את הכללים ואני מסכים להם", "קראתי את הכללים ואני מסכימה להם")}</span>
           </label>
 
           <div className="intake-card-soft mb-4">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-medium">חתימת התלמיד/ה</p>
+              <p className="text-sm font-medium">{g("חתימת התלמיד", "חתימת התלמידה")}</p>
               <button onClick={handleClearSignature} className="text-xs text-muted-foreground flex items-center gap-1 hover:text-foreground">
                 <RotateCcw className="w-3 h-3" /> נקה
               </button>
@@ -349,16 +353,16 @@ const StudentFlow = () => {
           <Star className="w-10 h-10 text-success" />
         </div>
         <h1 className="text-2xl font-heading font-bold mb-3">
-          {isReassessment ? "סיימת את הסיכום השנתי!" : "סיימת בהצלחה!"}
+          {isReassessment ? g("סיימת את הסיכום השנתי!", "סיימת את הסיכום השנתי!") : g("סיימת בהצלחה!", "סיימת בהצלחה!")}
         </h1>
         <p className="text-muted-foreground leading-relaxed mb-2">
-          תודה רבה. סיימת את השאלון בהצלחה.
+          {g("תודה רבה. סיימת את השאלון בהצלחה.", "תודה רבה. סיימת את השאלון בהצלחה.")}
         </p>
         <p className="text-sm text-muted-foreground">
-          המידע יעזור לנו להכיר אותך טוב יותר ולתמוך בך בצורה המתאימה.
+          {g("המידע יעזור לנו להכיר אותך טוב יותר ולתמוך בך בצורה המתאימה.", "המידע יעזור לנו להכיר אותך טוב יותר ולתמוך בך בצורה המתאימה.")}
         </p>
         <div className="intake-card mt-6">
-          <p className="text-sm text-muted-foreground">🌟 אתם חלק חשוב מהתהליך — תודה על השיתוף!</p>
+          <p className="text-sm text-muted-foreground">{g("🌟 אתה חלק חשוב מהתהליך — תודה על השיתוף!", "🌟 את חלק חשוב מהתהליך — תודה על השיתוף!")}</p>
         </div>
         <button onClick={() => navigate("/")} className="btn-intake bg-secondary text-secondary-foreground mt-4">
           חזרה למסך הראשי
