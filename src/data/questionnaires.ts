@@ -72,9 +72,9 @@ export const sectionOrder: Array<{ section: string; label: string }> = [
 ];
 
 export const likertLabels = [
-  { value: 1, label: "לא מסכים בכלל" },
-  { value: 2, label: "לא כל כך מסכים" },
-  { value: 3, label: "ככה ככה" },
-  { value: 4, label: "מסכים" },
-  { value: 5, label: "מסכים מאוד" },
+  { value: 1, label: "לא מסכים בכלל", labelFemale: "לא מסכימה בכלל" },
+  { value: 2, label: "לא כל כך מסכים", labelFemale: "לא כל כך מסכימה" },
+  { value: 3, label: "ככה ככה", labelFemale: "ככה ככה" },
+  { value: 4, label: "מסכים", labelFemale: "מסכימה" },
+  { value: 5, label: "מסכים מאוד", labelFemale: "מסכימה מאוד" },
 ];
