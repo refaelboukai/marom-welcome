@@ -162,6 +162,13 @@ const StudentProfile = () => {
     }
   };
 
+  const handleToggleCode = async (type: "student" | "parent") => {
+    const field = type === "student" ? "studentCodeActive" : "parentCodeActive";
+    const current = type === "student" ? session.studentCodeActive !== false : session.parentCodeActive !== false;
+    await updateSessionDB(session.id, { [field]: !current });
+    setSession((prev) => prev ? { ...prev, [field]: !current } : null);
+  };
+
   const handlePrint = () => { window.print(); };
 
   const handleGenerateSummary = (type: SemesterType) => {
