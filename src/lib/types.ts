@@ -35,6 +35,8 @@ export interface IntakeSession {
   notes?: string;
   studentCode: string;
   parentCode: string;
+  studentCodeActive?: boolean;
+  parentCodeActive?: boolean;
   staffCode?: string;
   classGroup?: string;
   academicYear?: string;

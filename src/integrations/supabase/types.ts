@@ -137,6 +137,7 @@ export type Database = {
           intake_date: string
           notes: string | null
           parent_code: string
+          parent_code_active: boolean
           parent_name: string | null
           parent_open_response: string | null
           parent_phone: string | null
@@ -151,6 +152,7 @@ export type Database = {
           staff_responses: Json
           status: string
           student_code: string
+          student_code_active: boolean
           student_id_number: string | null
           student_name: string
           student_open_responses: Json
@@ -170,6 +172,7 @@ export type Database = {
           intake_date?: string
           notes?: string | null
           parent_code: string
+          parent_code_active?: boolean
           parent_name?: string | null
           parent_open_response?: string | null
           parent_phone?: string | null
@@ -184,6 +187,7 @@ export type Database = {
           staff_responses?: Json
           status?: string
           student_code: string
+          student_code_active?: boolean
           student_id_number?: string | null
           student_name: string
           student_open_responses?: Json
@@ -203,6 +207,7 @@ export type Database = {
           intake_date?: string
           notes?: string | null
           parent_code?: string
+          parent_code_active?: boolean
           parent_name?: string | null
           parent_open_response?: string | null
           parent_phone?: string | null
@@ -217,6 +222,7 @@ export type Database = {
           staff_responses?: Json
           status?: string
           student_code?: string
+          student_code_active?: boolean
           student_id_number?: string | null
           student_name?: string
           student_open_responses?: Json

@@ -16,6 +16,8 @@ function rowToSession(row: any): IntakeSession {
     notes: row.notes,
     studentCode: row.student_code,
     parentCode: row.parent_code,
+    studentCodeActive: row.student_code_active !== false,
+    parentCodeActive: row.parent_code_active !== false,
     staffCode: row.staff_code,
     classGroup: row.class_group || "",
     academicYear: row.academic_year || 'תשפ"ו',
@@ -110,7 +112,10 @@ export async function findSessionByCodeDB(code: string): Promise<{ session: Inta
     .eq("student_code", code)
     .maybeSingle();
 
-  if (studentData) return { session: rowToSession(studentData), role: "student" };
+  if (studentData) {
+    if (!(studentData as any).student_code_active) return null;
+    return { session: rowToSession(studentData), role: "student" };
+  }
 
   // Check parent code
   const { data: parentData } = await supabase
@@ -119,7 +124,10 @@ export async function findSessionByCodeDB(code: string): Promise<{ session: Inta
     .eq("parent_code", code)
     .maybeSingle();
 
-  if (parentData) return { session: rowToSession(parentData), role: "parent" };
+  if (parentData) {
+    if (!(parentData as any).parent_code_active) return null;
+    return { session: rowToSession(parentData), role: "parent" };
+  }
 
   return null;
 }
@@ -154,6 +162,8 @@ export async function updateSessionDB(id: string, updates: Partial<IntakeSession
   if (updates.reassessmentStudentResponses !== undefined) dbUpdates.reassessment_student_responses = updates.reassessmentStudentResponses;
   if (updates.reassessmentParentResponses !== undefined) dbUpdates.reassessment_parent_responses = updates.reassessmentParentResponses;
   if (updates.reassessmentDate !== undefined) dbUpdates.reassessment_date = updates.reassessmentDate;
+  if (updates.studentCodeActive !== undefined) dbUpdates.student_code_active = updates.studentCodeActive;
+  if (updates.parentCodeActive !== undefined) dbUpdates.parent_code_active = updates.parentCodeActive;
 
   const { data, error } = await supabase
     .from("intake_sessions")
@@ -341,6 +351,15 @@ export async function createAssessmentRound(sessionId: string, roundLabel: strin
     .select()
     .single();
   if (error) { console.error("Error creating round:", error); return null; }
+
+  // Auto-enable codes for relevant participants
+  const codeUpdates: any = {};
+  if (participants !== 'parent') codeUpdates.student_code_active = true;
+  if (participants !== 'student') codeUpdates.parent_code_active = true;
+  if (Object.keys(codeUpdates).length > 0) {
+    await (supabase as any).from("intake_sessions").update(codeUpdates).eq("id", sessionId);
+  }
+
   return { ...data, student_responses: {}, parent_responses: {} };
 }
 
