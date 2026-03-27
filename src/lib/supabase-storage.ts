@@ -16,6 +16,8 @@ function rowToSession(row: any): IntakeSession {
     notes: row.notes,
     studentCode: row.student_code,
     parentCode: row.parent_code,
+    studentCodeActive: row.student_code_active !== false,
+    parentCodeActive: row.parent_code_active !== false,
     staffCode: row.staff_code,
     classGroup: row.class_group || "",
     academicYear: row.academic_year || 'תשפ"ו',
@@ -110,7 +112,10 @@ export async function findSessionByCodeDB(code: string): Promise<{ session: Inta
     .eq("student_code", code)
     .maybeSingle();
 
-  if (studentData) return { session: rowToSession(studentData), role: "student" };
+  if (studentData) {
+    if (!(studentData as any).student_code_active) return null;
+    return { session: rowToSession(studentData), role: "student" };
+  }
 
   // Check parent code
   const { data: parentData } = await supabase
@@ -119,7 +124,10 @@ export async function findSessionByCodeDB(code: string): Promise<{ session: Inta
     .eq("parent_code", code)
     .maybeSingle();
 
-  if (parentData) return { session: rowToSession(parentData), role: "parent" };
+  if (parentData) {
+    if (!(parentData as any).parent_code_active) return null;
+    return { session: rowToSession(parentData), role: "parent" };
+  }
 
   return null;
 }
