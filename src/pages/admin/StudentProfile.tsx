@@ -159,6 +159,9 @@ const StudentProfile = () => {
       setShowNewRound(false);
       setNewRoundLabel("");
       setNewRoundParticipants("both");
+      // Refresh session to reflect re-enabled codes
+      const updated = await getSessionDB(session.id);
+      if (updated) setSession(updated);
     }
   };
 
