@@ -21,6 +21,45 @@ const NewIntake = () => {
   const [created, setCreated] = useState<{ studentCode: string; parentCode: string } | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [classGroups, setClassGroups] = useState<string[]>(["tali", "eden"]);
+  const [classGroupLabels, setClassGroupLabels] = useState<Record<string, string>>({
+    tali: "הכיתה של טלי",
+    eden: "הכיתה של עדן",
+  });
+  const [showNewClass, setShowNewClass] = useState(false);
+  const [newClassName, setNewClassName] = useState("");
+
+  useEffect(() => {
+    const loadClassGroups = async () => {
+      const { data } = await supabase
+        .from("intake_sessions")
+        .select("class_group")
+        .not("class_group", "is", null)
+        .not("class_group", "eq", "");
+      if (data) {
+        const unique = [...new Set(data.map((d) => d.class_group!).filter(Boolean))];
+        const defaultLabels: Record<string, string> = { tali: "הכיתה של טלי", eden: "הכיתה של עדן" };
+        const allGroups = [...new Set(["tali", "eden", ...unique])];
+        setClassGroups(allGroups);
+        const labels = { ...defaultLabels };
+        unique.forEach((g) => { if (!labels[g]) labels[g] = g; });
+        setClassGroupLabels(labels);
+      }
+    };
+    loadClassGroups();
+  }, []);
+
+  const handleAddClass = () => {
+    if (!newClassName.trim()) return;
+    const key = newClassName.trim();
+    if (!classGroups.includes(key)) {
+      setClassGroups((prev) => [...prev, key]);
+      setClassGroupLabels((prev) => ({ ...prev, [key]: key }));
+    }
+    updateField("classGroup", key);
+    setNewClassName("");
+    setShowNewClass(false);
+  };
 
   const handleSubmit = async () => {
     if (!form.studentName.trim()) return;
