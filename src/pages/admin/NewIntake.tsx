@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createSessionDB } from "@/lib/supabase-storage";
-import { ArrowRight, Copy, CheckCircle, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { ArrowRight, Copy, CheckCircle, Loader2, Plus } from "lucide-react";
 
 const NewIntake = () => {
   const navigate = useNavigate();
@@ -133,12 +134,37 @@ const NewIntake = () => {
           {/* Class group selector */}
           <div>
             <label className="block text-sm font-medium mb-1.5">כיתה / קבוצה</label>
-            <select value={form.classGroup} onChange={(e) => updateField("classGroup", e.target.value)}
-              className="w-full bg-card border border-input rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
-              <option value="">ללא שיוך</option>
-              <option value="tali">הכיתה של טלי</option>
-              <option value="eden">הכיתה של עדן</option>
-            </select>
+            <div className="flex gap-2">
+              <select value={form.classGroup} onChange={(e) => updateField("classGroup", e.target.value)}
+                className="flex-1 bg-card border border-input rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+                <option value="">ללא שיוך</option>
+                {classGroups.map((g) => (
+                  <option key={g} value={g}>{classGroupLabels[g] || g}</option>
+                ))}
+              </select>
+              <button type="button" onClick={() => setShowNewClass(!showNewClass)}
+                className="p-3 rounded-xl border border-input bg-card hover:bg-muted transition-colors"
+                title="הוסף כיתה חדשה">
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+            {showNewClass && (
+              <div className="mt-2 flex gap-2 animate-fade-in">
+                <input
+                  type="text"
+                  value={newClassName}
+                  onChange={(e) => setNewClassName(e.target.value)}
+                  placeholder="שם הכיתה החדשה..."
+                  className="flex-1 bg-card border border-input rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  onKeyDown={(e) => e.key === "Enter" && handleAddClass()}
+                />
+                <button type="button" onClick={handleAddClass}
+                  disabled={!newClassName.trim()}
+                  className="px-4 py-3 rounded-xl bg-primary text-primary-foreground text-sm disabled:opacity-50">
+                  הוסף
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Academic year selector */}
