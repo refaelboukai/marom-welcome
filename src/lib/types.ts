@@ -17,6 +17,7 @@ export interface QuestionnaireItem {
   id: string;
   section: QuestionnaireSection;
   studentText: string;
+  studentTextFemale?: string;
   parentText: string;
   isReverse: boolean;
   subdomain?: string;

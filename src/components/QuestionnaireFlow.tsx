@@ -105,9 +105,10 @@ const QuestionnaireFlow = ({
             <LikertScale
               key={item.id}
               questionNumber={globalOffset + idx + 1}
-              questionText={role === "student" ? item.studentText : item.parentText}
+              questionText={role === "student" ? (gender === "female" && item.studentTextFemale ? item.studentTextFemale : item.studentText) : item.parentText}
               value={responses[item.id]}
               onChange={(val) => onUpdateResponse(item.id, val)}
+              gender={gender}
             />
           ))}
         </div>
