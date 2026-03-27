@@ -116,7 +116,7 @@ const QuestionnaireFlow = ({
       {isOpenPage && (
         <div className="mt-4 space-y-4 animate-fade-in">
           <h3 className="text-lg font-heading font-semibold">עוד קצת עליך...</h3>
-          <p className="text-sm text-muted-foreground">אלה שאלות פתוחות. אפשר לכתוב כמה שרוצים או לדלג.</p>
+          <p className="text-sm text-muted-foreground">{g("אלה שאלות פתוחות. אפשר לכתוב כמה שרוצים או לדלג.", "אלה שאלות פתוחות. אפשר לכתוב כמה שרוצות או לדלג.")}</p>
           {OPEN_QUESTION_KEYS.map((key) => (
             <div key={key} className="intake-card-soft">
               <label className="block text-sm font-medium mb-2">{OPEN_QUESTION_LABELS[key]}</label>
@@ -125,7 +125,7 @@ const QuestionnaireFlow = ({
                 rows={3}
                 value={openResponses[key] || ""}
                 onChange={(e) => onUpdateOpenResponse?.(key, e.target.value)}
-                placeholder="כתוב/י כאן..."
+                placeholder={g("כתוב כאן...", "כתבי כאן...")}
               />
             </div>
           ))}
