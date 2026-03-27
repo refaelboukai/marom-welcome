@@ -293,23 +293,35 @@ const StudentProfile = () => {
 
         {/* Codes */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 print:hidden">
-          <div className="intake-card-soft flex items-center justify-between">
+          <div className={`intake-card-soft flex items-center justify-between ${session.studentCodeActive === false ? 'opacity-60' : ''}`}>
             <div>
               <p className="text-xs text-muted-foreground">קוד תלמיד</p>
               <p className="font-mono font-bold text-sm" dir="ltr">{session.studentCode}</p>
+              {session.studentCodeActive === false && <p className="text-xs text-destructive mt-0.5">מושבת</p>}
             </div>
-            <button onClick={() => handleCopy(session.studentCode, "student")} className="p-2 rounded-lg hover:bg-muted">
-              {copied === "student" ? <CheckCircle className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4 text-muted-foreground" />}
-            </button>
+            <div className="flex items-center gap-1">
+              <button onClick={() => handleCopy(session.studentCode, "student")} className="p-2 rounded-lg hover:bg-muted">
+                {copied === "student" ? <CheckCircle className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4 text-muted-foreground" />}
+              </button>
+              <button onClick={() => handleToggleCode("student")} className="p-2 rounded-lg hover:bg-muted" title={session.studentCodeActive !== false ? "השבת קוד" : "הפעל קוד"}>
+                {session.studentCodeActive !== false ? <Unlock className="w-4 h-4 text-success" /> : <Lock className="w-4 h-4 text-destructive" />}
+              </button>
+            </div>
           </div>
-          <div className="intake-card-soft flex items-center justify-between">
+          <div className={`intake-card-soft flex items-center justify-between ${session.parentCodeActive === false ? 'opacity-60' : ''}`}>
             <div>
               <p className="text-xs text-muted-foreground">קוד הורה</p>
               <p className="font-mono font-bold text-sm" dir="ltr">{session.parentCode}</p>
+              {session.parentCodeActive === false && <p className="text-xs text-destructive mt-0.5">מושבת</p>}
             </div>
-            <button onClick={() => handleCopy(session.parentCode, "parent")} className="p-2 rounded-lg hover:bg-muted">
-              {copied === "parent" ? <CheckCircle className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4 text-muted-foreground" />}
-            </button>
+            <div className="flex items-center gap-1">
+              <button onClick={() => handleCopy(session.parentCode, "parent")} className="p-2 rounded-lg hover:bg-muted">
+                {copied === "parent" ? <CheckCircle className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4 text-muted-foreground" />}
+              </button>
+              <button onClick={() => handleToggleCode("parent")} className="p-2 rounded-lg hover:bg-muted" title={session.parentCodeActive !== false ? "השבת קוד" : "הפעל קוד"}>
+                {session.parentCodeActive !== false ? <Unlock className="w-4 h-4 text-success" /> : <Lock className="w-4 h-4 text-destructive" />}
+              </button>
+            </div>
           </div>
         </div>
 
