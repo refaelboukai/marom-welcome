@@ -4,6 +4,7 @@ import LikertScale from "./LikertScale";
 import ProgressHeader from "./ProgressHeader";
 import { OPEN_QUESTION_KEYS, OPEN_QUESTION_LABELS } from "@/lib/types";
 import { LogOut } from "lucide-react";
+import { Gender, createGenderedText } from "@/lib/gender-utils";
 
 interface QuestionnaireFlowProps {
   role: "student" | "parent";
@@ -13,6 +14,7 @@ interface QuestionnaireFlowProps {
   onUpdateOpenResponse?: (key: string, value: string) => void;
   onComplete: () => void;
   onSaveAndExit?: () => void;
+  gender?: Gender;
 }
 
 const QuestionnaireFlow = ({
@@ -23,7 +25,9 @@ const QuestionnaireFlow = ({
   onUpdateOpenResponse,
   onComplete,
   onSaveAndExit,
+  gender = "unknown",
 }: QuestionnaireFlowProps) => {
+  const g = useMemo(() => createGenderedText(gender), [gender]);
   const totalItems = questionnaireItems.length;
   const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
   const hasOpenQuestions = role === "student";

@@ -338,6 +338,7 @@ const StudentFlow = () => {
           onUpdateOpenResponse={handleUpdateOpenResponse}
           onComplete={handleComplete}
           onSaveAndExit={handleSaveAndExit}
+          gender={gender}
         />
       </div>
     );
