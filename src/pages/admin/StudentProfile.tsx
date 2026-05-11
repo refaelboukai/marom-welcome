@@ -11,6 +11,7 @@ import SupportPlans from "@/components/SupportPlans";
 import AIRecommendations from "@/components/AIRecommendations";
 import { generateStudentPDF, generatePersonalPlanPDF, PersonalPlanData } from "@/lib/pdf-export";
 import { supabase } from "@/integrations/supabase/client";
+import { questionnaireItems } from "@/data/questionnaires";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line } from "recharts";
 
 const StudentProfile = () => {
@@ -345,17 +346,17 @@ const StudentProfile = () => {
           <div className="intake-card-soft text-center">
             <Users className="w-5 h-5 mx-auto mb-1 text-primary" />
             <p className="text-xs text-muted-foreground">השלמת תלמיד</p>
-            <p className="text-xl font-bold">{Object.keys(session.studentResponses).length}/52</p>
+            <p className="text-xl font-bold">{Object.keys(session.studentResponses).length}/{questionnaireItems.length}</p>
             <div className="w-full h-1.5 bg-muted rounded-full mt-2 overflow-hidden">
-              <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${(Object.keys(session.studentResponses).length / 52) * 100}%` }} />
+              <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${(Object.keys(session.studentResponses).length / questionnaireItems.length) * 100}%` }} />
             </div>
           </div>
           <div className="intake-card-soft text-center">
             <Users className="w-5 h-5 mx-auto mb-1 text-info" />
             <p className="text-xs text-muted-foreground">השלמת הורה</p>
-            <p className="text-xl font-bold">{Object.keys(session.parentResponses).length}/52</p>
+            <p className="text-xl font-bold">{Object.keys(session.parentResponses).length}/{questionnaireItems.length}</p>
             <div className="w-full h-1.5 bg-muted rounded-full mt-2 overflow-hidden">
-              <div className="h-full bg-info rounded-full transition-all" style={{ width: `${(Object.keys(session.parentResponses).length / 52) * 100}%` }} />
+              <div className="h-full bg-info rounded-full transition-all" style={{ width: `${(Object.keys(session.parentResponses).length / questionnaireItems.length) * 100}%` }} />
             </div>
           </div>
         </div>
@@ -365,9 +366,9 @@ const StudentProfile = () => {
           <div className="intake-card-soft text-center">
             <ClipboardList className="w-5 h-5 mx-auto mb-1 text-warning" />
             <p className="text-xs text-muted-foreground">הערכת צוות</p>
-            <p className="text-xl font-bold">{Object.keys(session.staffResponses).length}/52</p>
+            <p className="text-xl font-bold">{Object.keys(session.staffResponses).length}/{questionnaireItems.length}</p>
             <div className="w-full h-1.5 bg-muted rounded-full mt-2 overflow-hidden">
-              <div className="h-full bg-warning rounded-full transition-all" style={{ width: `${(Object.keys(session.staffResponses).length / 52) * 100}%` }} />
+              <div className="h-full bg-warning rounded-full transition-all" style={{ width: `${(Object.keys(session.staffResponses).length / questionnaireItems.length) * 100}%` }} />
             </div>
           </div>
         )}
@@ -980,10 +981,10 @@ const StudentProfile = () => {
                     </div>
                     <div className="flex gap-4 mt-1 text-[11px] text-muted-foreground">
                       {r.participants !== 'parent' && (
-                        <span>תלמיד: {studentDone ? `✓ ${studentCount}/52` : `${studentCount}/52`}</span>
+                        <span>תלמיד: {studentDone ? `✓ ${studentCount}/${questionnaireItems.length}` : `${studentCount}/${questionnaireItems.length}`}</span>
                       )}
                       {r.participants !== 'student' && (
-                        <span>הורה: {parentDone ? `✓ ${parentCount}/52` : `${parentCount}/52`}</span>
+                        <span>הורה: {parentDone ? `✓ ${parentCount}/${questionnaireItems.length}` : `${parentCount}/${questionnaireItems.length}`}</span>
                       )}
                       <span>{new Date(r.created_at).toLocaleDateString("he-IL")}</span>
                     </div>
