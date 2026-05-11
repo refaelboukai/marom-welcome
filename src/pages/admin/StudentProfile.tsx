@@ -246,11 +246,8 @@ const StudentProfile = () => {
             <button onClick={() => navigate(`/staff/${session.id}`)} className="p-2 rounded-lg hover:bg-muted" title="שאלון צוות">
               <ClipboardList className="w-5 h-5 text-warning" />
             </button>
-            <button onClick={() => generateStudentPDF(session, "parent")} className="p-2 rounded-lg hover:bg-muted" title="PDF להורים">
-              <Download className="w-5 h-5 text-info" />
-            </button>
-            <button onClick={() => generateStudentPDF(session, "staff")} className="p-2 rounded-lg hover:bg-muted" title="PDF לצוות">
-              <FileText className="w-5 h-5 text-primary" />
+            <button onClick={handleExportPersonalPlan} className="p-2 rounded-lg hover:bg-muted" title="תכנית אישית — המלצות ודרכי פעולה">
+              <ScrollText className="w-5 h-5 text-success" />
             </button>
             <button onClick={handlePrint} className="p-2 rounded-lg hover:bg-muted" title="הדפסה">
               <Printer className="w-5 h-5 text-muted-foreground" />
@@ -859,19 +856,11 @@ const StudentProfile = () => {
           </div>
         )}
 
-        {/* PDF Export Buttons */}
-        <div className="grid grid-cols-3 gap-3 print:hidden">
-          <button onClick={() => generateStudentPDF(session, "parent")}
-            className="btn-intake bg-info/10 text-info text-sm flex items-center justify-center gap-2 hover:bg-info/20 transition-colors">
-            <Download className="w-4 h-4" /> PDF להורים
-          </button>
-          <button onClick={() => generateStudentPDF(session, "staff")}
-            className="btn-intake bg-primary/10 text-primary text-sm flex items-center justify-center gap-2 hover:bg-primary/20 transition-colors">
-            <FileText className="w-4 h-4" /> PDF לצוות
-          </button>
+        {/* Personal Plan Export */}
+        <div className="print:hidden">
           <button onClick={handleExportPersonalPlan}
-            className="btn-intake bg-success/10 text-success text-sm flex items-center justify-center gap-2 hover:bg-success/20 transition-colors">
-            <ScrollText className="w-4 h-4" /> תכנית אישית
+            className="btn-intake bg-success/10 text-success text-sm flex items-center justify-center gap-2 hover:bg-success/20 transition-colors w-full">
+            <ScrollText className="w-4 h-4" /> הפק תכנית אישית — המלצות ודרכי פעולה
           </button>
         </div>
 
