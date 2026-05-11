@@ -82,6 +82,7 @@ export function generateSemesterSummary(
     { key: "selfEfficacy" as const, label: SECTION_LABELS.self_efficacy },
     { key: "locusOfControl" as const, label: SECTION_LABELS.locus_of_control },
     { key: "cognitiveFlexibility" as const, label: SECTION_LABELS.cognitive_flexibility },
+    { key: "learningCharacteristics" as const, label: SECTION_LABELS.learning_characteristics },
   ];
 
   let relevantRounds: AssessmentRound[];
