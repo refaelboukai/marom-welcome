@@ -503,6 +503,39 @@ const StudentProfile = () => {
           </div>
         )}
 
+        {/* Learning Characteristics Subdomain Breakdown */}
+        {hasStudentData && Object.values(lcSubdomains).some(s => s.normalized >= 0) && (
+          <div className="intake-card border-warning/20">
+            <h3 className="font-heading font-semibold mb-2 flex items-center gap-2">
+              <Brain className="w-5 h-5 text-warning" />
+              מאפייני למידה — אשכולות נוירו-פדגוגיים
+            </h3>
+            <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
+              ארבעה אשכולות נוירו-פדגוגיים המאפשרים התאמת סביבת הלמידה ושיטות ההוראה לתלמיד. ציון נמוך באשכול מעיד על קושי הדורש התאמות פדגוגיות ייעודיות.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {Object.entries(lcSubdomains).map(([key, score]) => (
+                <div key={key} className="p-3 bg-muted/30 rounded-xl">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-xs font-semibold">{LC_SUBDOMAIN_LABELS[key]}</p>
+                    <span className={`text-lg font-bold ${getScoreColor(score.normalized)}`}>
+                      {score.normalized >= 0 ? score.normalized.toFixed(2) : "—"}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground leading-relaxed">
+                    {LC_SUBDOMAIN_DESCRIPTIONS[key]}
+                  </p>
+                  {score.studentNormalized >= 0 && score.parentNormalized >= 0 && (
+                    <p className="text-[9px] text-muted-foreground mt-1">
+                      ת: {score.studentNormalized.toFixed(1)} | ה: {score.parentNormalized.toFixed(1)}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Reassessment QoL Subdomain Comparison */}
         {reassessmentQoLSubdomains && (
           <div className="intake-card border-info/20">
