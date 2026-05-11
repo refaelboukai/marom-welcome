@@ -260,7 +260,7 @@ const Dashboard = () => {
                     </thead>
                     <tbody>
                       {filtered.map((session) => {
-                        const avgScoreDomains = [session.scores.qualityOfLife, session.scores.selfEfficacy, session.scores.locusOfControl, session.scores.cognitiveFlexibility].filter((d) => d.normalized >= 0);
+                        const avgScoreDomains = [session.scores.qualityOfLife, session.scores.selfEfficacy, session.scores.locusOfControl, session.scores.cognitiveFlexibility, session.scores.learningCharacteristics].filter((d) => d.normalized >= 0);
                         const overallScore = avgScoreDomains.length > 0 ? Math.round(avgScoreDomains.reduce((sum, d) => sum + d.normalized, 0) / avgScoreDomains.length * 100) / 100 : -1;
                         return (
                           <tr key={session.id} className="border-t border-border hover:bg-muted/30 transition-colors">
