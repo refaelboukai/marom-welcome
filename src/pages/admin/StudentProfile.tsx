@@ -29,6 +29,13 @@ const StudentProfile = () => {
   const [showNewRound, setShowNewRound] = useState(false);
   const [newRoundLabel, setNewRoundLabel] = useState("");
   const [newRoundParticipants, setNewRoundParticipants] = useState<string>("both");
+  const [newRoundSections, setNewRoundSections] = useState<string[]>([
+    "quality_of_life",
+    "locus_of_control",
+    "self_efficacy",
+    "cognitive_flexibility",
+    "learning_characteristics",
+  ]);
   const printRef = useRef<HTMLDivElement>(null);
   const [summaryType, setSummaryType] = useState<SemesterType | null>(null);
   const [summaryText, setSummaryText] = useState("");
@@ -158,12 +165,14 @@ const StudentProfile = () => {
 
   const handleCreateRound = async () => {
     if (!newRoundLabel.trim()) return;
-    const round = await createAssessmentRound(session.id, newRoundLabel, newRoundParticipants);
+    if (newRoundSections.length === 0) return;
+    const round = await createAssessmentRound(session.id, newRoundLabel, newRoundParticipants, newRoundSections);
     if (round) {
       setRounds((prev) => [...prev, round]);
       setShowNewRound(false);
       setNewRoundLabel("");
       setNewRoundParticipants("both");
+      setNewRoundSections(["quality_of_life","locus_of_control","self_efficacy","cognitive_flexibility","learning_characteristics"]);
       // Refresh session to reflect re-enabled codes
       const updated = await getSessionDB(session.id);
       if (updated) setSession(updated);
