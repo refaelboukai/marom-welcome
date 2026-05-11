@@ -192,6 +192,7 @@ const ParentFlow = () => {
           onUpdateOpenResponse={handleUpdateOpenResponse}
           onComplete={handleComplete}
           onSaveAndExit={handleSaveAndExit}
+          allowedSections={activeRound?.sections}
         />
       </div>
     );
