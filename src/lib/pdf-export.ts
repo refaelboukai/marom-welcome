@@ -1,12 +1,13 @@
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
-import { IntakeSession, SECTION_LABELS, QOL_SUBDOMAIN_LABELS } from "@/lib/types";
-import { calculateScores, calculateQoLSubdomains, generateRiskFlags, generateInsights, generateGASGoals, getScoreLabel, getTopFocusAreas } from "@/lib/scoring";
-import { DOMAIN_DESCRIPTIONS, QOL_SUBDOMAIN_DESCRIPTIONS, getScoreInterpretation } from "@/lib/domain-descriptions";
+import { IntakeSession, SECTION_LABELS, QOL_SUBDOMAIN_LABELS, LC_SUBDOMAIN_LABELS } from "@/lib/types";
+import { calculateScores, calculateQoLSubdomains, calculateLearningSubdomains, generateRiskFlags, generateInsights, generateGASGoals, getScoreLabel, getTopFocusAreas } from "@/lib/scoring";
+import { DOMAIN_DESCRIPTIONS, QOL_SUBDOMAIN_DESCRIPTIONS, LC_SUBDOMAIN_DESCRIPTIONS, getScoreInterpretation } from "@/lib/domain-descriptions";
 
 function buildReportHTML(session: IntakeSession, target: "staff" | "parent"): string {
   const scores = calculateScores(session.studentResponses, session.parentResponses);
   const qolSubs = calculateQoLSubdomains(session.studentResponses, session.parentResponses);
+  const lcSubs = calculateLearningSubdomains(session.studentResponses, session.parentResponses);
   const riskFlags = generateRiskFlags(scores);
   const insights = generateInsights(scores);
   const focusAreas = getTopFocusAreas(scores);
@@ -16,6 +17,7 @@ function buildReportHTML(session: IntakeSession, target: "staff" | "parent"): st
     { key: "selfEfficacy", label: SECTION_LABELS.self_efficacy, s: scores.selfEfficacy },
     { key: "locusOfControl", label: SECTION_LABELS.locus_of_control, s: scores.locusOfControl },
     { key: "cognitiveFlexibility", label: SECTION_LABELS.cognitive_flexibility, s: scores.cognitiveFlexibility },
+    { key: "learningCharacteristics", label: SECTION_LABELS.learning_characteristics, s: scores.learningCharacteristics },
   ];
 
   const fmt = (n: number) => n >= 0 ? n.toFixed(2) : "—";
@@ -66,6 +68,25 @@ function buildReportHTML(session: IntakeSession, target: "staff" | "parent"): st
         </div>
       `).join("")}
     </div>`;
+
+  // Learning Characteristics subdomain breakdown
+  if (Object.keys(lcSubs).length > 0 && Object.values(lcSubs).some(s => s.normalized >= 0)) {
+    html += `
+    <div data-section style="margin-bottom: 20px;">
+      <h2 style="font-size: 15px; font-weight: 700; margin: 0 0 10px 0;">🧩 מאפייני למידה — פירוט אשכולות נוירו-פדגוגיים</h2>
+      <p style="font-size: 11px; color: #888; margin: 0 0 10px 0;">ארבעה אשכולות המאפשרים התאמות פדגוגיות ממוקדות. ציון נמוך מסמן צורך בתמיכה ובהתאמות.</p>
+      ${Object.entries(lcSubs).map(([key, s]) => `
+        <div style="margin-bottom: 8px; padding: 8px 12px; border: 1px solid #fef0e8; border-radius: 6px; background: #fffaf7;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <strong style="font-size: 12px;">${LC_SUBDOMAIN_LABELS[key] || key}</strong>
+            <span style="font-size: 14px; font-weight: 700; color: ${s.normalized < 2.5 ? '#e53e3e' : s.normalized < 3.0 ? '#d69e2e' : '#333'};">${fmt(s.normalized)}</span>
+          </div>
+          <p style="font-size: 10px; color: #666; margin: 2px 0 0 0;">${LC_SUBDOMAIN_DESCRIPTIONS[key] || ""}</p>
+          <p style="font-size: 10px; color: #888; margin: 2px 0 0 0;">ת: ${fmt(s.studentNormalized)} | ה: ${fmt(s.parentNormalized)} | ${getScoreLabel(s.normalized)}</p>
+        </div>
+      `).join("")}
+    </div>`;
+  }
 
   if (target === "staff" && riskFlags.length > 0) {
     html += `
@@ -197,6 +218,7 @@ export interface PersonalPlanData {
 function buildPersonalPlanHTML(session: IntakeSession, planData: PersonalPlanData): string {
   const scores = calculateScores(session.studentResponses, session.parentResponses);
   const qolSubs = calculateQoLSubdomains(session.studentResponses, session.parentResponses);
+  const lcSubs = calculateLearningSubdomains(session.studentResponses, session.parentResponses);
   const gasGoals = generateGASGoals(scores);
   const insights = generateInsights(scores);
   const focusAreas = getTopFocusAreas(scores);
@@ -207,6 +229,7 @@ function buildPersonalPlanHTML(session: IntakeSession, planData: PersonalPlanDat
     { key: "selfEfficacy", label: SECTION_LABELS.self_efficacy, s: scores.selfEfficacy },
     { key: "locusOfControl", label: SECTION_LABELS.locus_of_control, s: scores.locusOfControl },
     { key: "cognitiveFlexibility", label: SECTION_LABELS.cognitive_flexibility, s: scores.cognitiveFlexibility },
+    { key: "learningCharacteristics", label: SECTION_LABELS.learning_characteristics, s: scores.learningCharacteristics },
   ];
   const fmt = (n: number) => n >= 0 ? n.toFixed(2) : "—";
 
@@ -253,6 +276,25 @@ function buildPersonalPlanHTML(session: IntakeSession, planData: PersonalPlanDat
         </div>
       `).join("")}
     </div>`;
+
+  // Learning Characteristics breakdown in personal plan
+  if (Object.keys(lcSubs).length > 0 && Object.values(lcSubs).some(s => s.normalized >= 0)) {
+    html += `
+    <div data-section style="margin-bottom: 24px;">
+      <h2 style="font-size: 15px; font-weight: 700; margin: 0 0 10px 0; color: #b7791f;">🧩 מאפייני למידה — אשכולות נוירו-פדגוגיים</h2>
+      <p style="font-size: 11px; color: #888; margin: 0 0 10px 0;">בסיס להתאמות פדגוגיות אישיות לתלמיד. כל אשכול מלווה בהמלצות פעולה.</p>
+      ${Object.entries(lcSubs).map(([key, s]) => `
+        <div style="margin-bottom: 8px; padding: 8px 12px; border: 1px solid #fef0e8; border-radius: 6px; background: #fffaf7;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <strong style="font-size: 12px;">${LC_SUBDOMAIN_LABELS[key] || key}</strong>
+            <span style="font-size: 14px; font-weight: 700; color: ${s.normalized < 2.5 ? '#e53e3e' : s.normalized < 3.0 ? '#d69e2e' : '#333'};">${fmt(s.normalized)} — ${getScoreLabel(s.normalized)}</span>
+          </div>
+          <p style="font-size: 10px; color: #666; margin: 2px 0 0 0;">${LC_SUBDOMAIN_DESCRIPTIONS[key] || ""}</p>
+          <p style="font-size: 10px; color: #888; margin: 2px 0 0 0;">ת: ${fmt(s.studentNormalized)} | ה: ${fmt(s.parentNormalized)}</p>
+        </div>
+      `).join("")}
+    </div>`;
+  }
 
   // AI Personal Insight
   if (ai?.personalInsight) {

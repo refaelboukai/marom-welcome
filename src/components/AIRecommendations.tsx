@@ -46,6 +46,7 @@ const AIRecommendations = ({ student, onResult }: AIRecommendationsProps) => {
       selfEfficacy: { score: scores.selfEfficacy.normalized, student: scores.selfEfficacy.studentNormalized, parent: scores.selfEfficacy.parentNormalized },
       locusOfControl: { score: scores.locusOfControl.normalized, student: scores.locusOfControl.studentNormalized, parent: scores.locusOfControl.parentNormalized },
       cognitiveFlexibility: { score: scores.cognitiveFlexibility.normalized, student: scores.cognitiveFlexibility.studentNormalized, parent: scores.cognitiveFlexibility.parentNormalized },
+      learningCharacteristics: { score: scores.learningCharacteristics.normalized, student: scores.learningCharacteristics.studentNormalized, parent: scores.learningCharacteristics.parentNormalized },
     };
 
     try {

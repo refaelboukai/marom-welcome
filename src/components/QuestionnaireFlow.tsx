@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
-import { questionnaireItems, ITEMS_PER_PAGE, sectionOrder } from "@/data/questionnaires";
+import { questionnaireItems, ITEMS_PER_PAGE, sectionOrder, likertLabels, likertLabelsCharacterizes } from "@/data/questionnaires";
 import LikertScale from "./LikertScale";
 import ProgressHeader from "./ProgressHeader";
 import { OPEN_QUESTION_KEYS, OPEN_QUESTION_LABELS } from "@/lib/types";
@@ -37,6 +37,8 @@ const QuestionnaireFlow = ({
   const [currentPage, setCurrentPage] = useState(() => {
     // Resume from where user left off
     const answered = Object.keys(responses).length;
+    if (answered >= totalItems && hasOpenQuestions) return totalPages;
+    if (answered >= totalItems && hasParentComment) return totalPages;
     if (answered > 0) {
       return Math.min(Math.floor(answered / ITEMS_PER_PAGE), totalPages - 1);
     }
@@ -109,6 +111,7 @@ const QuestionnaireFlow = ({
               value={responses[item.id]}
               onChange={(val) => onUpdateResponse(item.id, val)}
               gender={gender}
+              labels={item.scaleType === "characterizes" ? likertLabelsCharacterizes : likertLabels}
             />
           ))}
         </div>

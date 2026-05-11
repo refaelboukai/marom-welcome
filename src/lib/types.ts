@@ -11,7 +11,8 @@ export type QuestionnaireSection =
   | "quality_of_life"
   | "self_efficacy"
   | "locus_of_control"
-  | "cognitive_flexibility";
+  | "cognitive_flexibility"
+  | "learning_characteristics";
 
 export interface QuestionnaireItem {
   id: string;
@@ -21,6 +22,8 @@ export interface QuestionnaireItem {
   parentText: string;
   isReverse: boolean;
   subdomain?: string;
+  /** Optional Likert scale variant: "agreement" (default — "מסכים/לא מסכים") or "characterizes" ("מאפיין אותי") */
+  scaleType?: "agreement" | "characterizes";
 }
 
 export interface IntakeSession {
@@ -72,6 +75,7 @@ export interface ScoreResults {
   selfEfficacy: DomainScore;
   locusOfControl: DomainScore;
   cognitiveFlexibility: DomainScore;
+  learningCharacteristics: DomainScore;
 }
 
 export interface RiskFlag {
@@ -113,6 +117,7 @@ export const SECTION_LABELS: Record<QuestionnaireSection, string> = {
   self_efficacy: "מסוגלות עצמית",
   locus_of_control: "מיקוד שליטה",
   cognitive_flexibility: "גמישות קוגניטיבית",
+  learning_characteristics: "מאפייני למידה",
 };
 
 export const QOL_SUBDOMAIN_LABELS: Record<string, string> = {
@@ -124,6 +129,13 @@ export const QOL_SUBDOMAIN_LABELS: Record<string, string> = {
   health_lifestyle: "בריאות ואורח חיים",
   family_support: "משפחה ותמיכה",
   self_view: "תפיסה עצמית",
+};
+
+export const LC_SUBDOMAIN_LABELS: Record<string, string> = {
+  working_memory: "זיכרון עבודה ועומס קוגניטיבי",
+  executive_functions: "תפקודים ניהוליים — התארגנות וגמישות",
+  emotional_regulation: "ויסות רגשי וחוסן בלמידה",
+  arousal_sensory: "ויסות עוררות ועיבוד חושי",
 };
 
 export const OPEN_QUESTION_KEYS = [

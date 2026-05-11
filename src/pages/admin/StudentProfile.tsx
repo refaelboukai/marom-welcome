@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getSessionDB, updateSessionDB, getAssessmentRounds, createAssessmentRound, AssessmentRound } from "@/lib/supabase-storage";
-import { IntakeSession, SECTION_LABELS, OPEN_QUESTION_LABELS, QOL_SUBDOMAIN_LABELS, GASGoal } from "@/lib/types";
-import { calculateScores, calculateQoLSubdomains, generateRiskFlags, generateInsights, generateGASGoals, getScoreLabel, getScoreColor, getTopFocusAreas } from "@/lib/scoring";
-import { DOMAIN_DESCRIPTIONS, QOL_SUBDOMAIN_DESCRIPTIONS, getScoreInterpretation } from "@/lib/domain-descriptions";
+import { IntakeSession, SECTION_LABELS, OPEN_QUESTION_LABELS, QOL_SUBDOMAIN_LABELS, LC_SUBDOMAIN_LABELS, GASGoal } from "@/lib/types";
+import { calculateScores, calculateQoLSubdomains, calculateLearningSubdomains, generateRiskFlags, generateInsights, generateGASGoals, getScoreLabel, getScoreColor, getTopFocusAreas } from "@/lib/scoring";
+import { DOMAIN_DESCRIPTIONS, QOL_SUBDOMAIN_DESCRIPTIONS, LC_SUBDOMAIN_DESCRIPTIONS, getScoreInterpretation } from "@/lib/domain-descriptions";
 import StatusBadge from "@/components/StatusBadge";
-import { ArrowRight, AlertTriangle, Copy, CheckCircle, Lock, Unlock, FileText, Target, Lightbulb, TrendingUp, Users, Printer, MessageSquare, BarChart3, Shield, Loader2, RefreshCw, Download, PenLine, ScrollText, ClipboardList, Heart, Info, FileBarChart } from "lucide-react";
+import { ArrowRight, AlertTriangle, Copy, CheckCircle, Lock, Unlock, FileText, Target, Lightbulb, TrendingUp, Users, Printer, MessageSquare, BarChart3, Shield, Loader2, RefreshCw, Download, PenLine, ScrollText, ClipboardList, Heart, Info, FileBarChart, Brain } from "lucide-react";
 import { generateSemesterSummary, SEMESTER_LABELS, type SemesterType } from "@/lib/summary-generator";
 import SupportPlans from "@/components/SupportPlans";
 import AIRecommendations from "@/components/AIRecommendations";
@@ -63,6 +63,7 @@ const StudentProfile = () => {
 
   const scores = calculateScores(session.studentResponses, session.parentResponses);
   const qolSubdomains = calculateQoLSubdomains(session.studentResponses, session.parentResponses);
+  const lcSubdomains = calculateLearningSubdomains(session.studentResponses, session.parentResponses);
   const riskFlags = generateRiskFlags(scores);
   const insights = generateInsights(scores);
   const gasGoals = generateGASGoals(scores);
@@ -90,6 +91,7 @@ const StudentProfile = () => {
     { subject: "מסוגלות עצמית", student: scores.selfEfficacy.studentNormalized, parent: scores.selfEfficacy.parentNormalized },
     { subject: "מיקוד שליטה", student: scores.locusOfControl.studentNormalized, parent: scores.locusOfControl.parentNormalized },
     { subject: "גמישות קוגניטיבית", student: scores.cognitiveFlexibility.studentNormalized, parent: scores.cognitiveFlexibility.parentNormalized },
+    { subject: "מאפייני למידה", student: scores.learningCharacteristics.studentNormalized, parent: scores.learningCharacteristics.parentNormalized },
   ].map((d) => ({ ...d, student: d.student >= 0 ? d.student : 0, parent: d.parent >= 0 ? d.parent : 0 }));
 
   const hasStudentData = scores.qualityOfLife.studentNormalized >= 0;
@@ -102,6 +104,7 @@ const StudentProfile = () => {
       { key: "selfEfficacy" as const, label: SECTION_LABELS.self_efficacy },
       { key: "locusOfControl" as const, label: SECTION_LABELS.locus_of_control },
       { key: "cognitiveFlexibility" as const, label: SECTION_LABELS.cognitive_flexibility },
+      { key: "learningCharacteristics" as const, label: SECTION_LABELS.learning_characteristics },
     ];
     // Each data point is a round
     const data = [
@@ -119,6 +122,7 @@ const StudentProfile = () => {
     { label: SECTION_LABELS.self_efficacy, קליטה: scores.selfEfficacy.studentNormalized >= 0 ? scores.selfEfficacy.studentNormalized : 0, סיכום: reassessmentScores.selfEfficacy.studentNormalized >= 0 ? reassessmentScores.selfEfficacy.studentNormalized : 0 },
     { label: SECTION_LABELS.locus_of_control, קליטה: scores.locusOfControl.studentNormalized >= 0 ? scores.locusOfControl.studentNormalized : 0, סיכום: reassessmentScores.locusOfControl.studentNormalized >= 0 ? reassessmentScores.locusOfControl.studentNormalized : 0 },
     { label: SECTION_LABELS.cognitive_flexibility, קליטה: scores.cognitiveFlexibility.studentNormalized >= 0 ? scores.cognitiveFlexibility.studentNormalized : 0, סיכום: reassessmentScores.cognitiveFlexibility.studentNormalized >= 0 ? reassessmentScores.cognitiveFlexibility.studentNormalized : 0 },
+    { label: SECTION_LABELS.learning_characteristics, קליטה: scores.learningCharacteristics.studentNormalized >= 0 ? scores.learningCharacteristics.studentNormalized : 0, סיכום: reassessmentScores.learningCharacteristics.studentNormalized >= 0 ? reassessmentScores.learningCharacteristics.studentNormalized : 0 },
   ] : null;
 
   const handleExportPersonalPlan = async () => {
@@ -193,6 +197,7 @@ const StudentProfile = () => {
     { key: "selfEfficacy" as const, label: SECTION_LABELS.self_efficacy, icon: TrendingUp },
     { key: "locusOfControl" as const, label: SECTION_LABELS.locus_of_control, icon: Target },
     { key: "cognitiveFlexibility" as const, label: SECTION_LABELS.cognitive_flexibility, icon: Lightbulb },
+    { key: "learningCharacteristics" as const, label: SECTION_LABELS.learning_characteristics, icon: Brain },
   ];
 
   const comparisonData = reassessmentScores ? scoreCards.map(({ key, label }) => ({
@@ -495,6 +500,39 @@ const StudentProfile = () => {
                   ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Learning Characteristics Subdomain Breakdown */}
+        {hasStudentData && Object.values(lcSubdomains).some(s => s.normalized >= 0) && (
+          <div className="intake-card border-warning/20">
+            <h3 className="font-heading font-semibold mb-2 flex items-center gap-2">
+              <Brain className="w-5 h-5 text-warning" />
+              מאפייני למידה — אשכולות נוירו-פדגוגיים
+            </h3>
+            <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
+              ארבעה אשכולות נוירו-פדגוגיים המאפשרים התאמת סביבת הלמידה ושיטות ההוראה לתלמיד. ציון נמוך באשכול מעיד על קושי הדורש התאמות פדגוגיות ייעודיות.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {Object.entries(lcSubdomains).map(([key, score]) => (
+                <div key={key} className="p-3 bg-muted/30 rounded-xl">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-xs font-semibold">{LC_SUBDOMAIN_LABELS[key]}</p>
+                    <span className={`text-lg font-bold ${getScoreColor(score.normalized)}`}>
+                      {score.normalized >= 0 ? score.normalized.toFixed(2) : "—"}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground leading-relaxed">
+                    {LC_SUBDOMAIN_DESCRIPTIONS[key]}
+                  </p>
+                  {score.studentNormalized >= 0 && score.parentNormalized >= 0 && (
+                    <p className="text-[9px] text-muted-foreground mt-1">
+                      ת: {score.studentNormalized.toFixed(1)} | ה: {score.parentNormalized.toFixed(1)}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

@@ -37,6 +37,12 @@ function getPositiveInterpretation(score: number, domain: string): string {
       growing: "בתהליך של הרחבת דרכי החשיבה. חשיפה למצבים מגוונים ותרגול פתרון בעיות יתמכו בפיתוח הגמישות.",
       emerging: "מתחיל/ה להכיר דרכי חשיבה חדשות. ליווי שמעודד הסתכלות ממספר זוויות יסייע בפיתוח חשיבה יצירתית ופתוחה.",
     },
+    learningCharacteristics: {
+      high: "מגלה תפקודי למידה אדפטיביים: זיכרון עבודה, ארגון, ויסות רגשי וחושי. מהווה בסיס מצוין ללמידה עצמאית ומשמעותית.",
+      mid: "מפתח/ת מיומנויות למידה והתאמות אישיות. שילוב עזרים ויזואליים, פירוק משימות וצ'קליסטים יחזק את התפקוד.",
+      growing: "מזהה צרכים אישיים בלמידה. התאמות פדגוגיות — הפסקות תנועה, אביזרי תחושה וחיבור רלוונטי לתוכן — יתמכו בהתקדמות.",
+      emerging: "זקוק/ה להתאמות פדגוגיות ייעודיות לפי האשכולות הנוירו-פדגוגיים. ליווי אישי ושיתוף הצוות יבנו מסגרת למידה מותאמת.",
+    },
   };
 
   const d = map[domain] || map.qualityOfLife;
@@ -82,6 +88,7 @@ export function generateSemesterSummary(
     { key: "selfEfficacy" as const, label: SECTION_LABELS.self_efficacy },
     { key: "locusOfControl" as const, label: SECTION_LABELS.locus_of_control },
     { key: "cognitiveFlexibility" as const, label: SECTION_LABELS.cognitive_flexibility },
+    { key: "learningCharacteristics" as const, label: SECTION_LABELS.learning_characteristics },
   ];
 
   let relevantRounds: AssessmentRound[];

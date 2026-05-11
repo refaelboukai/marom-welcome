@@ -52,6 +52,7 @@ export function calculateScores(
     selfEfficacy: calcDomainScore("self_efficacy", studentResponses, parentResponses),
     locusOfControl: calcDomainScore("locus_of_control", studentResponses, parentResponses),
     cognitiveFlexibility: calcDomainScore("cognitive_flexibility", studentResponses, parentResponses),
+    learningCharacteristics: calcDomainScore("learning_characteristics", studentResponses, parentResponses),
   };
 }
 
@@ -64,6 +65,47 @@ export function calculateQoLSubdomains(
 
   for (const sub of subdomains) {
     const items = questionnaireItems.filter(i => i.section === "quality_of_life" && i.subdomain === sub);
+    if (items.length === 0) continue;
+
+    const studentValues: number[] = [];
+    const parentValues: number[] = [];
+
+    for (const item of items) {
+      if (studentResponses[item.id] != null) {
+        studentValues.push(scoreItem(studentResponses[item.id], item.isReverse));
+      }
+      if (parentResponses[item.id] != null) {
+        parentValues.push(scoreItem(parentResponses[item.id], item.isReverse));
+      }
+    }
+
+    const studentAvg = studentValues.length > 0 ? studentValues.reduce((a, b) => a + b, 0) / studentValues.length : -1;
+    const parentAvg = parentValues.length > 0 ? parentValues.reduce((a, b) => a + b, 0) / parentValues.length : -1;
+    const allValues = [...studentValues, ...parentValues];
+    const rawAvg = allValues.length > 0 ? allValues.reduce((a, b) => a + b, 0) / allValues.length : -1;
+    const round2 = (v: number) => Math.round(v * 100) / 100;
+
+    result[sub] = {
+      raw: rawAvg >= 0 ? round2(rawAvg) : -1,
+      normalized: rawAvg >= 0 ? round2(rawAvg) : -1,
+      completionRate: Math.round(((studentValues.length + parentValues.length) / (items.length * 2)) * 100),
+      studentNormalized: studentAvg >= 0 ? round2(studentAvg) : -1,
+      parentNormalized: parentAvg >= 0 ? round2(parentAvg) : -1,
+    };
+  }
+
+  return result;
+}
+
+export function calculateLearningSubdomains(
+  studentResponses: Record<string, number>,
+  parentResponses: Record<string, number>
+): Record<string, DomainScore> {
+  const subdomains = ["working_memory", "executive_functions", "emotional_regulation", "arousal_sensory"];
+  const result: Record<string, DomainScore> = {};
+
+  for (const sub of subdomains) {
+    const items = questionnaireItems.filter(i => i.section === "learning_characteristics" && i.subdomain === sub);
     if (items.length === 0) continue;
 
     const studentValues: number[] = [];
@@ -111,12 +153,16 @@ export function generateRiskFlags(scores: ScoreResults): RiskFlag[] {
   if (scores.cognitiveFlexibility.normalized > 0 && scores.cognitiveFlexibility.normalized < 2.0) {
     flags.push({ domain: "גמישות קוגניטיבית", severity: "concern", message: "קושי בגמישות קוגניטיבית — מומלץ בירור נוסף" });
   }
+  if (scores.learningCharacteristics.normalized > 0 && scores.learningCharacteristics.normalized < 2.5) {
+    flags.push({ domain: "מאפייני למידה", severity: "concern", message: "מאפייני למידה מורכבים — מומלץ להתאים את סביבת ושיטות הלמידה" });
+  }
 
   const sections = [
     { key: "qualityOfLife" as const, label: "איכות חיים" },
     { key: "selfEfficacy" as const, label: "מסוגלות עצמית" },
     { key: "locusOfControl" as const, label: "מיקוד שליטה" },
     { key: "cognitiveFlexibility" as const, label: "גמישות קוגניטיבית" },
+    { key: "learningCharacteristics" as const, label: "מאפייני למידה" },
   ];
 
   for (const { key, label } of sections) {
@@ -172,6 +218,7 @@ export function generateInsights(scores: ScoreResults): InsightResult {
     { key: "selfEfficacy" as const, label: "מסוגלות עצמית" },
     { key: "locusOfControl" as const, label: "מיקוד שליטה" },
     { key: "cognitiveFlexibility" as const, label: "גמישות קוגניטיבית" },
+    { key: "learningCharacteristics" as const, label: "מאפייני למידה" },
   ];
 
   for (const { key, label } of domains) {
@@ -202,6 +249,9 @@ export function generateInsights(scores: ScoreResults): InsightResult {
   }
   if (scores.qualityOfLife.normalized >= 0 && scores.qualityOfLife.normalized < 2.5) {
     recommendations.push("בירור מעמיק של תחומי איכות חיים — חברתי, רגשי, לימודי ומשפחתי");
+  }
+  if (scores.learningCharacteristics.normalized >= 0 && scores.learningCharacteristics.normalized < 3.0) {
+    recommendations.push("התאמת סביבת ושיטות הלמידה למאפייני התלמיד — פירוק משימות, עזרים ויזואליים, הפסקות תנועה והנגשת רלוונטיות");
   }
   if (discrepancies.length > 0) {
     recommendations.push("שיח משותף עם התלמיד וההורה לגבי פערים בתפיסה");
@@ -307,6 +357,7 @@ export function getTopFocusAreas(scores: ScoreResults): string[] {
     { label: "מיקוד שליטה", score: scores.locusOfControl.normalized },
     { label: "גמישות קוגניטיבית", score: scores.cognitiveFlexibility.normalized },
     { label: "איכות חיים", score: scores.qualityOfLife.normalized },
+    { label: "מאפייני למידה", score: scores.learningCharacteristics.normalized },
   ].filter((a) => a.score >= 0);
 
   return areas.sort((a, b) => a.score - b.score).slice(0, 3).map((a) => `${a.label} (${a.score})`);
