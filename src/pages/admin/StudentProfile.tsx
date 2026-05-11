@@ -980,10 +980,10 @@ const StudentProfile = () => {
                     </div>
                     <div className="flex gap-4 mt-1 text-[11px] text-muted-foreground">
                       {r.participants !== 'parent' && (
-                        <span>תלמיד: {studentDone ? `✓ ${studentCount}/{questionnaireItems.length}` : `${studentCount}/{questionnaireItems.length}`}</span>
+                        <span>תלמיד: {studentDone ? `✓ ${studentCount}/${questionnaireItems.length}` : `${studentCount}/${questionnaireItems.length}`}</span>
                       )}
                       {r.participants !== 'student' && (
-                        <span>הורה: {parentDone ? `✓ ${parentCount}/{questionnaireItems.length}` : `${parentCount}/{questionnaireItems.length}`}</span>
+                        <span>הורה: {parentDone ? `✓ ${parentCount}/${questionnaireItems.length}` : `${parentCount}/${questionnaireItems.length}`}</span>
                       )}
                       <span>{new Date(r.created_at).toLocaleDateString("he-IL")}</span>
                     </div>
