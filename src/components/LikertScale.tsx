@@ -7,9 +7,11 @@ interface LikertScaleProps {
   questionText: string;
   questionNumber: number;
   gender?: Gender;
+  labels?: Array<{ value: number; label: string; labelFemale?: string }>;
 }
 
-const LikertScale = ({ value, onChange, questionText, questionNumber, gender = "unknown" }: LikertScaleProps) => {
+const LikertScale = ({ value, onChange, questionText, questionNumber, gender = "unknown", labels }: LikertScaleProps) => {
+  const opts = labels ?? likertLabels;
   return (
     <div className="intake-card-soft animate-fade-in mb-3">
       <p className="text-sm sm:text-base font-medium mb-3 sm:mb-4 leading-relaxed">
@@ -17,7 +19,7 @@ const LikertScale = ({ value, onChange, questionText, questionNumber, gender = "
         {questionText}
       </p>
       <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
-        {likertLabels.map((opt) => {
+        {opts.map((opt) => {
           const label = gender === "female" && opt.labelFemale ? opt.labelFemale : opt.label;
           return (
             <button
