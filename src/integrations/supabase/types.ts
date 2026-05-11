@@ -83,6 +83,7 @@ export type Database = {
           participants: string
           round_label: string
           round_number: number
+          sections: Json
           session_id: string
           student_responses: Json
           student_status: string
@@ -96,6 +97,7 @@ export type Database = {
           participants?: string
           round_label?: string
           round_number?: number
+          sections?: Json
           session_id: string
           student_responses?: Json
           student_status?: string
@@ -109,6 +111,7 @@ export type Database = {
           participants?: string
           round_label?: string
           round_number?: number
+          sections?: Json
           session_id?: string
           student_responses?: Json
           student_status?: string

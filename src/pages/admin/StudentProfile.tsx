@@ -29,6 +29,13 @@ const StudentProfile = () => {
   const [showNewRound, setShowNewRound] = useState(false);
   const [newRoundLabel, setNewRoundLabel] = useState("");
   const [newRoundParticipants, setNewRoundParticipants] = useState<string>("both");
+  const [newRoundSections, setNewRoundSections] = useState<string[]>([
+    "quality_of_life",
+    "locus_of_control",
+    "self_efficacy",
+    "cognitive_flexibility",
+    "learning_characteristics",
+  ]);
   const printRef = useRef<HTMLDivElement>(null);
   const [summaryType, setSummaryType] = useState<SemesterType | null>(null);
   const [summaryText, setSummaryText] = useState("");
@@ -158,12 +165,14 @@ const StudentProfile = () => {
 
   const handleCreateRound = async () => {
     if (!newRoundLabel.trim()) return;
-    const round = await createAssessmentRound(session.id, newRoundLabel, newRoundParticipants);
+    if (newRoundSections.length === 0) return;
+    const round = await createAssessmentRound(session.id, newRoundLabel, newRoundParticipants, newRoundSections);
     if (round) {
       setRounds((prev) => [...prev, round]);
       setShowNewRound(false);
       setNewRoundLabel("");
       setNewRoundParticipants("both");
+      setNewRoundSections(["quality_of_life","locus_of_control","self_efficacy","cognitive_flexibility","learning_characteristics"]);
       // Refresh session to reflect re-enabled codes
       const updated = await getSessionDB(session.id);
       if (updated) setSession(updated);
@@ -1023,8 +1032,48 @@ const StudentProfile = () => {
                   </button>
                 ))}
               </div>
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground">בחר שאלונים לסבב זה:</p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { value: "quality_of_life", label: "איכות חיים" },
+                    { value: "locus_of_control", label: "מיקוד שליטה" },
+                    { value: "self_efficacy", label: "מסוגלות עצמית" },
+                    { value: "cognitive_flexibility", label: "גמישות קוגניטיבית" },
+                    { value: "learning_characteristics", label: "מאפייני למידה" },
+                  ].map((opt) => {
+                    const active = newRoundSections.includes(opt.value);
+                    return (
+                      <button
+                        key={opt.value}
+                        onClick={() =>
+                          setNewRoundSections((prev) =>
+                            prev.includes(opt.value)
+                              ? prev.filter((s) => s !== opt.value)
+                              : [...prev, opt.value]
+                          )
+                        }
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
+                          active
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-background text-muted-foreground border-input hover:bg-muted/40"
+                        }`}
+                      >
+                        {active ? "✓ " : ""}{opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                {newRoundSections.length === 0 && (
+                  <p className="text-xs text-destructive">יש לבחור לפחות שאלון אחד</p>
+                )}
+              </div>
               <div className="flex gap-2">
-                <button onClick={handleCreateRound} className="btn-intake bg-primary text-primary-foreground text-sm flex-1">
+                <button
+                  onClick={handleCreateRound}
+                  disabled={newRoundSections.length === 0 || !newRoundLabel.trim()}
+                  className="btn-intake bg-primary text-primary-foreground text-sm flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                   פתח סבב
                 </button>
                 <button onClick={() => setShowNewRound(false)} className="btn-intake bg-muted text-muted-foreground text-sm">

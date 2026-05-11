@@ -312,6 +312,7 @@ export interface AssessmentRound {
   parent_status: string;
   created_at: string;
   completed_at: string | null;
+  sections?: string[]; // Empty array or omitted = all sections
 }
 
 export async function getAssessmentRounds(sessionId: string): Promise<AssessmentRound[]> {
@@ -325,10 +326,11 @@ export async function getAssessmentRounds(sessionId: string): Promise<Assessment
     ...r,
     student_responses: r.student_responses || {},
     parent_responses: r.parent_responses || {},
+    sections: Array.isArray(r.sections) ? r.sections : [],
   }));
 }
 
-export async function createAssessmentRound(sessionId: string, roundLabel: string, participants: string): Promise<AssessmentRound | null> {
+export async function createAssessmentRound(sessionId: string, roundLabel: string, participants: string, sections: string[] = []): Promise<AssessmentRound | null> {
   // Get next round number
   const { data: existing } = await supabase
     .from("assessment_rounds")
@@ -347,6 +349,7 @@ export async function createAssessmentRound(sessionId: string, roundLabel: strin
       participants,
       student_status: participants === 'parent' ? 'not_required' : 'pending',
       parent_status: participants === 'student' ? 'not_required' : 'pending',
+      sections,
     })
     .select()
     .single();
@@ -360,7 +363,7 @@ export async function createAssessmentRound(sessionId: string, roundLabel: strin
     await (supabase as any).from("intake_sessions").update(codeUpdates).eq("id", sessionId);
   }
 
-  return { ...data, student_responses: {}, parent_responses: {} };
+  return { ...data, student_responses: {}, parent_responses: {}, sections };
 }
 
 export async function updateAssessmentRound(id: string, updates: Partial<AssessmentRound>): Promise<void> {
@@ -385,7 +388,7 @@ export async function getActiveRoundForSession(sessionId: string, role: 'student
   // Check participants field
   if (role === 'student' && r.participants === 'parent') return null;
   if (role === 'parent' && r.participants === 'student') return null;
-  return { ...r, student_responses: r.student_responses || {}, parent_responses: r.parent_responses || {} };
+  return { ...r, student_responses: r.student_responses || {}, parent_responses: r.parent_responses || {}, sections: Array.isArray(r.sections) ? r.sections : [] };
 }
 
 export async function resetAllSessionsDB(): Promise<boolean> {

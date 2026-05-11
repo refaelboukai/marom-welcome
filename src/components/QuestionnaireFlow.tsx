@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
-import { questionnaireItems, ITEMS_PER_PAGE, sectionOrder, likertLabels, likertLabelsCharacterizes } from "@/data/questionnaires";
+import { questionnaireItems as allItems, ITEMS_PER_PAGE, sectionOrder, likertLabels, likertLabelsCharacterizes } from "@/data/questionnaires";
 import LikertScale from "./LikertScale";
 import ProgressHeader from "./ProgressHeader";
 import { OPEN_QUESTION_KEYS, OPEN_QUESTION_LABELS } from "@/lib/types";
@@ -15,6 +15,7 @@ interface QuestionnaireFlowProps {
   onComplete: () => void;
   onSaveAndExit?: () => void;
   gender?: Gender;
+  allowedSections?: string[]; // empty/undefined => all
 }
 
 const QuestionnaireFlow = ({
@@ -26,8 +27,14 @@ const QuestionnaireFlow = ({
   onComplete,
   onSaveAndExit,
   gender = "unknown",
+  allowedSections,
 }: QuestionnaireFlowProps) => {
   const g = useMemo(() => createGenderedText(gender), [gender]);
+  const questionnaireItems = useMemo(() => {
+    if (!allowedSections || allowedSections.length === 0) return allItems;
+    const set = new Set(allowedSections);
+    return allItems.filter((it) => set.has(it.section));
+  }, [allowedSections]);
   const totalItems = questionnaireItems.length;
   const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
   const hasOpenQuestions = role === "student";
@@ -51,7 +58,7 @@ const QuestionnaireFlow = ({
   const currentItems = useMemo(() => {
     if (isOpenPage || isParentCommentPage) return [];
     return questionnaireItems.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE);
-  }, [currentPage, isOpenPage, isParentCommentPage]);
+  }, [currentPage, isOpenPage, isParentCommentPage, questionnaireItems]);
 
   const currentSection = currentItems.length > 0
     ? sectionOrder.find((s) => s.section === currentItems[0].section)

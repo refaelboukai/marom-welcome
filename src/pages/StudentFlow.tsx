@@ -339,6 +339,7 @@ const StudentFlow = () => {
           onComplete={handleComplete}
           onSaveAndExit={handleSaveAndExit}
           gender={gender}
+          allowedSections={activeRound?.sections}
         />
       </div>
     );

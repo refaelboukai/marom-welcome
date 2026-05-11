@@ -1,0 +1,1 @@
+ALTER TABLE public.assessment_rounds ADD COLUMN IF NOT EXISTS sections jsonb NOT NULL DEFAULT '[]'::jsonb;
