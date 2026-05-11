@@ -134,8 +134,35 @@ const StudentProfile = () => {
   ] : null;
 
   const handleExportPersonalPlan = async () => {
+    // Auto-fetch personal insights if not yet generated
+    let recs = aiResult;
+    if (!recs && hasStudentData && scores.qualityOfLife.normalized >= 0) {
+      try {
+        const studentData = {
+          name: session.studentName,
+          qualityOfLife: { score: scores.qualityOfLife.normalized, student: scores.qualityOfLife.studentNormalized, parent: scores.qualityOfLife.parentNormalized },
+          selfEfficacy: { score: scores.selfEfficacy.normalized, student: scores.selfEfficacy.studentNormalized, parent: scores.selfEfficacy.parentNormalized },
+          locusOfControl: { score: scores.locusOfControl.normalized, student: scores.locusOfControl.studentNormalized, parent: scores.locusOfControl.parentNormalized },
+          cognitiveFlexibility: { score: scores.cognitiveFlexibility.normalized, student: scores.cognitiveFlexibility.studentNormalized, parent: scores.cognitiveFlexibility.parentNormalized },
+          learningCharacteristics: { score: scores.learningCharacteristics.normalized, student: scores.learningCharacteristics.studentNormalized, parent: scores.learningCharacteristics.parentNormalized },
+        };
+        const { data, error } = await supabase.functions.invoke("ai-recommendations", {
+          body: {
+            student: studentData,
+            openResponses: session.studentOpenResponses,
+            staffOpenResponses: session.staffOpenResponses,
+          },
+        });
+        if (!error && data && !data.error) {
+          recs = data;
+          setAiResult(data);
+        }
+      } catch (e) {
+        console.error("Failed to fetch recommendations:", e);
+      }
+    }
     await generatePersonalPlanPDF(session, {
-      aiRecommendations: aiResult || undefined,
+      aiRecommendations: recs || undefined,
       supportPlans: supportPlansData,
     });
   };
@@ -791,19 +818,6 @@ const StudentProfile = () => {
 
         {/* Support Plans */}
         <SupportPlans sessionId={session.id} />
-
-        {/* AI Recommendations */}
-        {hasStudentData && (
-          <AIRecommendations
-            student={{
-              name: session.studentName,
-              scores,
-              openResponses: session.studentOpenResponses,
-              staffOpenResponses: session.staffOpenResponses,
-            }}
-            onResult={(r) => setAiResult(r)}
-          />
-        )}
 
         {/* Staff Open Responses */}
         {Object.values(session.staffOpenResponses).some(v => v) && (
