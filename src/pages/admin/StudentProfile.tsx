@@ -273,7 +273,7 @@ const StudentProfile = () => {
             <button onClick={() => navigate(`/staff/${session.id}`)} className="p-2 rounded-lg hover:bg-muted" title="שאלון צוות">
               <ClipboardList className="w-5 h-5 text-warning" />
             </button>
-            <button onClick={handleExportPersonalPlan} className="p-2 rounded-lg hover:bg-muted" title="תכנית אישית — המלצות ודרכי פעולה">
+            <button onClick={() => handleExportPersonalPlan()} className="p-2 rounded-lg hover:bg-muted" title="תכנית אישית — המלצות ודרכי פעולה">
               <ScrollText className="w-5 h-5 text-success" />
             </button>
             <button onClick={handlePrint} className="p-2 rounded-lg hover:bg-muted" title="הדפסה">
