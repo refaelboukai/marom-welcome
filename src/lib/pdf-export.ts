@@ -466,7 +466,8 @@ function buildPersonalPlanHTML(session: IntakeSession, planData: PersonalPlanDat
   return html;
 }
 
-async function renderHTMLToPDF(html: string, filename: string) {
+async function renderHTMLToPDF(html: string, filename: string, options?: { grayscale?: boolean }) {
+  const grayscale = options?.grayscale === true;
   const container = document.createElement("div");
   container.style.position = "fixed";
   container.style.left = "-9999px";
@@ -487,7 +488,7 @@ async function renderHTMLToPDF(html: string, filename: string) {
     }));
 
     const canvas = await html2canvas(container, {
-      scale: 2,
+      scale: grayscale ? 1.5 : 2,
       useCORS: true,
       logging: false,
       backgroundColor: "#ffffff",
@@ -535,9 +536,24 @@ async function renderHTMLToPDF(html: string, filename: string) {
       ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
       ctx.drawImage(canvas, 0, startPx, canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight);
 
-      const imgData = pageCanvas.toDataURL("image/png");
+      if (grayscale) {
+        const imgData = ctx.getImageData(0, 0, pageCanvas.width, pageCanvas.height);
+        const d = imgData.data;
+        for (let p = 0; p < d.length; p += 4) {
+          const gray = Math.round(0.299 * d[p] + 0.587 * d[p + 1] + 0.114 * d[p + 2]);
+          d[p] = d[p + 1] = d[p + 2] = gray;
+        }
+        ctx.putImageData(imgData, 0, 0);
+      }
+
       const imgHeight = (sliceHeight * pdfWidth) / canvas.width;
-      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, Math.min(imgHeight, pdfHeight));
+      if (grayscale) {
+        const imgData = pageCanvas.toDataURL("image/jpeg", 0.6);
+        pdf.addImage(imgData, "JPEG", 0, 0, pdfWidth, Math.min(imgHeight, pdfHeight), undefined, "FAST");
+      } else {
+        const imgData = pageCanvas.toDataURL("image/png");
+        pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, Math.min(imgHeight, pdfHeight));
+      }
     }
 
     pdf.save(filename);
@@ -551,7 +567,8 @@ export async function generateStudentPDF(session: IntakeSession, target: "staff"
   await renderHTMLToPDF(html, `${session.studentName}_${target === "staff" ? "staff_report" : "parent_report"}.pdf`);
 }
 
-export async function generatePersonalPlanPDF(session: IntakeSession, planData: PersonalPlanData) {
+export async function generatePersonalPlanPDF(session: IntakeSession, planData: PersonalPlanData, options?: { grayscale?: boolean }) {
   const html = buildPersonalPlanHTML(session, planData);
-  await renderHTMLToPDF(html, `${session.studentName}_תכנית_אישית.pdf`);
+  const suffix = options?.grayscale ? "_שחור_לבן" : "";
+  await renderHTMLToPDF(html, `${session.studentName}_תכנית_אישית${suffix}.pdf`, options);
 }
