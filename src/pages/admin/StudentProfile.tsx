@@ -133,7 +133,7 @@ const StudentProfile = () => {
     { label: SECTION_LABELS.learning_characteristics, קליטה: scores.learningCharacteristics.studentNormalized >= 0 ? scores.learningCharacteristics.studentNormalized : 0, סיכום: reassessmentScores.learningCharacteristics.studentNormalized >= 0 ? reassessmentScores.learningCharacteristics.studentNormalized : 0 },
   ] : null;
 
-  const handleExportPersonalPlan = async () => {
+  const handleExportPersonalPlan = async (options?: { grayscale?: boolean }) => {
     // Auto-fetch personal insights if not yet generated
     let recs = aiResult;
     if (!recs && hasStudentData && scores.qualityOfLife.normalized >= 0) {
@@ -164,7 +164,7 @@ const StudentProfile = () => {
     await generatePersonalPlanPDF(session, {
       aiRecommendations: recs || undefined,
       supportPlans: supportPlansData,
-    });
+    }, options);
   };
 
   const handleCopy = (text: string, label: string) => {
@@ -871,10 +871,15 @@ const StudentProfile = () => {
         )}
 
         {/* Personal Plan Export */}
-        <div className="print:hidden">
-          <button onClick={handleExportPersonalPlan}
+        <div className="print:hidden grid sm:grid-cols-2 gap-2">
+          <button onClick={() => handleExportPersonalPlan()}
             className="btn-intake bg-success/10 text-success text-sm flex items-center justify-center gap-2 hover:bg-success/20 transition-colors w-full">
             <ScrollText className="w-4 h-4" /> הפק תכנית אישית — המלצות ודרכי פעולה
+          </button>
+          <button onClick={() => handleExportPersonalPlan({ grayscale: true })}
+            className="btn-intake bg-muted text-foreground text-sm flex items-center justify-center gap-2 hover:bg-muted/80 transition-colors w-full"
+            title="גרסה ללא צבע — קובץ קטן יותר">
+            <ScrollText className="w-4 h-4" /> הפק תכנית אישית — שחור לבן (קובץ קטן)
           </button>
         </div>
 
