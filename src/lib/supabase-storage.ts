@@ -455,3 +455,37 @@ export async function saveSchoolRules(rules: string[]): Promise<boolean> {
   }
   return true;
 }
+
+// ---------- Welcome WhatsApp Message ----------
+
+import { WELCOME_MESSAGE as DEFAULT_WELCOME_MESSAGE } from "./whatsapp";
+
+export { DEFAULT_WELCOME_MESSAGE };
+
+export async function getWelcomeMessage(): Promise<string> {
+  const { data, error } = await (supabase as any)
+    .from("school_settings")
+    .select("value")
+    .eq("key", "welcome_message")
+    .maybeSingle();
+  if (error || !data) return DEFAULT_WELCOME_MESSAGE;
+  const value = data.value;
+  if (typeof value?.text === "string" && value.text.trim().length > 0) {
+    return value.text;
+  }
+  return DEFAULT_WELCOME_MESSAGE;
+}
+
+export async function saveWelcomeMessage(text: string): Promise<boolean> {
+  const { error } = await (supabase as any)
+    .from("school_settings")
+    .upsert(
+      { key: "welcome_message", value: { text }, updated_at: new Date().toISOString() },
+      { onConflict: "key" }
+    );
+  if (error) {
+    console.error("Error saving welcome message:", error);
+    return false;
+  }
+  return true;
+}

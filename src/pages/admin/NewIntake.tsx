@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { createSessionDB } from "@/lib/supabase-storage";
+import { createSessionDB, getWelcomeMessage } from "@/lib/supabase-storage";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowRight, Copy, CheckCircle, Loader2, Plus, MessageCircle } from "lucide-react";
 import { openWhatsApp, normalizePhone, WELCOME_MESSAGE } from "@/lib/whatsapp";
@@ -30,6 +30,11 @@ const NewIntake = () => {
   });
   const [showNewClass, setShowNewClass] = useState(false);
   const [newClassName, setNewClassName] = useState("");
+  const [welcomeMessage, setWelcomeMessage] = useState<string>(WELCOME_MESSAGE);
+
+  useEffect(() => {
+    getWelcomeMessage().then(setWelcomeMessage).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const loadClassGroups = async () => {
@@ -85,8 +90,8 @@ const NewIntake = () => {
 
   if (created) {
     const APP_URL = "https://marom-welcome.vercel.app";
-    const parentMessage = `${WELCOME_MESSAGE}\n\nקוד הורה: ${created.parentCode}\nכניסה ישירה: ${APP_URL}/?code=${created.parentCode}`;
-    const studentMessage = `${WELCOME_MESSAGE}\n\nקוד תלמיד: ${created.studentCode}\nכניסה ישירה: ${APP_URL}/?code=${created.studentCode}`;
+    const parentMessage = `${welcomeMessage}\n\nקוד הורה: ${created.parentCode}\nכניסה ישירה: ${APP_URL}/?code=${created.parentCode}`;
+    const studentMessage = `${welcomeMessage}\n\nקוד תלמיד: ${created.studentCode}\nכניסה ישירה: ${APP_URL}/?code=${created.studentCode}`;
     const parentPhoneValid = !!normalizePhone(form.parentPhone);
     const studentPhoneValid = !!normalizePhone(form.studentPhone);
     return (
