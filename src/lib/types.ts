@@ -5,7 +5,8 @@ export type IntakeStatus =
   | "parent_started"
   | "parent_completed"
   | "under_review"
-  | "completed";
+  | "completed"
+  | "archived";
 
 export type QuestionnaireSection =
   | "quality_of_life"
@@ -110,6 +111,7 @@ export const STATUS_LABELS: Record<IntakeStatus, string> = {
   parent_completed: "ההורה השלים",
   under_review: "בבדיקה",
   completed: "הושלם",
+  archived: "בארכיון",
 };
 
 export const SECTION_LABELS: Record<QuestionnaireSection, string> = {

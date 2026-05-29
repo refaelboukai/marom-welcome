@@ -1,11 +1,13 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getSessionDB, updateSessionDB, getAssessmentRounds, createAssessmentRound, AssessmentRound } from "@/lib/supabase-storage";
+import { deleteSessionDB } from "@/lib/supabase-storage";
+import { ADMIN_CODE } from "@/data/students";
 import { IntakeSession, SECTION_LABELS, OPEN_QUESTION_LABELS, QOL_SUBDOMAIN_LABELS, LC_SUBDOMAIN_LABELS, GASGoal } from "@/lib/types";
 import { calculateScores, calculateQoLSubdomains, calculateLearningSubdomains, generateRiskFlags, generateInsights, generateGASGoals, getScoreLabel, getScoreColor, getTopFocusAreas } from "@/lib/scoring";
 import { DOMAIN_DESCRIPTIONS, QOL_SUBDOMAIN_DESCRIPTIONS, LC_SUBDOMAIN_DESCRIPTIONS, getScoreInterpretation } from "@/lib/domain-descriptions";
 import StatusBadge from "@/components/StatusBadge";
-import { ArrowRight, AlertTriangle, Copy, CheckCircle, Lock, Unlock, FileText, Target, Lightbulb, TrendingUp, Users, Printer, MessageSquare, BarChart3, Shield, Loader2, RefreshCw, Download, PenLine, ScrollText, ClipboardList, Heart, Info, FileBarChart, Brain } from "lucide-react";
+import { ArrowRight, AlertTriangle, Copy, CheckCircle, Lock, Unlock, FileText, Target, Lightbulb, TrendingUp, Users, Printer, MessageSquare, BarChart3, Shield, Loader2, RefreshCw, Download, PenLine, ScrollText, ClipboardList, Heart, Info, FileBarChart, Brain, Trash2, Archive } from "lucide-react";
 import { generateSemesterSummary, SEMESTER_LABELS, type SemesterType } from "@/lib/summary-generator";
 import SupportPlans from "@/components/SupportPlans";
 import AIRecommendations from "@/components/AIRecommendations";
@@ -40,6 +42,37 @@ const StudentProfile = () => {
   const [summaryType, setSummaryType] = useState<SemesterType | null>(null);
   const [summaryText, setSummaryText] = useState("");
   const [summaryCopied, setSummaryCopied] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [archiving, setArchiving] = useState(false);
+
+  const handleArchive = async () => {
+    if (!session) return;
+    const isArchived = session.status === "archived";
+    if (!isArchived && !confirm("להעביר את התלמיד לארכיון?")) return;
+    setArchiving(true);
+    await updateSessionDB(session.id, { status: isArchived ? "under_review" : "archived" });
+    setArchiving(false);
+    if (isArchived) {
+      setSession((prev) => prev ? { ...prev, status: "under_review" } : null);
+    } else {
+      navigate("/admin");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!session) return;
+    if (deletePassword !== ADMIN_CODE) {
+      setDeleteError("סיסמת מנהל שגויה");
+      return;
+    }
+    setDeleting(true);
+    await deleteSessionDB(session.id);
+    setDeleting(false);
+    navigate("/admin");
+  };
 
   const loadData = useCallback(async () => {
     if (!sessionId) return;
@@ -1124,6 +1157,70 @@ const StudentProfile = () => {
                 })}
               </LineChart>
             </ResponsiveContainer>
+          </div>
+        )}
+
+        {/* Danger Zone */}
+        <div className="intake-card border-destructive/30 bg-destructive/5">
+          <h3 className="font-heading font-semibold mb-2 flex items-center gap-2 text-destructive">
+            <AlertTriangle className="w-5 h-5" />
+            אזור מסוכן — ניהול תלמיד
+          </h3>
+          <p className="text-xs text-muted-foreground mb-4">
+            ניתן להעביר את התלמיד לארכיון (ניתן לשחזר) או למחוק לצמיתות (דורש סיסמת מנהל).
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={handleArchive}
+              disabled={archiving}
+              className="btn-intake bg-muted text-foreground text-sm flex items-center gap-2 hover:bg-muted/70 disabled:opacity-50"
+            >
+              <Archive className="w-4 h-4" />
+              {session.status === "archived" ? "החזרה מארכיון" : "העברה לארכיון"}
+            </button>
+            <button
+              onClick={() => { setShowDeleteDialog(true); setDeletePassword(""); setDeleteError(""); }}
+              className="btn-intake bg-destructive text-destructive-foreground text-sm flex items-center gap-2 hover:bg-destructive/90"
+            >
+              <Trash2 className="w-4 h-4" />
+              מחיקת תלמיד מהמערכת
+            </button>
+          </div>
+        </div>
+
+        {showDeleteDialog && (
+          <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => !deleting && setShowDeleteDialog(false)}>
+            <div className="bg-card rounded-2xl p-6 max-w-sm w-full shadow-xl" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center gap-2 mb-3 text-destructive">
+                <AlertTriangle className="w-5 h-5" />
+                <h3 className="font-heading font-bold text-lg">מחיקת תלמיד</h3>
+              </div>
+              <p className="text-sm text-muted-foreground mb-4">
+                הפעולה תמחק לצמיתות את <strong className="text-foreground">{session.studentName}</strong> ואת כל הנתונים הקשורים אליו. לא ניתן לשחזר.
+              </p>
+              <label className="block text-xs font-medium mb-1">סיסמת מנהל</label>
+              <input
+                type="password"
+                value={deletePassword}
+                onChange={(e) => { setDeletePassword(e.target.value); setDeleteError(""); }}
+                className="w-full p-2 rounded-lg border border-input bg-background text-sm mb-2"
+                placeholder="הזן 9020"
+                autoFocus
+              />
+              {deleteError && <p className="text-xs text-destructive mb-2">{deleteError}</p>}
+              <div className="flex gap-2 mt-3">
+                <button
+                  onClick={handleDelete}
+                  disabled={deleting || !deletePassword}
+                  className="btn-intake bg-destructive text-destructive-foreground text-sm flex-1 disabled:opacity-50"
+                >
+                  {deleting ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "מחק לצמיתות"}
+                </button>
+                <button onClick={() => setShowDeleteDialog(false)} disabled={deleting} className="btn-intake bg-muted text-muted-foreground text-sm">
+                  ביטול
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
