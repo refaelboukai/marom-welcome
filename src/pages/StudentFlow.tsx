@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getSessionDB, updateSessionDB, getActiveRoundForSession, updateAssessmentRound, AssessmentRound } from "@/lib/supabase-storage";
+import { getSessionDB, updateSessionDB, getActiveRoundForSession, updateAssessmentRound, AssessmentRound, getSchoolRules, DEFAULT_SCHOOL_RULES } from "@/lib/supabase-storage";
 import { IntakeSession } from "@/lib/types";
 import QuestionnaireFlow from "@/components/QuestionnaireFlow";
 import logo from "@/assets/logo.jpeg";
@@ -22,7 +22,7 @@ function getExplanationCards(g: (m: string, f: string) => string) {
   ];
 }
 
-const schoolRules = [
+const DEFAULT_SCHOOL_RULES_FALLBACK = [
   "בית הספר שלנו הינו מרחב לימודי-חינוכי-טיפולי, שבו כל תלמיד ותלמידה ירכשו כלים בתחומים מקצועיים להתמודדות מיטיבה בהמשך חייכם.",
   "לכל תלמיד הזכות למוגנות, שייכות ומשמעות. לכל תלמיד הזכות להתפתחות רגשית, חברתית, לימודית ואישית תוך חיזוק המסוגלות העצמית.",
   "אנחנו מאמינים בחינוך המבוסס על ערכים של הכלה ואמפתיה, עם גבולות ברורים, שיתוף והתייעצות.",
@@ -50,6 +50,7 @@ const StudentFlow = () => {
   const [hasSigned, setHasSigned] = useState(false);
   const [isReassessment, setIsReassessment] = useState(false);
   const [activeRound, setActiveRound] = useState<AssessmentRound | null>(null);
+  const [schoolRules, setSchoolRules] = useState<string[]>(DEFAULT_SCHOOL_RULES);
   const sigCanvasRef = useRef<SignatureCanvas>(null);
 
   const gender = useMemo(() => session ? getStudentGender(session.studentName) : "unknown" as Gender, [session?.studentName]);
