@@ -193,8 +193,8 @@ const Dashboard = () => {
             <button onClick={openPromoteDialog} className="btn-intake bg-info/10 text-info text-sm px-3 py-2 hover:bg-info/20 hidden sm:inline-flex gap-1" title="העברת תלמידים לשנה הבאה">
               <ArrowLeftRight className="w-4 h-4" /> העברה לשנה הבאה
             </button>
-            <button onClick={() => navigate("/admin/new")} className="btn-intake bg-primary text-primary-foreground text-xs sm:text-sm px-2.5 sm:px-4 py-2 shadow-md hover:shadow-lg transition-all">
-              <Plus className="w-4 h-4 inline sm:ml-1" /> <span className="hidden xs:inline sm:inline">קליטה חדשה</span>
+            <button onClick={() => navigate("/admin/new")} className="btn-intake bg-primary text-primary-foreground text-xs sm:text-sm px-2.5 sm:px-4 py-2 shadow-md hover:shadow-lg transition-all flex items-center gap-1">
+              <Plus className="w-4 h-4" /> קליטה חדשה
             </button>
             <button onClick={() => navigate("/")} className="p-2 rounded-xl hover:bg-muted transition-colors" title="יציאה">
               <LogOut className="w-5 h-5 text-muted-foreground" />
