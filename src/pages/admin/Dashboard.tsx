@@ -7,9 +7,10 @@ import { CLASS_GROUPS, ADMIN_CODE } from "@/data/students";
 import StatusBadge from "@/components/StatusBadge";
 import CodeManagement from "@/components/CodeManagement";
 import SchoolRulesEditor from "@/components/SchoolRulesEditor";
+import WelcomeMessageEditor from "@/components/WelcomeMessageEditor";
 
 import logo from "@/assets/logo.jpeg";
-import { Plus, Users, AlertTriangle, CheckCircle, Clock, Search, LogOut, XCircle, Loader2, Download, Key, FileText, Copy, ClipboardList, Trash2, ShieldAlert, Calendar, ArrowLeftRight, BookOpen } from "lucide-react";
+import { Plus, Users, AlertTriangle, CheckCircle, Clock, Search, LogOut, XCircle, Loader2, Download, Key, FileText, Copy, ClipboardList, Trash2, ShieldAlert, Calendar, ArrowLeftRight, BookOpen, MessageCircle } from "lucide-react";
 import { calculateScores, generateRiskFlags, getCompletionPercentage } from "@/lib/scoring";
 import { exportToExcel } from "@/lib/export-utils";
 import { generateStudentPDF } from "@/lib/pdf-export";
@@ -38,6 +39,7 @@ const Dashboard = () => {
   const [promoting, setPromoting] = useState(false);
   const [promoteResult, setPromoteResult] = useState<string | null>(null);
   const [showRulesEditor, setShowRulesEditor] = useState(false);
+  const [showWelcomeEditor, setShowWelcomeEditor] = useState(false);
   useEffect(() => {
     getSessionsDB().then((data) => { setSessions(data); setLoading(false); });
   }, []);
@@ -190,6 +192,9 @@ const Dashboard = () => {
             <button onClick={() => setShowRulesEditor(true)} className="btn-intake bg-muted text-foreground text-sm px-3 py-2 hover:bg-muted/70 hidden sm:inline-flex gap-1" title="עריכת כללי בית הספר">
               <BookOpen className="w-4 h-4" /> כללי בית הספר
             </button>
+            <button onClick={() => setShowWelcomeEditor(true)} className="btn-intake bg-muted text-foreground text-sm px-3 py-2 hover:bg-muted/70 hidden sm:inline-flex gap-1" title="עריכת הודעת ווטסאפ">
+              <MessageCircle className="w-4 h-4" /> הודעת ווטסאפ
+            </button>
             <button onClick={openPromoteDialog} className="btn-intake bg-info/10 text-info text-sm px-3 py-2 hover:bg-info/20 hidden sm:inline-flex gap-1" title="העברת תלמידים לשנה הבאה">
               <ArrowLeftRight className="w-4 h-4" /> העברה לשנה הבאה
             </button>
@@ -275,6 +280,9 @@ const Dashboard = () => {
               </button>
               <button onClick={() => setShowRulesEditor(true)} className="btn-intake bg-muted text-foreground text-xs px-3 py-2 gap-1 hover:bg-muted/70 sm:hidden">
                 <BookOpen className="w-3.5 h-3.5" /> כללי בית הספר
+              </button>
+              <button onClick={() => setShowWelcomeEditor(true)} className="btn-intake bg-muted text-foreground text-xs px-3 py-2 gap-1 hover:bg-muted/70 sm:hidden">
+                <MessageCircle className="w-3.5 h-3.5" /> הודעת ווטסאפ
               </button>
               <button onClick={() => { setShowResetDialog(true); setResetPassword(""); setResetError(""); }}
                 className="btn-intake bg-destructive/10 text-destructive text-xs px-3 py-2 gap-1 hover:bg-destructive/20 mr-auto">
@@ -532,6 +540,7 @@ const Dashboard = () => {
       )}
 
       {showRulesEditor && <SchoolRulesEditor onClose={() => setShowRulesEditor(false)} />}
+      {showWelcomeEditor && <WelcomeMessageEditor onClose={() => setShowWelcomeEditor(false)} />}
     </div>
   );
 };
