@@ -6,9 +6,10 @@ import { questionnaireItems } from "@/data/questionnaires";
 import { CLASS_GROUPS, ADMIN_CODE } from "@/data/students";
 import StatusBadge from "@/components/StatusBadge";
 import CodeManagement from "@/components/CodeManagement";
+import SchoolRulesEditor from "@/components/SchoolRulesEditor";
 
 import logo from "@/assets/logo.jpeg";
-import { Plus, Users, AlertTriangle, CheckCircle, Clock, Search, LogOut, XCircle, Loader2, Download, Key, FileText, Copy, ClipboardList, Trash2, ShieldAlert, Calendar, ArrowLeftRight } from "lucide-react";
+import { Plus, Users, AlertTriangle, CheckCircle, Clock, Search, LogOut, XCircle, Loader2, Download, Key, FileText, Copy, ClipboardList, Trash2, ShieldAlert, Calendar, ArrowLeftRight, BookOpen } from "lucide-react";
 import { calculateScores, generateRiskFlags, getCompletionPercentage } from "@/lib/scoring";
 import { exportToExcel } from "@/lib/export-utils";
 import { generateStudentPDF } from "@/lib/pdf-export";
@@ -36,6 +37,7 @@ const Dashboard = () => {
   const [promoteSelected, setPromoteSelected] = useState<Set<string>>(new Set());
   const [promoting, setPromoting] = useState(false);
   const [promoteResult, setPromoteResult] = useState<string | null>(null);
+  const [showRulesEditor, setShowRulesEditor] = useState(false);
   useEffect(() => {
     getSessionsDB().then((data) => { setSessions(data); setLoading(false); });
   }, []);
@@ -185,6 +187,9 @@ const Dashboard = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <button onClick={() => setShowRulesEditor(true)} className="btn-intake bg-muted text-foreground text-sm px-3 py-2 hover:bg-muted/70 hidden sm:inline-flex gap-1" title="עריכת כללי בית הספר">
+              <BookOpen className="w-4 h-4" /> כללי בית הספר
+            </button>
             <button onClick={openPromoteDialog} className="btn-intake bg-info/10 text-info text-sm px-3 py-2 hover:bg-info/20 hidden sm:inline-flex gap-1" title="העברת תלמידים לשנה הבאה">
               <ArrowLeftRight className="w-4 h-4" /> העברה לשנה הבאה
             </button>
@@ -267,6 +272,9 @@ const Dashboard = () => {
               </button>
               <button onClick={openPromoteDialog} className="btn-intake bg-info/10 text-info text-xs px-3 py-2 gap-1 hover:bg-info/20 sm:hidden">
                 <ArrowLeftRight className="w-3.5 h-3.5" /> העברה לשנה הבאה
+              </button>
+              <button onClick={() => setShowRulesEditor(true)} className="btn-intake bg-muted text-foreground text-xs px-3 py-2 gap-1 hover:bg-muted/70 sm:hidden">
+                <BookOpen className="w-3.5 h-3.5" /> כללי בית הספר
               </button>
               <button onClick={() => { setShowResetDialog(true); setResetPassword(""); setResetError(""); }}
                 className="btn-intake bg-destructive/10 text-destructive text-xs px-3 py-2 gap-1 hover:bg-destructive/20 mr-auto">
