@@ -1,11 +1,13 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getSessionDB, updateSessionDB, getAssessmentRounds, createAssessmentRound, AssessmentRound } from "@/lib/supabase-storage";
+import { deleteSessionDB } from "@/lib/supabase-storage";
+import { ADMIN_CODE } from "@/data/students";
 import { IntakeSession, SECTION_LABELS, OPEN_QUESTION_LABELS, QOL_SUBDOMAIN_LABELS, LC_SUBDOMAIN_LABELS, GASGoal } from "@/lib/types";
 import { calculateScores, calculateQoLSubdomains, calculateLearningSubdomains, generateRiskFlags, generateInsights, generateGASGoals, getScoreLabel, getScoreColor, getTopFocusAreas } from "@/lib/scoring";
 import { DOMAIN_DESCRIPTIONS, QOL_SUBDOMAIN_DESCRIPTIONS, LC_SUBDOMAIN_DESCRIPTIONS, getScoreInterpretation } from "@/lib/domain-descriptions";
 import StatusBadge from "@/components/StatusBadge";
-import { ArrowRight, AlertTriangle, Copy, CheckCircle, Lock, Unlock, FileText, Target, Lightbulb, TrendingUp, Users, Printer, MessageSquare, BarChart3, Shield, Loader2, RefreshCw, Download, PenLine, ScrollText, ClipboardList, Heart, Info, FileBarChart, Brain } from "lucide-react";
+import { ArrowRight, AlertTriangle, Copy, CheckCircle, Lock, Unlock, FileText, Target, Lightbulb, TrendingUp, Users, Printer, MessageSquare, BarChart3, Shield, Loader2, RefreshCw, Download, PenLine, ScrollText, ClipboardList, Heart, Info, FileBarChart, Brain, Trash2, Archive } from "lucide-react";
 import { generateSemesterSummary, SEMESTER_LABELS, type SemesterType } from "@/lib/summary-generator";
 import SupportPlans from "@/components/SupportPlans";
 import AIRecommendations from "@/components/AIRecommendations";
@@ -40,6 +42,37 @@ const StudentProfile = () => {
   const [summaryType, setSummaryType] = useState<SemesterType | null>(null);
   const [summaryText, setSummaryText] = useState("");
   const [summaryCopied, setSummaryCopied] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [archiving, setArchiving] = useState(false);
+
+  const handleArchive = async () => {
+    if (!session) return;
+    const isArchived = session.status === "archived";
+    if (!isArchived && !confirm("להעביר את התלמיד לארכיון?")) return;
+    setArchiving(true);
+    await updateSessionDB(session.id, { status: isArchived ? "under_review" : "archived" });
+    setArchiving(false);
+    if (isArchived) {
+      setSession((prev) => prev ? { ...prev, status: "under_review" } : null);
+    } else {
+      navigate("/admin");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!session) return;
+    if (deletePassword !== ADMIN_CODE) {
+      setDeleteError("סיסמת מנהל שגויה");
+      return;
+    }
+    setDeleting(true);
+    await deleteSessionDB(session.id);
+    setDeleting(false);
+    navigate("/admin");
+  };
 
   const loadData = useCallback(async () => {
     if (!sessionId) return;
