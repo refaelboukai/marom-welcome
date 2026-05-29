@@ -58,6 +58,10 @@ const StudentFlow = () => {
   const explanationCards = useMemo(() => getExplanationCards(g), [g]);
 
   useEffect(() => {
+    getSchoolRules().then(setSchoolRules).catch(() => {});
+  }, []);
+
+  useEffect(() => {
     if (!sessionId) return;
     getSessionDB(sessionId).then(async (s) => {
       if (!s) { setLoading(false); navigate("/"); return; }
