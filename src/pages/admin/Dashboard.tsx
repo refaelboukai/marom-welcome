@@ -530,6 +530,8 @@ const Dashboard = () => {
           </div>
         </div>
       )}
+
+      {showRulesEditor && <SchoolRulesEditor onClose={() => setShowRulesEditor(false)} />}
     </div>
   );
 };
