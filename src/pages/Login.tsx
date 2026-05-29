@@ -16,6 +16,33 @@ const Login = () => {
     initializeSessionsDB().then(() => setInitialized(true));
   }, []);
 
+  // Auto-login when ?code=XXXX is present in the URL (used by WhatsApp deep links)
+  useEffect(() => {
+    if (!initialized) return;
+    const params = new URLSearchParams(window.location.search);
+    const urlCode = params.get("code");
+    if (!urlCode) return;
+    const trimmed = urlCode.trim().toUpperCase();
+    setCode(trimmed);
+    (async () => {
+      setLoading(true);
+      try {
+        if (isAdminCode(trimmed)) { navigate("/admin"); return; }
+        if (trimmed === STAFF_CODE) { navigate("/staff"); return; }
+        const result = await findSessionByCodeDB(trimmed);
+        if (result) {
+          navigate(result.role === "student" ? `/student/${result.session.id}` : `/parent/${result.session.id}`);
+        } else {
+          setError("הקוד שבקישור אינו תקין. ניתן להזין אותו ידנית.");
+        }
+      } catch {
+        setError("שגיאה בחיבור לשרת. נסה שוב.");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [initialized, navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = code.trim().toUpperCase();
