@@ -84,8 +84,9 @@ const NewIntake = () => {
   };
 
   if (created) {
-    const parentMessage = `${WELCOME_MESSAGE}\n\nקוד הורה: ${created.parentCode}`;
-    const studentMessage = `${WELCOME_MESSAGE}\n\nקוד תלמיד: ${created.studentCode}`;
+    const APP_URL = "https://marom-welcome.vercel.app";
+    const parentMessage = `${WELCOME_MESSAGE}\n\nקוד הורה: ${created.parentCode}\nכניסה ישירה: ${APP_URL}/?code=${created.parentCode}`;
+    const studentMessage = `${WELCOME_MESSAGE}\n\nקוד תלמיד: ${created.studentCode}\nכניסה ישירה: ${APP_URL}/?code=${created.studentCode}`;
     const parentPhoneValid = !!normalizePhone(form.parentPhone);
     const studentPhoneValid = !!normalizePhone(form.studentPhone);
     return (
