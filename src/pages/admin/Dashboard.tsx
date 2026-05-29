@@ -177,24 +177,24 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-card border-b border-border px-4 py-3 sticky top-0 z-20 shadow-sm">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src={logo} alt="מרום" className="h-11 rounded-xl shadow-sm" />
-            <div>
-              <h1 className="text-lg font-heading font-bold bg-gradient-to-l from-primary to-primary/70 bg-clip-text text-transparent">דשבורד ניהול</h1>
-              <p className="text-xs text-muted-foreground">מרום בית אקשטיין</p>
+      <div className="bg-card border-b border-border px-3 sm:px-4 py-2.5 sticky top-0 z-20 shadow-sm">
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <img src={logo} alt="מרום" className="h-9 sm:h-11 rounded-xl shadow-sm flex-shrink-0" />
+            <div className="min-w-0">
+              <h1 className="text-sm sm:text-lg font-heading font-bold bg-gradient-to-l from-primary to-primary/70 bg-clip-text text-transparent truncate">דשבורד ניהול</h1>
+              <p className="text-[10px] sm:text-xs text-muted-foreground truncate">מרום בית אקשטיין</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
             <button onClick={() => setShowRulesEditor(true)} className="btn-intake bg-muted text-foreground text-sm px-3 py-2 hover:bg-muted/70 hidden sm:inline-flex gap-1" title="עריכת כללי בית הספר">
               <BookOpen className="w-4 h-4" /> כללי בית הספר
             </button>
             <button onClick={openPromoteDialog} className="btn-intake bg-info/10 text-info text-sm px-3 py-2 hover:bg-info/20 hidden sm:inline-flex gap-1" title="העברת תלמידים לשנה הבאה">
               <ArrowLeftRight className="w-4 h-4" /> העברה לשנה הבאה
             </button>
-            <button onClick={() => navigate("/admin/new")} className="btn-intake bg-primary text-primary-foreground text-sm px-4 py-2 shadow-md hover:shadow-lg transition-all">
-              <Plus className="w-4 h-4 inline ml-1" /> קליטה חדשה
+            <button onClick={() => navigate("/admin/new")} className="btn-intake bg-primary text-primary-foreground text-xs sm:text-sm px-2.5 sm:px-4 py-2 shadow-md hover:shadow-lg transition-all">
+              <Plus className="w-4 h-4 inline sm:ml-1" /> <span className="hidden xs:inline sm:inline">קליטה חדשה</span>
             </button>
             <button onClick={() => navigate("/")} className="p-2 rounded-xl hover:bg-muted transition-colors" title="יציאה">
               <LogOut className="w-5 h-5 text-muted-foreground" />
