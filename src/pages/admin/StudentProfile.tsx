@@ -1192,7 +1192,7 @@ const StudentProfile = () => {
           <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => !deleting && setShowDeleteDialog(false)}>
             <div className="bg-card rounded-2xl p-6 max-w-sm w-full shadow-xl" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center gap-2 mb-3 text-destructive">
-                <ShieldAlertIcon />
+                <AlertTriangle className="w-5 h-5" />
                 <h3 className="font-heading font-bold text-lg">מחיקת תלמיד</h3>
               </div>
               <p className="text-sm text-muted-foreground mb-4">
