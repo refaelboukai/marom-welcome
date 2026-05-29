@@ -12,6 +12,7 @@ const statusStyles: Record<IntakeStatus, string> = {
   parent_completed: "bg-success/20 text-success",
   under_review: "bg-warning/15 text-warning",
   completed: "bg-success/15 text-success border border-success/30",
+  archived: "bg-muted text-muted-foreground border border-border",
 };
 
 const StatusBadge = ({ status }: StatusBadgeProps) => {
