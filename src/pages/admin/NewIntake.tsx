@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createSessionDB } from "@/lib/supabase-storage";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowRight, Copy, CheckCircle, Loader2, Plus } from "lucide-react";
+import { ArrowRight, Copy, CheckCircle, Loader2, Plus, MessageCircle } from "lucide-react";
+import { openWhatsApp, normalizePhone, WELCOME_MESSAGE } from "@/lib/whatsapp";
 
 const NewIntake = () => {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ const NewIntake = () => {
     intakeDate: new Date().toISOString().split("T")[0],
     parentName: "",
     parentPhone: "",
+    studentPhone: "",
     secondParentName: "",
     classGroup: "",
     academicYear: 'תשפ"ו',
@@ -82,9 +84,13 @@ const NewIntake = () => {
   };
 
   if (created) {
+    const parentMessage = `${WELCOME_MESSAGE}\n\nקוד הורה: ${created.parentCode}`;
+    const studentMessage = `${WELCOME_MESSAGE}\n\nקוד תלמיד: ${created.studentCode}`;
+    const parentPhoneValid = !!normalizePhone(form.parentPhone);
+    const studentPhoneValid = !!normalizePhone(form.studentPhone);
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4">
-        <div className="w-full max-w-md animate-fade-in">
+        <div className="w-full max-w-md animate-fade-in py-6">
           <div className="intake-card text-center">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-success/15 flex items-center justify-center">
               <CheckCircle className="w-8 h-8 text-success" />
@@ -113,11 +119,65 @@ const NewIntake = () => {
               </div>
             </div>
 
+            {/* WhatsApp send */}
+            <div className="mt-6 text-right space-y-3">
+              <div className="flex items-center gap-2 text-success">
+                <MessageCircle className="w-4 h-4" />
+                <p className="text-sm font-semibold">שליחת הודעת ווטסאפ</p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium mb-1 text-muted-foreground">טלפון הורה</label>
+                <div className="flex gap-2">
+                  <input
+                    type="tel"
+                    value={form.parentPhone}
+                    onChange={(e) => updateField("parentPhone", e.target.value)}
+                    placeholder="05X-XXXXXXX"
+                    dir="ltr"
+                    className="flex-1 bg-card border border-input rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                  <button
+                    onClick={() => openWhatsApp(form.parentPhone, parentMessage)}
+                    disabled={!parentPhoneValid}
+                    className="btn-intake bg-success text-success-foreground px-4 py-3 text-sm disabled:opacity-40 disabled:cursor-not-allowed gap-1"
+                  >
+                    <MessageCircle className="w-4 h-4" /> שלח
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium mb-1 text-muted-foreground">טלפון תלמיד</label>
+                <div className="flex gap-2">
+                  <input
+                    type="tel"
+                    value={form.studentPhone}
+                    onChange={(e) => updateField("studentPhone", e.target.value)}
+                    placeholder="05X-XXXXXXX"
+                    dir="ltr"
+                    className="flex-1 bg-card border border-input rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                  <button
+                    onClick={() => openWhatsApp(form.studentPhone, studentMessage)}
+                    disabled={!studentPhoneValid}
+                    className="btn-intake bg-success text-success-foreground px-4 py-3 text-sm disabled:opacity-40 disabled:cursor-not-allowed gap-1"
+                  >
+                    <MessageCircle className="w-4 h-4" /> שלח
+                  </button>
+                </div>
+              </div>
+
+              <p className="text-[10px] text-muted-foreground leading-relaxed">
+                ההודעה תיפתח באפליקציית הווטסאפ במכשיר. נוסח קבוע + קוד הכניסה האישי.
+              </p>
+            </div>
+
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => {
                   setCreated(null);
-                  setForm({ studentName: "", studentIdNumber: "", grade: "", intakeDate: new Date().toISOString().split("T")[0], parentName: "", parentPhone: "", secondParentName: "", classGroup: "", academicYear: 'תשפ"ו', notes: "" });
+                  setForm({ studentName: "", studentIdNumber: "", grade: "", intakeDate: new Date().toISOString().split("T")[0], parentName: "", parentPhone: "", studentPhone: "", secondParentName: "", classGroup: "", academicYear: 'תשפ"ו', notes: "" });
                 }}
                 className="btn-intake bg-secondary text-secondary-foreground flex-1"
               >
@@ -140,6 +200,7 @@ const NewIntake = () => {
     { key: "intakeDate", label: "תאריך קליטה", required: false, type: "date" },
     { key: "parentName", label: "שם הורה", required: false, type: "text" },
     { key: "parentPhone", label: "טלפון הורה", required: false, type: "tel" },
+    { key: "studentPhone", label: "טלפון תלמיד (לשליחת ווטסאפ)", required: false, type: "tel" },
     { key: "secondParentName", label: "הורה נוסף (אופציונלי)", required: false, type: "text" },
   ];
 
