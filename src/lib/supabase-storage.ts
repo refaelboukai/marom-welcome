@@ -406,3 +406,52 @@ export async function resetAllSessionsDB(): Promise<boolean> {
   await initializeSessionsDB();
   return true;
 }
+
+// ---------- School Settings (editable content) ----------
+
+export const DEFAULT_SCHOOL_RULES: string[] = [
+  "בית הספר שלנו הינו מרחב לימודי-חינוכי-טיפולי, שבו כל תלמיד ותלמידה ירכשו כלים בתחומים מקצועיים להתמודדות מיטיבה בהמשך חייכם.",
+  "לכל תלמיד הזכות למוגנות, שייכות ומשמעות. לכל תלמיד הזכות להתפתחות רגשית, חברתית, לימודית ואישית תוך חיזוק המסוגלות העצמית.",
+  "אנחנו מאמינים בחינוך המבוסס על ערכים של הכלה ואמפתיה, עם גבולות ברורים, שיתוף והתייעצות.",
+  "כבוד הדדי — בשיחה, במרחב האישי ובלבוש. מותר להתווכח, מותר לא להסכים, אך חובה לכבד את האחד.ה את השני.ה, תלמידים וצוות כאחד.",
+  "יש להקפיד על לבוש מכבד את עצמנו ואת הסביבה (לא גופיות, חולצות מכבדות).",
+  "מותר להתווכח, מותר לטעון אחרת — אך חובה להקשיב לצוות בית הספר. נשמע, נעשה ונהיה ביקורתיים.",
+  "חובה להגיע בזמן לשיעור, להגיע מוכנים עם הציוד הנחוץ. מערכת שעות מחייבת אך גמישה.",
+  "חובה להיות נוכחים בשיעורים בכיתות לאורך כל שעות היום, אלא אם קיבלתם אישור לצאת מהכיתה.",
+  "הפלאפונים יאוחסנו לאורך כל היום בארון במזכירות בית הספר.",
+  "חובה על כל איש צוות ותלמיד למלא את התורנות שלו בצורה הטובה ביותר.",
+  "⛔ איסור מוחלט על אלימות מכל סוג — פיזית (כולל ונדליזם והרס רכוש), מינית ומילולית. אלימות בכל צורה שהיא תטופל בחומרה מרבית.",
+  "אסור לעשן, להכניס אמצעים לעישון או לעשות שימוש באלכוהול בשום צורה ואופן.",
+  "אסור לצאת מבית הספר ללא אישור. יציאה ללא אישור מסכנת אתכם ותפקידנו לשמור עליכם.",
+  "אם נפגעת או שנחשפת לפגיעה באחר.ת — יש לדווח במיידי לצוות.",
+  "שמירה על הכללים תוביל תמיד להערכה והוקרה. הפרה של הכללים תוביל תמיד לתגובה והשלכות.",
+];
+
+export async function getSchoolRules(): Promise<string[]> {
+  const { data, error } = await (supabase as any)
+    .from("school_settings")
+    .select("value")
+    .eq("key", "school_rules")
+    .maybeSingle();
+  if (error || !data) return DEFAULT_SCHOOL_RULES;
+  const value = data.value;
+  if (Array.isArray(value?.rules) && value.rules.every((r: unknown) => typeof r === "string")) {
+    return value.rules;
+  }
+  return DEFAULT_SCHOOL_RULES;
+}
+
+export async function saveSchoolRules(rules: string[]): Promise<boolean> {
+  const cleaned = rules.map((r) => r.trim()).filter((r) => r.length > 0);
+  const { error } = await (supabase as any)
+    .from("school_settings")
+    .upsert(
+      { key: "school_rules", value: { rules: cleaned }, updated_at: new Date().toISOString() },
+      { onConflict: "key" }
+    );
+  if (error) {
+    console.error("Error saving school rules:", error);
+    return false;
+  }
+  return true;
+}
