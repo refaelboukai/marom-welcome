@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { getSessionsDB, resetAllSessionsDB } from "@/lib/supabase-storage";
+import { getSessionsDB, resetAllSessionsDB, createSessionDB } from "@/lib/supabase-storage";
 import { IntakeSession, IntakeStatus } from "@/lib/types";
 import { questionnaireItems } from "@/data/questionnaires";
 import { CLASS_GROUPS, ADMIN_CODE } from "@/data/students";
@@ -8,7 +8,7 @@ import StatusBadge from "@/components/StatusBadge";
 import CodeManagement from "@/components/CodeManagement";
 
 import logo from "@/assets/logo.jpeg";
-import { Plus, Users, AlertTriangle, CheckCircle, Clock, Search, LogOut, XCircle, Loader2, Download, Key, FileText, Copy, ClipboardList, Trash2, ShieldAlert, Calendar } from "lucide-react";
+import { Plus, Users, AlertTriangle, CheckCircle, Clock, Search, LogOut, XCircle, Loader2, Download, Key, FileText, Copy, ClipboardList, Trash2, ShieldAlert, Calendar, ArrowLeftRight } from "lucide-react";
 import { calculateScores, generateRiskFlags, getCompletionPercentage } from "@/lib/scoring";
 import { exportToExcel } from "@/lib/export-utils";
 import { generateStudentPDF } from "@/lib/pdf-export";
@@ -31,6 +31,11 @@ const Dashboard = () => {
   const [resetPassword, setResetPassword] = useState("");
   const [resetError, setResetError] = useState("");
   const [resetting, setResetting] = useState(false);
+  const [showPromoteDialog, setShowPromoteDialog] = useState(false);
+  const [promoteTargetYear, setPromoteTargetYear] = useState<string>('תשפ"ז');
+  const [promoteSelected, setPromoteSelected] = useState<Set<string>>(new Set());
+  const [promoting, setPromoting] = useState(false);
+  const [promoteResult, setPromoteResult] = useState<string | null>(null);
   useEffect(() => {
     getSessionsDB().then((data) => { setSessions(data); setLoading(false); });
   }, []);
@@ -101,6 +106,61 @@ const Dashboard = () => {
     setResetting(false);
   };
 
+  const openPromoteDialog = () => {
+    // Default target = next year after the selected one
+    const idx = ACADEMIC_YEARS.indexOf(selectedYear);
+    const next = idx >= 0 && idx < ACADEMIC_YEARS.length - 1 ? ACADEMIC_YEARS[idx + 1] : ACADEMIC_YEARS[ACADEMIC_YEARS.length - 1];
+    setPromoteTargetYear(next);
+    setPromoteSelected(new Set(sessionsForYear.map((s) => s.id)));
+    setPromoteResult(null);
+    setShowPromoteDialog(true);
+  };
+
+  const togglePromoteAll = () => {
+    if (promoteSelected.size === sessionsForYear.length) {
+      setPromoteSelected(new Set());
+    } else {
+      setPromoteSelected(new Set(sessionsForYear.map((s) => s.id)));
+    }
+  };
+
+  const handlePromote = async () => {
+    if (promoteSelected.size === 0) return;
+    setPromoting(true);
+    // Avoid duplicates: skip students that already exist in target year (by name + id number)
+    const existingInTarget = new Set(
+      sessions
+        .filter((s) => (s.academicYear || 'תשפ"ו') === promoteTargetYear)
+        .map((s) => `${s.studentName}|${s.studentIdNumber}`)
+    );
+    let created = 0;
+    let skipped = 0;
+    for (const id of Array.from(promoteSelected)) {
+      const s = sessions.find((x) => x.id === id);
+      if (!s) continue;
+      const key = `${s.studentName}|${s.studentIdNumber}`;
+      if (existingInTarget.has(key)) { skipped++; continue; }
+      const res = await createSessionDB({
+        studentName: s.studentName,
+        studentIdNumber: s.studentIdNumber,
+        grade: s.grade,
+        intakeDate: new Date().toISOString().split("T")[0],
+        parentName: s.parentName,
+        parentPhone: s.parentPhone,
+        secondParentName: s.secondParentName,
+        classGroup: s.classGroup,
+        academicYear: promoteTargetYear,
+        notes: s.notes,
+      });
+      if (res) created++;
+    }
+    const data = await getSessionsDB();
+    setSessions(data);
+    setPromoting(false);
+    setPromoteResult(`הועברו ${created} תלמידים${skipped ? ` (דולגו ${skipped} שכבר קיימים)` : ""}`);
+    setSelectedYear(promoteTargetYear);
+  };
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
   }
@@ -125,6 +185,9 @@ const Dashboard = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <button onClick={openPromoteDialog} className="btn-intake bg-info/10 text-info text-sm px-3 py-2 hover:bg-info/20 hidden sm:inline-flex gap-1" title="העברת תלמידים לשנה הבאה">
+              <ArrowLeftRight className="w-4 h-4" /> העברה לשנה הבאה
+            </button>
             <button onClick={() => navigate("/admin/new")} className="btn-intake bg-primary text-primary-foreground text-sm px-4 py-2 shadow-md hover:shadow-lg transition-all">
               <Plus className="w-4 h-4 inline ml-1" /> קליטה חדשה
             </button>
@@ -201,6 +264,9 @@ const Dashboard = () => {
               <button onClick={() => exportToExcel(tab === "all" ? sessions : filtered, tab === "tali" ? "הכיתה_של_טלי" : tab === "eden" ? "הכיתה_של_עדן" : "כל_התלמידים")}
                 className="btn-intake bg-success/10 text-success text-xs px-3 py-2 gap-1 hover:bg-success/20">
                 <Download className="w-3.5 h-3.5" /> ייצוא Excel
+              </button>
+              <button onClick={openPromoteDialog} className="btn-intake bg-info/10 text-info text-xs px-3 py-2 gap-1 hover:bg-info/20 sm:hidden">
+                <ArrowLeftRight className="w-3.5 h-3.5" /> העברה לשנה הבאה
               </button>
               <button onClick={() => { setShowResetDialog(true); setResetPassword(""); setResetError(""); }}
                 className="btn-intake bg-destructive/10 text-destructive text-xs px-3 py-2 gap-1 hover:bg-destructive/20 mr-auto">
@@ -366,6 +432,91 @@ const Dashboard = () => {
                 className="btn-intake bg-destructive text-destructive-foreground flex-1 disabled:opacity-50">
                 {resetting ? <Loader2 className="w-4 h-4 animate-spin inline ml-1" /> : <Trash2 className="w-4 h-4 inline ml-1" />}
                 אפס הכל
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Promote-to-next-year Dialog */}
+      {showPromoteDialog && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => !promoting && setShowPromoteDialog(false)}>
+          <div className="bg-card rounded-2xl shadow-xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3 text-info">
+              <ArrowLeftRight className="w-7 h-7" />
+              <div>
+                <h2 className="text-lg font-heading font-bold">העברת תלמידים לשנה הבאה</h2>
+                <p className="text-xs text-muted-foreground">משנה {selectedYear} — סמנו מי ממשיך</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-muted-foreground">העבר לשנת:</span>
+              <select
+                value={promoteTargetYear}
+                onChange={(e) => setPromoteTargetYear(e.target.value)}
+                disabled={promoting}
+                className="bg-background border border-input rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                {ACADEMIC_YEARS.filter((y) => y !== selectedYear).map((y) => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+            </div>
+
+            {sessionsForYear.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6">אין תלמידים בשנה זו</p>
+            ) : (
+              <>
+                <div className="flex items-center justify-between text-xs">
+                  <button onClick={togglePromoteAll} disabled={promoting} className="text-primary hover:underline">
+                    {promoteSelected.size === sessionsForYear.length ? "נקה הכל" : "סמן הכל"}
+                  </button>
+                  <span className="text-muted-foreground">{promoteSelected.size} / {sessionsForYear.length} נבחרו</span>
+                </div>
+
+                <div className="flex-1 overflow-y-auto border border-border rounded-xl divide-y divide-border">
+                  {sessionsForYear.map((s) => {
+                    const checked = promoteSelected.has(s.id);
+                    return (
+                      <label key={s.id} className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-muted/30 ${checked ? "bg-primary/5" : ""}`}>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          disabled={promoting}
+                          onChange={() => {
+                            const next = new Set(promoteSelected);
+                            if (next.has(s.id)) next.delete(s.id); else next.add(s.id);
+                            setPromoteSelected(next);
+                          }}
+                          className="w-4 h-4 accent-primary"
+                        />
+                        <div className="flex-1 min-w-0 text-right">
+                          <p className="text-sm font-medium truncate">{s.studentName}</p>
+                          <p className="text-[11px] text-muted-foreground truncate">
+                            {s.grade ? `כיתה ${s.grade}` : "ללא כיתה"}{s.classGroup ? ` · ${s.classGroup === "tali" ? "טלי" : s.classGroup === "eden" ? "עדן" : s.classGroup}` : ""}
+                          </p>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
+            {promoteResult && (
+              <p className="text-sm text-success text-center bg-success/10 rounded-lg py-2">{promoteResult}</p>
+            )}
+
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              לתלמידים שנבחרים נוצרים תהליכי קליטה חדשים בשנה הנבחרת עם קודים חדשים. תלמידים שכבר קיימים בשנת היעד יידלגו.
+            </p>
+
+            <div className="flex gap-2">
+              <button onClick={() => setShowPromoteDialog(false)} disabled={promoting} className="btn-intake bg-muted text-muted-foreground flex-1">סגור</button>
+              <button onClick={handlePromote} disabled={promoting || promoteSelected.size === 0}
+                className="btn-intake bg-info text-info-foreground flex-1 disabled:opacity-50">
+                {promoting ? <><Loader2 className="w-4 h-4 animate-spin inline ml-1" /> מעביר...</> : <><ArrowLeftRight className="w-4 h-4 inline ml-1" /> העבר {promoteSelected.size > 0 ? `(${promoteSelected.size})` : ""}</>}
               </button>
             </div>
           </div>
