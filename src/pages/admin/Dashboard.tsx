@@ -540,6 +540,7 @@ const Dashboard = () => {
       )}
 
       {showRulesEditor && <SchoolRulesEditor onClose={() => setShowRulesEditor(false)} />}
+      {showWelcomeEditor && <WelcomeMessageEditor onClose={() => setShowWelcomeEditor(false)} />}
     </div>
   );
 };
