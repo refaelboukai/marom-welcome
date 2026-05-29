@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { getSessionsDB, resetAllSessionsDB } from "@/lib/supabase-storage";
+import { getSessionsDB, resetAllSessionsDB, createSessionDB } from "@/lib/supabase-storage";
 import { IntakeSession, IntakeStatus } from "@/lib/types";
 import { questionnaireItems } from "@/data/questionnaires";
 import { CLASS_GROUPS, ADMIN_CODE } from "@/data/students";
@@ -8,7 +8,7 @@ import StatusBadge from "@/components/StatusBadge";
 import CodeManagement from "@/components/CodeManagement";
 
 import logo from "@/assets/logo.jpeg";
-import { Plus, Users, AlertTriangle, CheckCircle, Clock, Search, LogOut, XCircle, Loader2, Download, Key, FileText, Copy, ClipboardList, Trash2, ShieldAlert, Calendar } from "lucide-react";
+import { Plus, Users, AlertTriangle, CheckCircle, Clock, Search, LogOut, XCircle, Loader2, Download, Key, FileText, Copy, ClipboardList, Trash2, ShieldAlert, Calendar, ArrowLeftRight } from "lucide-react";
 import { calculateScores, generateRiskFlags, getCompletionPercentage } from "@/lib/scoring";
 import { exportToExcel } from "@/lib/export-utils";
 import { generateStudentPDF } from "@/lib/pdf-export";
@@ -31,6 +31,11 @@ const Dashboard = () => {
   const [resetPassword, setResetPassword] = useState("");
   const [resetError, setResetError] = useState("");
   const [resetting, setResetting] = useState(false);
+  const [showPromoteDialog, setShowPromoteDialog] = useState(false);
+  const [promoteTargetYear, setPromoteTargetYear] = useState<string>('תשפ"ז');
+  const [promoteSelected, setPromoteSelected] = useState<Set<string>>(new Set());
+  const [promoting, setPromoting] = useState(false);
+  const [promoteResult, setPromoteResult] = useState<string | null>(null);
   useEffect(() => {
     getSessionsDB().then((data) => { setSessions(data); setLoading(false); });
   }, []);
@@ -99,6 +104,61 @@ const Dashboard = () => {
       setResetError("שגיאה באיפוס הנתונים");
     }
     setResetting(false);
+  };
+
+  const openPromoteDialog = () => {
+    // Default target = next year after the selected one
+    const idx = ACADEMIC_YEARS.indexOf(selectedYear);
+    const next = idx >= 0 && idx < ACADEMIC_YEARS.length - 1 ? ACADEMIC_YEARS[idx + 1] : ACADEMIC_YEARS[ACADEMIC_YEARS.length - 1];
+    setPromoteTargetYear(next);
+    setPromoteSelected(new Set(sessionsForYear.map((s) => s.id)));
+    setPromoteResult(null);
+    setShowPromoteDialog(true);
+  };
+
+  const togglePromoteAll = () => {
+    if (promoteSelected.size === sessionsForYear.length) {
+      setPromoteSelected(new Set());
+    } else {
+      setPromoteSelected(new Set(sessionsForYear.map((s) => s.id)));
+    }
+  };
+
+  const handlePromote = async () => {
+    if (promoteSelected.size === 0) return;
+    setPromoting(true);
+    // Avoid duplicates: skip students that already exist in target year (by name + id number)
+    const existingInTarget = new Set(
+      sessions
+        .filter((s) => (s.academicYear || 'תשפ"ו') === promoteTargetYear)
+        .map((s) => `${s.studentName}|${s.studentIdNumber}`)
+    );
+    let created = 0;
+    let skipped = 0;
+    for (const id of Array.from(promoteSelected)) {
+      const s = sessions.find((x) => x.id === id);
+      if (!s) continue;
+      const key = `${s.studentName}|${s.studentIdNumber}`;
+      if (existingInTarget.has(key)) { skipped++; continue; }
+      const res = await createSessionDB({
+        studentName: s.studentName,
+        studentIdNumber: s.studentIdNumber,
+        grade: s.grade,
+        intakeDate: new Date().toISOString().split("T")[0],
+        parentName: s.parentName,
+        parentPhone: s.parentPhone,
+        secondParentName: s.secondParentName,
+        classGroup: s.classGroup,
+        academicYear: promoteTargetYear,
+        notes: s.notes,
+      });
+      if (res) created++;
+    }
+    const data = await getSessionsDB();
+    setSessions(data);
+    setPromoting(false);
+    setPromoteResult(`הועברו ${created} תלמידים${skipped ? ` (דולגו ${skipped} שכבר קיימים)` : ""}`);
+    setSelectedYear(promoteTargetYear);
   };
 
   if (loading) {
