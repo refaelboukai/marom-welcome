@@ -437,6 +437,91 @@ const Dashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Promote-to-next-year Dialog */}
+      {showPromoteDialog && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => !promoting && setShowPromoteDialog(false)}>
+          <div className="bg-card rounded-2xl shadow-xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3 text-info">
+              <ArrowLeftRight className="w-7 h-7" />
+              <div>
+                <h2 className="text-lg font-heading font-bold">העברת תלמידים לשנה הבאה</h2>
+                <p className="text-xs text-muted-foreground">משנה {selectedYear} — סמנו מי ממשיך</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-muted-foreground">העבר לשנת:</span>
+              <select
+                value={promoteTargetYear}
+                onChange={(e) => setPromoteTargetYear(e.target.value)}
+                disabled={promoting}
+                className="bg-background border border-input rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                {ACADEMIC_YEARS.filter((y) => y !== selectedYear).map((y) => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+            </div>
+
+            {sessionsForYear.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6">אין תלמידים בשנה זו</p>
+            ) : (
+              <>
+                <div className="flex items-center justify-between text-xs">
+                  <button onClick={togglePromoteAll} disabled={promoting} className="text-primary hover:underline">
+                    {promoteSelected.size === sessionsForYear.length ? "נקה הכל" : "סמן הכל"}
+                  </button>
+                  <span className="text-muted-foreground">{promoteSelected.size} / {sessionsForYear.length} נבחרו</span>
+                </div>
+
+                <div className="flex-1 overflow-y-auto border border-border rounded-xl divide-y divide-border">
+                  {sessionsForYear.map((s) => {
+                    const checked = promoteSelected.has(s.id);
+                    return (
+                      <label key={s.id} className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-muted/30 ${checked ? "bg-primary/5" : ""}`}>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          disabled={promoting}
+                          onChange={() => {
+                            const next = new Set(promoteSelected);
+                            if (next.has(s.id)) next.delete(s.id); else next.add(s.id);
+                            setPromoteSelected(next);
+                          }}
+                          className="w-4 h-4 accent-primary"
+                        />
+                        <div className="flex-1 min-w-0 text-right">
+                          <p className="text-sm font-medium truncate">{s.studentName}</p>
+                          <p className="text-[11px] text-muted-foreground truncate">
+                            {s.grade ? `כיתה ${s.grade}` : "ללא כיתה"}{s.classGroup ? ` · ${s.classGroup === "tali" ? "טלי" : s.classGroup === "eden" ? "עדן" : s.classGroup}` : ""}
+                          </p>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
+            {promoteResult && (
+              <p className="text-sm text-success text-center bg-success/10 rounded-lg py-2">{promoteResult}</p>
+            )}
+
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              לתלמידים שנבחרים נוצרים תהליכי קליטה חדשים בשנה הנבחרת עם קודים חדשים. תלמידים שכבר קיימים בשנת היעד יידלגו.
+            </p>
+
+            <div className="flex gap-2">
+              <button onClick={() => setShowPromoteDialog(false)} disabled={promoting} className="btn-intake bg-muted text-muted-foreground flex-1">סגור</button>
+              <button onClick={handlePromote} disabled={promoting || promoteSelected.size === 0}
+                className="btn-intake bg-info text-info-foreground flex-1 disabled:opacity-50">
+                {promoting ? <><Loader2 className="w-4 h-4 animate-spin inline ml-1" /> מעביר...</> : <><ArrowLeftRight className="w-4 h-4 inline ml-1" /> העבר {promoteSelected.size > 0 ? `(${promoteSelected.size})` : ""}</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
