@@ -90,83 +90,92 @@ const NewIntake = () => {
     const parentPhoneValid = !!normalizePhone(form.parentPhone);
     const studentPhoneValid = !!normalizePhone(form.studentPhone);
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4">
-        <div className="w-full max-w-md animate-fade-in py-6">
-          <div className="intake-card text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-success/15 flex items-center justify-center">
-              <CheckCircle className="w-8 h-8 text-success" />
+      <div className="min-h-screen bg-background flex flex-col items-center px-3 py-4 sm:justify-center">
+        <div className="w-full max-w-md animate-fade-in">
+          <div className="intake-card text-center p-4 sm:p-6">
+            <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-success/15 flex items-center justify-center">
+              <CheckCircle className="w-7 h-7 text-success" />
             </div>
-            <h2 className="text-xl font-heading font-bold mb-2">תהליך הקליטה נוצר בהצלחה!</h2>
-            <p className="text-sm text-muted-foreground mb-6">{form.studentName}</p>
+            <h2 className="text-lg sm:text-xl font-heading font-bold mb-1">תהליך הקליטה נוצר בהצלחה!</h2>
+            <p className="text-xs text-muted-foreground mb-4">{form.studentName}</p>
 
-            <div className="space-y-3 text-right">
-              <div className="p-4 bg-muted/50 rounded-xl flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">קוד תלמיד</p>
-                  <p className="font-mono font-bold" dir="ltr">{created.studentCode}</p>
+            {/* Codes */}
+            <div className="space-y-2 text-right">
+              <div className="p-3 bg-muted/50 rounded-xl flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-[10px] text-muted-foreground">קוד תלמיד</p>
+                  <p className="font-mono font-bold text-sm truncate" dir="ltr">{created.studentCode}</p>
                 </div>
-                <button onClick={() => handleCopy(created.studentCode, "student")} className="p-2 rounded-lg hover:bg-muted">
+                <button onClick={() => handleCopy(created.studentCode, "student")} className="p-2 rounded-lg hover:bg-muted flex-shrink-0">
                   {copied === "student" ? <CheckCircle className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
                 </button>
               </div>
-              <div className="p-4 bg-muted/50 rounded-xl flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">קוד הורה</p>
-                  <p className="font-mono font-bold" dir="ltr">{created.parentCode}</p>
+              <div className="p-3 bg-muted/50 rounded-xl flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-[10px] text-muted-foreground">קוד הורה</p>
+                  <p className="font-mono font-bold text-sm truncate" dir="ltr">{created.parentCode}</p>
                 </div>
-                <button onClick={() => handleCopy(created.parentCode, "parent")} className="p-2 rounded-lg hover:bg-muted">
+                <button onClick={() => handleCopy(created.parentCode, "parent")} className="p-2 rounded-lg hover:bg-muted flex-shrink-0">
                   {copied === "parent" ? <CheckCircle className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
                 </button>
               </div>
             </div>
 
-            {/* WhatsApp send */}
-            <div className="mt-6 text-right space-y-3">
+            {/* WhatsApp send — buttons next to student & parent names */}
+            <div className="mt-5 text-right space-y-3">
               <div className="flex items-center gap-2 text-success">
                 <MessageCircle className="w-4 h-4" />
                 <p className="text-sm font-semibold">שליחת הודעת ווטסאפ</p>
               </div>
 
-              <div>
-                <label className="block text-xs font-medium mb-1 text-muted-foreground">טלפון הורה</label>
-                <div className="flex gap-2">
-                  <input
-                    type="tel"
-                    value={form.parentPhone}
-                    onChange={(e) => updateField("parentPhone", e.target.value)}
-                    placeholder="05X-XXXXXXX"
-                    dir="ltr"
-                    className="flex-1 bg-card border border-input rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
-                  <button
-                    onClick={() => openWhatsApp(form.parentPhone, parentMessage)}
-                    disabled={!parentPhoneValid}
-                    className="btn-intake bg-success text-success-foreground px-4 py-3 text-sm disabled:opacity-40 disabled:cursor-not-allowed gap-1"
-                  >
-                    <MessageCircle className="w-4 h-4" /> שלח
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium mb-1 text-muted-foreground">טלפון תלמיד</label>
-                <div className="flex gap-2">
-                  <input
-                    type="tel"
-                    value={form.studentPhone}
-                    onChange={(e) => updateField("studentPhone", e.target.value)}
-                    placeholder="05X-XXXXXXX"
-                    dir="ltr"
-                    className="flex-1 bg-card border border-input rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
+              {/* Student row */}
+              <div className="p-3 rounded-xl border border-border bg-card/50 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-muted-foreground">תלמיד/ה</p>
+                    <p className="text-sm font-semibold truncate">{form.studentName || "—"}</p>
+                  </div>
                   <button
                     onClick={() => openWhatsApp(form.studentPhone, studentMessage)}
                     disabled={!studentPhoneValid}
-                    className="btn-intake bg-success text-success-foreground px-4 py-3 text-sm disabled:opacity-40 disabled:cursor-not-allowed gap-1"
+                    className="btn-intake bg-success text-success-foreground px-3 py-2 text-xs disabled:opacity-40 disabled:cursor-not-allowed gap-1 flex-shrink-0"
                   >
-                    <MessageCircle className="w-4 h-4" /> שלח
+                    <MessageCircle className="w-4 h-4" /> שלח לתלמיד
                   </button>
                 </div>
+                <input
+                  type="tel"
+                  value={form.studentPhone}
+                  onChange={(e) => updateField("studentPhone", e.target.value)}
+                  placeholder="טלפון תלמיד 05X-XXXXXXX"
+                  dir="ltr"
+                  className="w-full bg-background border border-input rounded-lg p-2 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+
+              {/* Parent row */}
+              <div className="p-3 rounded-xl border border-border bg-card/50 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-muted-foreground">הורה</p>
+                    <p className="text-sm font-semibold truncate">{form.parentName || "—"}</p>
+                  </div>
+                  <button
+                    onClick={() => openWhatsApp(form.parentPhone, parentMessage)}
+                    disabled={!parentPhoneValid}
+                    className="btn-intake bg-success text-success-foreground px-3 py-2 text-xs disabled:opacity-40 disabled:cursor-not-allowed gap-1 flex-shrink-0"
+                  >
+                    <MessageCircle className="w-4 h-4" /> שלח להורה
+                  </button>
+                </div>
+                <input
+                  type="tel"
+                  value={form.parentPhone}
+                  onChange={(e) => updateField("parentPhone", e.target.value)}
+                  placeholder="טלפון הורה 05X-XXXXXXX"
+                  dir="ltr"
+                  className="w-full bg-background border border-input rounded-lg p-2 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
+                />
               </div>
 
               <p className="text-[10px] text-muted-foreground leading-relaxed">
@@ -174,17 +183,17 @@ const NewIntake = () => {
               </p>
             </div>
 
-            <div className="flex gap-3 mt-6">
+            <div className="flex flex-col sm:flex-row gap-2 mt-5">
               <button
                 onClick={() => {
                   setCreated(null);
                   setForm({ studentName: "", studentIdNumber: "", grade: "", intakeDate: new Date().toISOString().split("T")[0], parentName: "", parentPhone: "", studentPhone: "", secondParentName: "", classGroup: "", academicYear: 'תשפ"ו', notes: "" });
                 }}
-                className="btn-intake bg-secondary text-secondary-foreground flex-1"
+                className="btn-intake bg-secondary text-secondary-foreground flex-1 text-sm"
               >
                 הוסף תלמיד נוסף
               </button>
-              <button onClick={() => navigate("/admin")} className="btn-intake bg-primary text-primary-foreground flex-1">
+              <button onClick={() => navigate("/admin")} className="btn-intake bg-primary text-primary-foreground flex-1 text-sm">
                 חזרה לדשבורד
               </button>
             </div>
