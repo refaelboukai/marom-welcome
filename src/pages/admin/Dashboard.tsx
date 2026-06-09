@@ -406,6 +406,14 @@ const Dashboard = () => {
                                 <button onClick={() => navigate(`/admin/student/${session.id}`)} className="p-1.5 rounded-lg hover:bg-muted" title="פרופיל">
                                   <Users className="w-3.5 h-3.5" />
                                 </button>
+                                <button onClick={() => sendReminder(session.studentPhone, session.studentCode, session.studentName)}
+                                  className="p-1.5 rounded-lg hover:bg-success/10" title="תזכורת ווטסאפ לתלמיד">
+                                  <Send className="w-3.5 h-3.5 text-success" />
+                                </button>
+                                <button onClick={() => sendReminder(session.parentPhone, session.parentCode, `הורה של ${session.studentName}`)}
+                                  className="p-1.5 rounded-lg hover:bg-success/10" title="תזכורת ווטסאפ להורה">
+                                  <MessageCircle className="w-3.5 h-3.5 text-success" />
+                                </button>
                                 <button onClick={() => navigate(`/staff/${session.id}`)} className="p-1.5 rounded-lg hover:bg-muted" title="שאלון צוות">
                                   <ClipboardList className="w-3.5 h-3.5 text-warning" />
                                 </button>
@@ -445,6 +453,14 @@ const Dashboard = () => {
                           className="flex items-center gap-1 text-[10px] font-mono bg-info/5 text-info px-2 py-1 rounded-lg">
                           {copied === `mpc-${session.id}` ? <CheckCircle className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                           קוד הורה: {session.parentCode}
+                        </button>
+                        <button onClick={(e) => { e.stopPropagation(); sendReminder(session.studentPhone, session.studentCode, session.studentName); }}
+                          className="p-1.5 rounded-lg bg-success/10 hover:bg-success/20" title="תזכורת לתלמיד">
+                          <Send className="w-3.5 h-3.5 text-success" />
+                        </button>
+                        <button onClick={(e) => { e.stopPropagation(); sendReminder(session.parentPhone, session.parentCode, `הורה של ${session.studentName}`); }}
+                          className="p-1.5 rounded-lg bg-success/10 hover:bg-success/20" title="תזכורת להורה">
+                          <MessageCircle className="w-3.5 h-3.5 text-success" />
                         </button>
                         <button onClick={() => generateStudentPDF(session, "staff")} className="p-1.5 rounded-lg hover:bg-muted mr-auto">
                           <FileText className="w-3.5 h-3.5 text-primary" />
@@ -582,6 +598,8 @@ const Dashboard = () => {
 
       {showRulesEditor && <SchoolRulesEditor onClose={() => setShowRulesEditor(false)} />}
       {showWelcomeEditor && <WelcomeMessageEditor onClose={() => setShowWelcomeEditor(false)} />}
+      {showReminderEditor && <ReminderMessageEditor onClose={() => { setShowReminderEditor(false); getReminderMessage().then(setReminderMessage).catch(() => {}); }} />}
+      {showPhonesImport && <PhonesImportDialog sessions={sessions} onClose={() => setShowPhonesImport(false)} onDone={reloadSessions} />}
     </div>
   );
 };
