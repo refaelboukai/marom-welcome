@@ -209,7 +209,7 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="bg-card border-b border-border px-3 sm:px-4 py-2.5 sticky top-0 z-20 shadow-sm">
-        <div className="max-w-6xl mx-auto flex items-center justify-between gap-2">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
             <img src={logo} alt="מרום" className="h-9 sm:h-11 rounded-xl shadow-sm flex-shrink-0" />
             <div className="min-w-0">
@@ -217,20 +217,20 @@ const Dashboard = () => {
               <p className="text-[10px] sm:text-xs text-muted-foreground truncate">מרום בית אקשטיין</p>
             </div>
           </div>
-          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-            <button onClick={() => setShowRulesEditor(true)} className="btn-intake bg-muted text-foreground text-sm px-3 py-2 hover:bg-muted/70 hidden sm:inline-flex gap-1" title="עריכת כללי בית הספר">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 flex-wrap justify-end">
+            <button onClick={() => setShowRulesEditor(true)} className="btn-intake bg-muted text-foreground text-sm px-3 py-2 hover:bg-muted/70 hidden xl:inline-flex gap-1" title="עריכת כללי בית הספר">
               <BookOpen className="w-4 h-4" /> כללי בית הספר
             </button>
-            <button onClick={() => setShowWelcomeEditor(true)} className="btn-intake bg-muted text-foreground text-sm px-3 py-2 hover:bg-muted/70 hidden sm:inline-flex gap-1" title="עריכת הודעת ווטסאפ">
+            <button onClick={() => setShowWelcomeEditor(true)} className="btn-intake bg-muted text-foreground text-sm px-3 py-2 hover:bg-muted/70 hidden xl:inline-flex gap-1" title="עריכת הודעת ווטסאפ">
               <MessageCircle className="w-4 h-4" /> הודעת ווטסאפ
             </button>
-            <button onClick={() => setShowReminderEditor(true)} className="btn-intake bg-muted text-foreground text-sm px-3 py-2 hover:bg-muted/70 hidden sm:inline-flex gap-1" title="עריכת הודעת תזכורת">
+            <button onClick={() => setShowReminderEditor(true)} className="btn-intake bg-muted text-foreground text-sm px-3 py-2 hover:bg-muted/70 hidden xl:inline-flex gap-1" title="עריכת הודעת תזכורת">
               <Bell className="w-4 h-4" /> הודעת תזכורת
             </button>
-            <button onClick={() => setShowPhonesImport(true)} className="btn-intake bg-info/10 text-info text-sm px-3 py-2 hover:bg-info/20 hidden sm:inline-flex gap-1" title="ייבוא טלפונים מקובץ">
+            <button onClick={() => setShowPhonesImport(true)} className="btn-intake bg-info/10 text-info text-sm px-3 py-2 hover:bg-info/20 hidden lg:inline-flex gap-1" title="ייבוא טלפונים מקובץ">
               <FileSpreadsheet className="w-4 h-4" /> ייבוא טלפונים
             </button>
-            <button onClick={openPromoteDialog} className="btn-intake bg-info/10 text-info text-sm px-3 py-2 hover:bg-info/20 hidden sm:inline-flex gap-1" title="העברת תלמידים לשנה הבאה">
+            <button onClick={openPromoteDialog} className="btn-intake bg-info/10 text-info text-sm px-3 py-2 hover:bg-info/20 hidden lg:inline-flex gap-1" title="העברת תלמידים לשנה הבאה">
               <ArrowLeftRight className="w-4 h-4" /> העברה לשנה הבאה
             </button>
             <button onClick={() => navigate("/admin/new")} className="btn-intake bg-primary text-primary-foreground text-xs sm:text-sm px-2.5 sm:px-4 py-2 shadow-md hover:shadow-lg transition-all flex items-center gap-1">
@@ -243,7 +243,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 py-6">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-6">
         {/* Year Selector */}
         <div className="flex items-center gap-2 mb-5">
           <Calendar className="w-4 h-4 text-primary" />
@@ -310,19 +310,19 @@ const Dashboard = () => {
                 className="btn-intake bg-success/10 text-success text-xs px-3 py-2 gap-1 hover:bg-success/20">
                 <Download className="w-3.5 h-3.5" /> ייצוא Excel
               </button>
-              <button onClick={openPromoteDialog} className="btn-intake bg-info/10 text-info text-xs px-3 py-2 gap-1 hover:bg-info/20 sm:hidden">
+              <button onClick={openPromoteDialog} className="btn-intake bg-info/10 text-info text-xs px-3 py-2 gap-1 hover:bg-info/20 lg:hidden">
                 <ArrowLeftRight className="w-3.5 h-3.5" /> העברה לשנה הבאה
               </button>
-              <button onClick={() => setShowRulesEditor(true)} className="btn-intake bg-muted text-foreground text-xs px-3 py-2 gap-1 hover:bg-muted/70 sm:hidden">
+              <button onClick={() => setShowRulesEditor(true)} className="btn-intake bg-muted text-foreground text-xs px-3 py-2 gap-1 hover:bg-muted/70 xl:hidden">
                 <BookOpen className="w-3.5 h-3.5" /> כללי בית הספר
               </button>
-              <button onClick={() => setShowWelcomeEditor(true)} className="btn-intake bg-muted text-foreground text-xs px-3 py-2 gap-1 hover:bg-muted/70 sm:hidden">
+              <button onClick={() => setShowWelcomeEditor(true)} className="btn-intake bg-muted text-foreground text-xs px-3 py-2 gap-1 hover:bg-muted/70 xl:hidden">
                 <MessageCircle className="w-3.5 h-3.5" /> הודעת ווטסאפ
               </button>
-              <button onClick={() => setShowReminderEditor(true)} className="btn-intake bg-muted text-foreground text-xs px-3 py-2 gap-1 hover:bg-muted/70 sm:hidden">
+              <button onClick={() => setShowReminderEditor(true)} className="btn-intake bg-muted text-foreground text-xs px-3 py-2 gap-1 hover:bg-muted/70 xl:hidden">
                 <Bell className="w-3.5 h-3.5" /> הודעת תזכורת
               </button>
-              <button onClick={() => setShowPhonesImport(true)} className="btn-intake bg-info/10 text-info text-xs px-3 py-2 gap-1 hover:bg-info/20 sm:hidden">
+              <button onClick={() => setShowPhonesImport(true)} className="btn-intake bg-info/10 text-info text-xs px-3 py-2 gap-1 hover:bg-info/20 lg:hidden">
                 <FileSpreadsheet className="w-3.5 h-3.5" /> ייבוא טלפונים
               </button>
               <button onClick={() => { setShowResetDialog(true); setResetPassword(""); setResetError(""); }}
