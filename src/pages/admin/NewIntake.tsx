@@ -222,7 +222,7 @@ const NewIntake = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="bg-card border-b border-border px-4 py-3">
-        <div className="max-w-lg mx-auto flex items-center gap-3">
+        <div className="max-w-2xl mx-auto flex items-center gap-3">
           <button onClick={() => navigate("/admin")} className="p-2 rounded-lg hover:bg-muted">
             <ArrowRight className="w-5 h-5" />
           </button>
@@ -230,7 +230,7 @@ const NewIntake = () => {
         </div>
       </div>
 
-      <div className="max-w-lg mx-auto px-4 py-6">
+      <div className="max-w-2xl mx-auto px-4 py-6">
         <div className="space-y-4">
           {fields.map(({ key, label, required, type }) => (
             <div key={key}>

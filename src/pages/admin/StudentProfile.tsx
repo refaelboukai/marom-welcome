@@ -330,7 +330,7 @@ const StudentProfile = () => {
     <div className="min-h-screen bg-background print:bg-white" ref={printRef}>
       {/* Header */}
       <div className="bg-card border-b border-border px-4 py-3 sticky top-0 z-20 print:static shadow-sm">
-        <div className="max-w-4xl mx-auto flex items-center gap-3">
+        <div className="max-w-5xl mx-auto flex items-center gap-3">
           <button onClick={() => navigate("/admin")} className="p-2 rounded-lg hover:bg-muted print:hidden">
             <ArrowRight className="w-5 h-5" />
           </button>
@@ -356,7 +356,7 @@ const StudentProfile = () => {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-5xl mx-auto px-3 sm:px-4 lg:px-6 py-6 space-y-6">
         {/* Info Banner */}
         <div className="flex items-start gap-3 p-4 bg-primary/5 border border-primary/15 rounded-2xl">
           <Info className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
