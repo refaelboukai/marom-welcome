@@ -7,6 +7,14 @@ export const WELCOME_MESSAGE = `ברוכים הבאים לבית הספר
 
 צוות בית הספר`;
 
+export const REMINDER_MESSAGE = `שלום,
+
+תזכורת ידידותית למילוי השאלונים במערכת הקליטה של בית הספר.
+המילוי לוקח כמה דקות בלבד ומסייע לנו להכיר אתכם טוב יותר.
+
+תודה,
+צוות בית הספר`;
+
 /**
  * Normalize an Israeli phone number to E.164 without the leading "+".
  * - Strips spaces, dashes, parentheses.

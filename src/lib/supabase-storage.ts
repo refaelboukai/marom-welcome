@@ -12,6 +12,7 @@ function rowToSession(row: any): IntakeSession {
     intakeDate: row.intake_date,
     parentName: row.parent_name || "",
     parentPhone: row.parent_phone || "",
+    studentPhone: row.student_phone || "",
     secondParentName: row.second_parent_name,
     notes: row.notes,
     studentCode: row.student_code,
@@ -145,6 +146,7 @@ export async function updateSessionDB(id: string, updates: Partial<IntakeSession
   if (updates.intakeDate !== undefined) dbUpdates.intake_date = updates.intakeDate;
   if (updates.parentName !== undefined) dbUpdates.parent_name = updates.parentName;
   if (updates.parentPhone !== undefined) dbUpdates.parent_phone = updates.parentPhone;
+  if ((updates as any).studentPhone !== undefined) dbUpdates.student_phone = (updates as any).studentPhone;
   if (updates.secondParentName !== undefined) dbUpdates.second_parent_name = updates.secondParentName;
   if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
   if (updates.status !== undefined) dbUpdates.status = updates.status;
@@ -187,6 +189,7 @@ export async function createSessionDB(data: Partial<IntakeSession>): Promise<Int
     intake_date: data.intakeDate || new Date().toISOString().split("T")[0],
     parent_name: data.parentName || "",
     parent_phone: data.parentPhone || "",
+    student_phone: (data as any).studentPhone || "",
     second_parent_name: data.secondParentName,
     notes: data.notes,
     student_code: generateCode(),
@@ -458,9 +461,9 @@ export async function saveSchoolRules(rules: string[]): Promise<boolean> {
 
 // ---------- Welcome WhatsApp Message ----------
 
-import { WELCOME_MESSAGE as DEFAULT_WELCOME_MESSAGE } from "./whatsapp";
+import { WELCOME_MESSAGE as DEFAULT_WELCOME_MESSAGE, REMINDER_MESSAGE as DEFAULT_REMINDER_MESSAGE } from "./whatsapp";
 
-export { DEFAULT_WELCOME_MESSAGE };
+export { DEFAULT_WELCOME_MESSAGE, DEFAULT_REMINDER_MESSAGE };
 
 export async function getWelcomeMessage(): Promise<string> {
   const { data, error } = await (supabase as any)
@@ -485,6 +488,36 @@ export async function saveWelcomeMessage(text: string): Promise<boolean> {
     );
   if (error) {
     console.error("Error saving welcome message:", error);
+    return false;
+  }
+  return true;
+}
+
+// ---------- Reminder WhatsApp Message ----------
+
+export async function getReminderMessage(): Promise<string> {
+  const { data, error } = await (supabase as any)
+    .from("school_settings")
+    .select("value")
+    .eq("key", "reminder_message")
+    .maybeSingle();
+  if (error || !data) return DEFAULT_REMINDER_MESSAGE;
+  const value = data.value;
+  if (typeof value?.text === "string" && value.text.trim().length > 0) {
+    return value.text;
+  }
+  return DEFAULT_REMINDER_MESSAGE;
+}
+
+export async function saveReminderMessage(text: string): Promise<boolean> {
+  const { error } = await (supabase as any)
+    .from("school_settings")
+    .upsert(
+      { key: "reminder_message", value: { text }, updated_at: new Date().toISOString() },
+      { onConflict: "key" }
+    );
+  if (error) {
+    console.error("Error saving reminder message:", error);
     return false;
   }
   return true;

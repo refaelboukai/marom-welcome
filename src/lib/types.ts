@@ -35,6 +35,7 @@ export interface IntakeSession {
   intakeDate: string;
   parentName: string;
   parentPhone: string;
+  studentPhone?: string;
   secondParentName?: string;
   notes?: string;
   studentCode: string;

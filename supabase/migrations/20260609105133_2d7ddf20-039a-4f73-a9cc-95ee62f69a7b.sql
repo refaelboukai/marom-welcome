@@ -1,0 +1,1 @@
+ALTER TABLE public.intake_sessions ADD COLUMN IF NOT EXISTS student_phone text DEFAULT ''::text;

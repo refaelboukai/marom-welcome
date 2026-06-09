@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { getSessionsDB, resetAllSessionsDB, createSessionDB } from "@/lib/supabase-storage";
+import { getSessionsDB, resetAllSessionsDB, createSessionDB, getReminderMessage } from "@/lib/supabase-storage";
 import { IntakeSession, IntakeStatus } from "@/lib/types";
 import { questionnaireItems } from "@/data/questionnaires";
 import { CLASS_GROUPS, ADMIN_CODE } from "@/data/students";
@@ -8,9 +8,12 @@ import StatusBadge from "@/components/StatusBadge";
 import CodeManagement from "@/components/CodeManagement";
 import SchoolRulesEditor from "@/components/SchoolRulesEditor";
 import WelcomeMessageEditor from "@/components/WelcomeMessageEditor";
+import ReminderMessageEditor from "@/components/ReminderMessageEditor";
+import PhonesImportDialog from "@/components/PhonesImportDialog";
+import { openWhatsApp, normalizePhone, REMINDER_MESSAGE } from "@/lib/whatsapp";
 
 import logo from "@/assets/logo.jpeg";
-import { Plus, Users, AlertTriangle, CheckCircle, Clock, Search, LogOut, XCircle, Loader2, Download, Key, FileText, Copy, ClipboardList, Trash2, ShieldAlert, Calendar, ArrowLeftRight, BookOpen, MessageCircle } from "lucide-react";
+import { Plus, Users, AlertTriangle, CheckCircle, Clock, Search, LogOut, XCircle, Loader2, Download, Key, FileText, Copy, ClipboardList, Trash2, ShieldAlert, Calendar, ArrowLeftRight, BookOpen, MessageCircle, Bell, FileSpreadsheet, Send } from "lucide-react";
 import { calculateScores, generateRiskFlags, getCompletionPercentage } from "@/lib/scoring";
 import { exportToExcel } from "@/lib/export-utils";
 import { generateStudentPDF } from "@/lib/pdf-export";
@@ -40,9 +43,29 @@ const Dashboard = () => {
   const [promoteResult, setPromoteResult] = useState<string | null>(null);
   const [showRulesEditor, setShowRulesEditor] = useState(false);
   const [showWelcomeEditor, setShowWelcomeEditor] = useState(false);
+  const [showReminderEditor, setShowReminderEditor] = useState(false);
+  const [showPhonesImport, setShowPhonesImport] = useState(false);
+  const [reminderMessage, setReminderMessage] = useState<string>(REMINDER_MESSAGE);
+  const APP_URL = "https://marom-welcome.vercel.app";
+
   useEffect(() => {
     getSessionsDB().then((data) => { setSessions(data); setLoading(false); });
+    getReminderMessage().then(setReminderMessage).catch(() => {});
   }, []);
+
+  const reloadSessions = async () => {
+    const data = await getSessionsDB();
+    setSessions(data);
+  };
+
+  const sendReminder = (phone: string | undefined, code: string, name: string) => {
+    if (!phone || !normalizePhone(phone)) {
+      alert(`לא הוזן מספר טלפון תקין עבור ${name}. ניתן להוסיף דרך פרופיל התלמיד או ייבוא קובץ.`);
+      return;
+    }
+    const msg = `${reminderMessage}\n\nקוד אישי: ${code}\nכניסה ישירה: ${APP_URL}/?code=${code}`;
+    openWhatsApp(phone, msg);
+  };
 
   const sessionsForYear = useMemo(() => {
     return sessions.filter((s) => (s.academicYear || 'תשפ"ו') === selectedYear);
@@ -201,6 +224,12 @@ const Dashboard = () => {
             <button onClick={() => setShowWelcomeEditor(true)} className="btn-intake bg-muted text-foreground text-sm px-3 py-2 hover:bg-muted/70 hidden sm:inline-flex gap-1" title="עריכת הודעת ווטסאפ">
               <MessageCircle className="w-4 h-4" /> הודעת ווטסאפ
             </button>
+            <button onClick={() => setShowReminderEditor(true)} className="btn-intake bg-muted text-foreground text-sm px-3 py-2 hover:bg-muted/70 hidden sm:inline-flex gap-1" title="עריכת הודעת תזכורת">
+              <Bell className="w-4 h-4" /> הודעת תזכורת
+            </button>
+            <button onClick={() => setShowPhonesImport(true)} className="btn-intake bg-info/10 text-info text-sm px-3 py-2 hover:bg-info/20 hidden sm:inline-flex gap-1" title="ייבוא טלפונים מקובץ">
+              <FileSpreadsheet className="w-4 h-4" /> ייבוא טלפונים
+            </button>
             <button onClick={openPromoteDialog} className="btn-intake bg-info/10 text-info text-sm px-3 py-2 hover:bg-info/20 hidden sm:inline-flex gap-1" title="העברת תלמידים לשנה הבאה">
               <ArrowLeftRight className="w-4 h-4" /> העברה לשנה הבאה
             </button>
@@ -290,6 +319,12 @@ const Dashboard = () => {
               <button onClick={() => setShowWelcomeEditor(true)} className="btn-intake bg-muted text-foreground text-xs px-3 py-2 gap-1 hover:bg-muted/70 sm:hidden">
                 <MessageCircle className="w-3.5 h-3.5" /> הודעת ווטסאפ
               </button>
+              <button onClick={() => setShowReminderEditor(true)} className="btn-intake bg-muted text-foreground text-xs px-3 py-2 gap-1 hover:bg-muted/70 sm:hidden">
+                <Bell className="w-3.5 h-3.5" /> הודעת תזכורת
+              </button>
+              <button onClick={() => setShowPhonesImport(true)} className="btn-intake bg-info/10 text-info text-xs px-3 py-2 gap-1 hover:bg-info/20 sm:hidden">
+                <FileSpreadsheet className="w-3.5 h-3.5" /> ייבוא טלפונים
+              </button>
               <button onClick={() => { setShowResetDialog(true); setResetPassword(""); setResetError(""); }}
                 className="btn-intake bg-destructive/10 text-destructive text-xs px-3 py-2 gap-1 hover:bg-destructive/20 mr-auto">
                 <Trash2 className="w-3.5 h-3.5" /> איפוס נתונים
@@ -371,6 +406,14 @@ const Dashboard = () => {
                                 <button onClick={() => navigate(`/admin/student/${session.id}`)} className="p-1.5 rounded-lg hover:bg-muted" title="פרופיל">
                                   <Users className="w-3.5 h-3.5" />
                                 </button>
+                                <button onClick={() => sendReminder(session.studentPhone, session.studentCode, session.studentName)}
+                                  className="p-1.5 rounded-lg hover:bg-success/10" title="תזכורת ווטסאפ לתלמיד">
+                                  <Send className="w-3.5 h-3.5 text-success" />
+                                </button>
+                                <button onClick={() => sendReminder(session.parentPhone, session.parentCode, `הורה של ${session.studentName}`)}
+                                  className="p-1.5 rounded-lg hover:bg-success/10" title="תזכורת ווטסאפ להורה">
+                                  <MessageCircle className="w-3.5 h-3.5 text-success" />
+                                </button>
                                 <button onClick={() => navigate(`/staff/${session.id}`)} className="p-1.5 rounded-lg hover:bg-muted" title="שאלון צוות">
                                   <ClipboardList className="w-3.5 h-3.5 text-warning" />
                                 </button>
@@ -410,6 +453,14 @@ const Dashboard = () => {
                           className="flex items-center gap-1 text-[10px] font-mono bg-info/5 text-info px-2 py-1 rounded-lg">
                           {copied === `mpc-${session.id}` ? <CheckCircle className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                           קוד הורה: {session.parentCode}
+                        </button>
+                        <button onClick={(e) => { e.stopPropagation(); sendReminder(session.studentPhone, session.studentCode, session.studentName); }}
+                          className="p-1.5 rounded-lg bg-success/10 hover:bg-success/20" title="תזכורת לתלמיד">
+                          <Send className="w-3.5 h-3.5 text-success" />
+                        </button>
+                        <button onClick={(e) => { e.stopPropagation(); sendReminder(session.parentPhone, session.parentCode, `הורה של ${session.studentName}`); }}
+                          className="p-1.5 rounded-lg bg-success/10 hover:bg-success/20" title="תזכורת להורה">
+                          <MessageCircle className="w-3.5 h-3.5 text-success" />
                         </button>
                         <button onClick={() => generateStudentPDF(session, "staff")} className="p-1.5 rounded-lg hover:bg-muted mr-auto">
                           <FileText className="w-3.5 h-3.5 text-primary" />
@@ -547,6 +598,8 @@ const Dashboard = () => {
 
       {showRulesEditor && <SchoolRulesEditor onClose={() => setShowRulesEditor(false)} />}
       {showWelcomeEditor && <WelcomeMessageEditor onClose={() => setShowWelcomeEditor(false)} />}
+      {showReminderEditor && <ReminderMessageEditor onClose={() => { setShowReminderEditor(false); getReminderMessage().then(setReminderMessage).catch(() => {}); }} />}
+      {showPhonesImport && <PhonesImportDialog sessions={sessions} onClose={() => setShowPhonesImport(false)} onDone={reloadSessions} />}
     </div>
   );
 };
