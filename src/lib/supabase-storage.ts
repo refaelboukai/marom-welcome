@@ -12,6 +12,7 @@ function rowToSession(row: any): IntakeSession {
     intakeDate: row.intake_date,
     parentName: row.parent_name || "",
     parentPhone: row.parent_phone || "",
+    studentPhone: row.student_phone || "",
     secondParentName: row.second_parent_name,
     notes: row.notes,
     studentCode: row.student_code,
@@ -145,6 +146,7 @@ export async function updateSessionDB(id: string, updates: Partial<IntakeSession
   if (updates.intakeDate !== undefined) dbUpdates.intake_date = updates.intakeDate;
   if (updates.parentName !== undefined) dbUpdates.parent_name = updates.parentName;
   if (updates.parentPhone !== undefined) dbUpdates.parent_phone = updates.parentPhone;
+  if ((updates as any).studentPhone !== undefined) dbUpdates.student_phone = (updates as any).studentPhone;
   if (updates.secondParentName !== undefined) dbUpdates.second_parent_name = updates.secondParentName;
   if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
   if (updates.status !== undefined) dbUpdates.status = updates.status;
@@ -187,6 +189,7 @@ export async function createSessionDB(data: Partial<IntakeSession>): Promise<Int
     intake_date: data.intakeDate || new Date().toISOString().split("T")[0],
     parent_name: data.parentName || "",
     parent_phone: data.parentPhone || "",
+    student_phone: (data as any).studentPhone || "",
     second_parent_name: data.secondParentName,
     notes: data.notes,
     student_code: generateCode(),
