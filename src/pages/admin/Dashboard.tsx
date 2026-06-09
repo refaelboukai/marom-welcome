@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { getSessionsDB, resetAllSessionsDB, createSessionDB } from "@/lib/supabase-storage";
+import { getSessionsDB, resetAllSessionsDB, createSessionDB, getReminderMessage } from "@/lib/supabase-storage";
 import { IntakeSession, IntakeStatus } from "@/lib/types";
 import { questionnaireItems } from "@/data/questionnaires";
 import { CLASS_GROUPS, ADMIN_CODE } from "@/data/students";
@@ -8,9 +8,12 @@ import StatusBadge from "@/components/StatusBadge";
 import CodeManagement from "@/components/CodeManagement";
 import SchoolRulesEditor from "@/components/SchoolRulesEditor";
 import WelcomeMessageEditor from "@/components/WelcomeMessageEditor";
+import ReminderMessageEditor from "@/components/ReminderMessageEditor";
+import PhonesImportDialog from "@/components/PhonesImportDialog";
+import { openWhatsApp, normalizePhone, REMINDER_MESSAGE } from "@/lib/whatsapp";
 
 import logo from "@/assets/logo.jpeg";
-import { Plus, Users, AlertTriangle, CheckCircle, Clock, Search, LogOut, XCircle, Loader2, Download, Key, FileText, Copy, ClipboardList, Trash2, ShieldAlert, Calendar, ArrowLeftRight, BookOpen, MessageCircle } from "lucide-react";
+import { Plus, Users, AlertTriangle, CheckCircle, Clock, Search, LogOut, XCircle, Loader2, Download, Key, FileText, Copy, ClipboardList, Trash2, ShieldAlert, Calendar, ArrowLeftRight, BookOpen, MessageCircle, Bell, FileSpreadsheet, Send } from "lucide-react";
 import { calculateScores, generateRiskFlags, getCompletionPercentage } from "@/lib/scoring";
 import { exportToExcel } from "@/lib/export-utils";
 import { generateStudentPDF } from "@/lib/pdf-export";
@@ -40,9 +43,29 @@ const Dashboard = () => {
   const [promoteResult, setPromoteResult] = useState<string | null>(null);
   const [showRulesEditor, setShowRulesEditor] = useState(false);
   const [showWelcomeEditor, setShowWelcomeEditor] = useState(false);
+  const [showReminderEditor, setShowReminderEditor] = useState(false);
+  const [showPhonesImport, setShowPhonesImport] = useState(false);
+  const [reminderMessage, setReminderMessage] = useState<string>(REMINDER_MESSAGE);
+  const APP_URL = "https://marom-welcome.vercel.app";
+
   useEffect(() => {
     getSessionsDB().then((data) => { setSessions(data); setLoading(false); });
+    getReminderMessage().then(setReminderMessage).catch(() => {});
   }, []);
+
+  const reloadSessions = async () => {
+    const data = await getSessionsDB();
+    setSessions(data);
+  };
+
+  const sendReminder = (phone: string | undefined, code: string, name: string) => {
+    if (!phone || !normalizePhone(phone)) {
+      alert(`לא הוזן מספר טלפון תקין עבור ${name}. ניתן להוסיף דרך פרופיל התלמיד או ייבוא קובץ.`);
+      return;
+    }
+    const msg = `${reminderMessage}\n\nקוד אישי: ${code}\nכניסה ישירה: ${APP_URL}/?code=${code}`;
+    openWhatsApp(phone, msg);
+  };
 
   const sessionsForYear = useMemo(() => {
     return sessions.filter((s) => (s.academicYear || 'תשפ"ו') === selectedYear);
