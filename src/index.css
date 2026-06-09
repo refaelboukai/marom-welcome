@@ -110,16 +110,18 @@
     @apply bg-card rounded-2xl border border-border/50 shadow-sm p-5;
   }
 
-  .btn-intake {
-    @apply inline-flex items-center justify-center rounded-xl px-6 py-3 text-base font-medium transition-all duration-200;
-  }
-
   .animate-fade-in {
     animation: fadeIn 0.4s ease-out;
   }
 
   .animate-slide-up {
     animation: slideUp 0.4s ease-out;
+  }
+}
+
+@layer components {
+  .btn-intake {
+    @apply inline-flex items-center justify-center rounded-xl px-6 py-3 text-base font-medium transition-all duration-200;
   }
 }
 
