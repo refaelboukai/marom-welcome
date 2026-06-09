@@ -224,6 +224,12 @@ const Dashboard = () => {
             <button onClick={() => setShowWelcomeEditor(true)} className="btn-intake bg-muted text-foreground text-sm px-3 py-2 hover:bg-muted/70 hidden sm:inline-flex gap-1" title="עריכת הודעת ווטסאפ">
               <MessageCircle className="w-4 h-4" /> הודעת ווטסאפ
             </button>
+            <button onClick={() => setShowReminderEditor(true)} className="btn-intake bg-muted text-foreground text-sm px-3 py-2 hover:bg-muted/70 hidden sm:inline-flex gap-1" title="עריכת הודעת תזכורת">
+              <Bell className="w-4 h-4" /> הודעת תזכורת
+            </button>
+            <button onClick={() => setShowPhonesImport(true)} className="btn-intake bg-info/10 text-info text-sm px-3 py-2 hover:bg-info/20 hidden sm:inline-flex gap-1" title="ייבוא טלפונים מקובץ">
+              <FileSpreadsheet className="w-4 h-4" /> ייבוא טלפונים
+            </button>
             <button onClick={openPromoteDialog} className="btn-intake bg-info/10 text-info text-sm px-3 py-2 hover:bg-info/20 hidden sm:inline-flex gap-1" title="העברת תלמידים לשנה הבאה">
               <ArrowLeftRight className="w-4 h-4" /> העברה לשנה הבאה
             </button>
@@ -312,6 +318,12 @@ const Dashboard = () => {
               </button>
               <button onClick={() => setShowWelcomeEditor(true)} className="btn-intake bg-muted text-foreground text-xs px-3 py-2 gap-1 hover:bg-muted/70 sm:hidden">
                 <MessageCircle className="w-3.5 h-3.5" /> הודעת ווטסאפ
+              </button>
+              <button onClick={() => setShowReminderEditor(true)} className="btn-intake bg-muted text-foreground text-xs px-3 py-2 gap-1 hover:bg-muted/70 sm:hidden">
+                <Bell className="w-3.5 h-3.5" /> הודעת תזכורת
+              </button>
+              <button onClick={() => setShowPhonesImport(true)} className="btn-intake bg-info/10 text-info text-xs px-3 py-2 gap-1 hover:bg-info/20 sm:hidden">
+                <FileSpreadsheet className="w-3.5 h-3.5" /> ייבוא טלפונים
               </button>
               <button onClick={() => { setShowResetDialog(true); setResetPassword(""); setResetError(""); }}
                 className="btn-intake bg-destructive/10 text-destructive text-xs px-3 py-2 gap-1 hover:bg-destructive/20 mr-auto">
