@@ -461,9 +461,9 @@ export async function saveSchoolRules(rules: string[]): Promise<boolean> {
 
 // ---------- Welcome WhatsApp Message ----------
 
-import { WELCOME_MESSAGE as DEFAULT_WELCOME_MESSAGE } from "./whatsapp";
+import { WELCOME_MESSAGE as DEFAULT_WELCOME_MESSAGE, REMINDER_MESSAGE as DEFAULT_REMINDER_MESSAGE } from "./whatsapp";
 
-export { DEFAULT_WELCOME_MESSAGE };
+export { DEFAULT_WELCOME_MESSAGE, DEFAULT_REMINDER_MESSAGE };
 
 export async function getWelcomeMessage(): Promise<string> {
   const { data, error } = await (supabase as any)
@@ -488,6 +488,36 @@ export async function saveWelcomeMessage(text: string): Promise<boolean> {
     );
   if (error) {
     console.error("Error saving welcome message:", error);
+    return false;
+  }
+  return true;
+}
+
+// ---------- Reminder WhatsApp Message ----------
+
+export async function getReminderMessage(): Promise<string> {
+  const { data, error } = await (supabase as any)
+    .from("school_settings")
+    .select("value")
+    .eq("key", "reminder_message")
+    .maybeSingle();
+  if (error || !data) return DEFAULT_REMINDER_MESSAGE;
+  const value = data.value;
+  if (typeof value?.text === "string" && value.text.trim().length > 0) {
+    return value.text;
+  }
+  return DEFAULT_REMINDER_MESSAGE;
+}
+
+export async function saveReminderMessage(text: string): Promise<boolean> {
+  const { error } = await (supabase as any)
+    .from("school_settings")
+    .upsert(
+      { key: "reminder_message", value: { text }, updated_at: new Date().toISOString() },
+      { onConflict: "key" }
+    );
+  if (error) {
+    console.error("Error saving reminder message:", error);
     return false;
   }
   return true;
