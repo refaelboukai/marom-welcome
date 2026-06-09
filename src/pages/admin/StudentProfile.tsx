@@ -48,6 +48,46 @@ const StudentProfile = () => {
   const [deleting, setDeleting] = useState(false);
   const [archiving, setArchiving] = useState(false);
 
+  const [editOpen, setEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    studentName: "",
+    studentIdNumber: "",
+    grade: "",
+    parentName: "",
+    parentPhone: "",
+    studentPhone: "",
+    secondParentName: "",
+  });
+  const [editSaving, setEditSaving] = useState(false);
+  const [editSaved, setEditSaved] = useState(false);
+
+  const openEdit = () => {
+    if (!session) return;
+    setEditForm({
+      studentName: session.studentName || "",
+      studentIdNumber: session.studentIdNumber || "",
+      grade: session.grade || "",
+      parentName: session.parentName || "",
+      parentPhone: session.parentPhone || "",
+      studentPhone: session.studentPhone || "",
+      secondParentName: session.secondParentName || "",
+    });
+    setEditSaved(false);
+    setEditOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!session) return;
+    setEditSaving(true);
+    const updated = await updateSessionDB(session.id, { ...editForm });
+    setEditSaving(false);
+    if (updated) {
+      setSession(updated);
+      setEditSaved(true);
+      setTimeout(() => setEditOpen(false), 600);
+    }
+  };
+
   const handleArchive = async () => {
     if (!session) return;
     const isArchived = session.status === "archived";
