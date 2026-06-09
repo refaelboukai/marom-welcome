@@ -159,6 +159,7 @@ export type Database = {
           student_id_number: string | null
           student_name: string
           student_open_responses: Json
+          student_phone: string | null
           student_responses: Json
           updated_at: string
         }
@@ -194,6 +195,7 @@ export type Database = {
           student_id_number?: string | null
           student_name: string
           student_open_responses?: Json
+          student_phone?: string | null
           student_responses?: Json
           updated_at?: string
         }
@@ -229,6 +231,7 @@ export type Database = {
           student_id_number?: string | null
           student_name?: string
           student_open_responses?: Json
+          student_phone?: string | null
           student_responses?: Json
           updated_at?: string
         }
