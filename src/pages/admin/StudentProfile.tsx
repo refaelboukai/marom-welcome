@@ -447,6 +447,22 @@ const StudentProfile = () => {
           </div>
         </div>
 
+        {/* Edit Student Details */}
+        <div className="intake-card-soft print:hidden">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex-1 min-w-[200px]">
+              <h3 className="font-heading font-semibold text-sm mb-1">פרטי תלמיד והורה</h3>
+              <div className="text-xs text-muted-foreground space-y-0.5">
+                <div>תלמיד: {session.studentName} {session.studentPhone && <span dir="ltr" className="text-foreground">· {session.studentPhone}</span>}</div>
+                <div>הורה: {session.parentName || "—"} {session.parentPhone && <span dir="ltr" className="text-foreground">· {session.parentPhone}</span>}</div>
+              </div>
+            </div>
+            <button onClick={openEdit} className="btn-intake bg-primary text-primary-foreground gap-2">
+              <PenLine className="w-4 h-4" /> ערוך פרטים
+            </button>
+          </div>
+        </div>
+
         {/* Completion Cards */}
         <div className="grid grid-cols-2 gap-3">
           <div className="intake-card-soft text-center">
