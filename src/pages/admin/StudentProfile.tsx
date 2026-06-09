@@ -48,6 +48,46 @@ const StudentProfile = () => {
   const [deleting, setDeleting] = useState(false);
   const [archiving, setArchiving] = useState(false);
 
+  const [editOpen, setEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    studentName: "",
+    studentIdNumber: "",
+    grade: "",
+    parentName: "",
+    parentPhone: "",
+    studentPhone: "",
+    secondParentName: "",
+  });
+  const [editSaving, setEditSaving] = useState(false);
+  const [editSaved, setEditSaved] = useState(false);
+
+  const openEdit = () => {
+    if (!session) return;
+    setEditForm({
+      studentName: session.studentName || "",
+      studentIdNumber: session.studentIdNumber || "",
+      grade: session.grade || "",
+      parentName: session.parentName || "",
+      parentPhone: session.parentPhone || "",
+      studentPhone: session.studentPhone || "",
+      secondParentName: session.secondParentName || "",
+    });
+    setEditSaved(false);
+    setEditOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!session) return;
+    setEditSaving(true);
+    const updated = await updateSessionDB(session.id, { ...editForm });
+    setEditSaving(false);
+    if (updated) {
+      setSession(updated);
+      setEditSaved(true);
+      setTimeout(() => setEditOpen(false), 600);
+    }
+  };
+
   const handleArchive = async () => {
     if (!session) return;
     const isArchived = session.status === "archived";
@@ -404,6 +444,22 @@ const StudentProfile = () => {
                 {session.parentCodeActive !== false ? <Unlock className="w-4 h-4 text-success" /> : <Lock className="w-4 h-4 text-destructive" />}
               </button>
             </div>
+          </div>
+        </div>
+
+        {/* Edit Student Details */}
+        <div className="intake-card-soft print:hidden">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex-1 min-w-[200px]">
+              <h3 className="font-heading font-semibold text-sm mb-1">פרטי תלמיד והורה</h3>
+              <div className="text-xs text-muted-foreground space-y-0.5">
+                <div>תלמיד: {session.studentName} {session.studentPhone && <span dir="ltr" className="text-foreground">· {session.studentPhone}</span>}</div>
+                <div>הורה: {session.parentName || "—"} {session.parentPhone && <span dir="ltr" className="text-foreground">· {session.parentPhone}</span>}</div>
+              </div>
+            </div>
+            <button onClick={openEdit} className="btn-intake bg-primary text-primary-foreground gap-2">
+              <PenLine className="w-4 h-4" /> ערוך פרטים
+            </button>
           </div>
         </div>
 
@@ -1224,6 +1280,46 @@ const StudentProfile = () => {
           </div>
         )}
       </div>
+
+      {editOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 print:hidden" onClick={() => !editSaving && setEditOpen(false)}>
+          <div className="bg-card rounded-2xl shadow-xl max-w-lg w-full max-h-[92vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="p-5 border-b border-border flex items-center justify-between">
+              <h3 className="font-heading font-bold text-lg">עריכת פרטי תלמיד</h3>
+              <button onClick={() => setEditOpen(false)} disabled={editSaving} className="p-2 rounded-lg hover:bg-muted text-muted-foreground">✕</button>
+            </div>
+            <div className="p-5 space-y-3">
+              {[
+                { key: "studentName", label: "שם התלמיד", dir: "rtl", type: "text" },
+                { key: "studentIdNumber", label: "ת.ז תלמיד", dir: "ltr", type: "text" },
+                { key: "grade", label: "כיתה", dir: "rtl", type: "text" },
+                { key: "studentPhone", label: "טלפון תלמיד", dir: "ltr", type: "tel" },
+                { key: "parentName", label: "שם הורה", dir: "rtl", type: "text" },
+                { key: "parentPhone", label: "טלפון הורה", dir: "ltr", type: "tel" },
+                { key: "secondParentName", label: "שם הורה נוסף (אופציונלי)", dir: "rtl", type: "text" },
+              ].map((f) => (
+                <div key={f.key}>
+                  <label className="block text-xs font-medium mb-1 text-muted-foreground">{f.label}</label>
+                  <input
+                    type={f.type}
+                    dir={f.dir}
+                    value={(editForm as any)[f.key]}
+                    onChange={(e) => setEditForm((p) => ({ ...p, [f.key]: e.target.value }))}
+                    className="w-full p-2 rounded-lg border border-input bg-background text-sm"
+                  />
+                </div>
+              ))}
+              {editSaved && <p className="text-xs text-success flex items-center gap-1"><CheckCircle className="w-3 h-3" /> נשמר בהצלחה</p>}
+            </div>
+            <div className="border-t border-border p-4 flex gap-2">
+              <button onClick={() => setEditOpen(false)} disabled={editSaving} className="btn-intake bg-muted text-muted-foreground flex-1">ביטול</button>
+              <button onClick={handleSaveEdit} disabled={editSaving} className="btn-intake bg-primary text-primary-foreground flex-1 disabled:opacity-50">
+                {editSaving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "שמור שינויים"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
