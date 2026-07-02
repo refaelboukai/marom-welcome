@@ -11,7 +11,7 @@ import { ArrowRight, AlertTriangle, Copy, CheckCircle, Lock, Unlock, FileText, T
 import { generateSemesterSummary, SEMESTER_LABELS, type SemesterType } from "@/lib/summary-generator";
 import SupportPlans from "@/components/SupportPlans";
 import AIRecommendations from "@/components/AIRecommendations";
-import { generateStudentPDF, generatePersonalPlanPDF, PersonalPlanData } from "@/lib/pdf-export";
+import { generateStudentPDF, generatePersonalPlanPDF, generateEmpoweringPlanPDF, PersonalPlanData } from "@/lib/pdf-export";
 import { supabase } from "@/integrations/supabase/client";
 import { questionnaireItems } from "@/data/questionnaires";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line } from "recharts";
@@ -235,6 +235,40 @@ const StudentProfile = () => {
       }
     }
     await generatePersonalPlanPDF(session, {
+      aiRecommendations: recs || undefined,
+      supportPlans: supportPlansData,
+    }, options);
+  };
+
+  const handleExportEmpoweringPlan = async (options?: { grayscale?: boolean }) => {
+    // Reuse the same insight-fetch path so the student version also benefits from AI ideas
+    let recs = aiResult;
+    if (!recs && hasStudentData && scores.qualityOfLife.normalized >= 0) {
+      try {
+        const studentData = {
+          name: session.studentName,
+          qualityOfLife: { score: scores.qualityOfLife.normalized, student: scores.qualityOfLife.studentNormalized, parent: scores.qualityOfLife.parentNormalized },
+          selfEfficacy: { score: scores.selfEfficacy.normalized, student: scores.selfEfficacy.studentNormalized, parent: scores.selfEfficacy.parentNormalized },
+          locusOfControl: { score: scores.locusOfControl.normalized, student: scores.locusOfControl.studentNormalized, parent: scores.locusOfControl.parentNormalized },
+          cognitiveFlexibility: { score: scores.cognitiveFlexibility.normalized, student: scores.cognitiveFlexibility.studentNormalized, parent: scores.cognitiveFlexibility.parentNormalized },
+          learningCharacteristics: { score: scores.learningCharacteristics.normalized, student: scores.learningCharacteristics.studentNormalized, parent: scores.learningCharacteristics.parentNormalized },
+        };
+        const { data, error } = await supabase.functions.invoke("ai-recommendations", {
+          body: {
+            student: studentData,
+            openResponses: session.studentOpenResponses,
+            staffOpenResponses: session.staffOpenResponses,
+          },
+        });
+        if (!error && data && !data.error) {
+          recs = data;
+          setAiResult(data);
+        }
+      } catch (e) {
+        console.error("Failed to fetch recommendations:", e);
+      }
+    }
+    await generateEmpoweringPlanPDF(session, {
       aiRecommendations: recs || undefined,
       supportPlans: supportPlansData,
     }, options);
