@@ -7,10 +7,11 @@ import { IntakeSession, SECTION_LABELS, OPEN_QUESTION_LABELS, QOL_SUBDOMAIN_LABE
 import { calculateScores, calculateQoLSubdomains, calculateLearningSubdomains, generateRiskFlags, generateInsights, generateGASGoals, getScoreLabel, getScoreColor, getTopFocusAreas } from "@/lib/scoring";
 import { DOMAIN_DESCRIPTIONS, QOL_SUBDOMAIN_DESCRIPTIONS, LC_SUBDOMAIN_DESCRIPTIONS, getScoreInterpretation } from "@/lib/domain-descriptions";
 import StatusBadge from "@/components/StatusBadge";
-import { ArrowRight, AlertTriangle, Copy, CheckCircle, Lock, Unlock, FileText, Target, Lightbulb, TrendingUp, Users, Printer, MessageSquare, BarChart3, Shield, Loader2, RefreshCw, Download, PenLine, ScrollText, ClipboardList, Heart, Info, FileBarChart, Brain, Trash2, Archive } from "lucide-react";
+import { ArrowRight, AlertTriangle, Copy, CheckCircle, Lock, Unlock, FileText, Target, Lightbulb, TrendingUp, Users, Printer, MessageSquare, BarChart3, Shield, Loader2, RefreshCw, Download, PenLine, ScrollText, ClipboardList, Heart, Info, FileBarChart, Brain, Trash2, Archive, Eye } from "lucide-react";
 import { generateSemesterSummary, SEMESTER_LABELS, type SemesterType } from "@/lib/summary-generator";
 import SupportPlans from "@/components/SupportPlans";
 import AIRecommendations from "@/components/AIRecommendations";
+import ResponsesViewer from "@/components/ResponsesViewer";
 import { generateStudentPDF, generatePersonalPlanPDF, generateEmpoweringPlanPDF, generateEmpoweringPlanDOC, PersonalPlanData } from "@/lib/pdf-export";
 import { supabase } from "@/integrations/supabase/client";
 import { questionnaireItems } from "@/data/questionnaires";
@@ -47,6 +48,7 @@ const StudentProfile = () => {
   const [deleteError, setDeleteError] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [archiving, setArchiving] = useState(false);
+  const [showResponses, setShowResponses] = useState(false);
 
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -386,6 +388,9 @@ const StudentProfile = () => {
           <div className="flex items-center gap-1 print:hidden">
             <button onClick={() => navigate(`/staff/${session.id}`)} className="p-2 rounded-lg hover:bg-muted" title="שאלון צוות">
               <ClipboardList className="w-5 h-5 text-warning" />
+            </button>
+            <button onClick={() => setShowResponses(true)} className="p-2 rounded-lg hover:bg-muted" title="צפייה בתשובות">
+              <Eye className="w-5 h-5 text-info" />
             </button>
             <button onClick={() => handleExportPersonalPlan()} className="p-2 rounded-lg hover:bg-muted" title="תכנית אישית — המלצות ודרכי פעולה">
               <ScrollText className="w-5 h-5 text-success" />
@@ -1382,6 +1387,7 @@ const StudentProfile = () => {
           </div>
         </div>
       )}
+      <ResponsesViewer session={session} open={showResponses} onClose={() => setShowResponses(false)} />
     </div>
   );
 };
