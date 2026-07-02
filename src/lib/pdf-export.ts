@@ -584,6 +584,22 @@ interface DomainNarrativeBits {
   reflection: string;       // reflection question for the student
 }
 
+const DOMAIN_SHORT_LABEL: Record<string, string> = {
+  qualityOfLife: "איכות חיים",
+  selfEfficacy: "מסוגלות עצמית",
+  locusOfControl: "מיקוד שליטה",
+  cognitiveFlexibility: "גמישות קוגניטיבית",
+  learningCharacteristics: "מאפייני למידה",
+};
+
+const DOMAIN_ONE_LINER: Record<string, string> = {
+  qualityOfLife: "עד כמה את/ה מרגיש/ה טוב ביום־יום — בבית, בבית הספר ובחברה.",
+  selfEfficacy: "האמונה שלך ביכולת להתמודד עם משימות ואתגרים ולהצליח בהם.",
+  locusOfControl: "התחושה שהמעשים שלך משפיעים על מה שקורה בחיים שלך.",
+  cognitiveFlexibility: "היכולת להסתכל על מצבים מזוויות שונות ולמצוא פתרונות יצירתיים.",
+  learningCharacteristics: "האופן שבו הראש שלך אוהב ללמוד — קשב, זיכרון, ארגון וויסות.",
+};
+
 const DOMAIN_NARRATIVES: Record<string, DomainNarrativeBits> = {
   qualityOfLife: {
     strengthPhrase: "אנחנו רואים אצלך <strong>תחושת רווחה ואיכות חיים טובה</strong> — משאב חשוב שאפשר להישען עליו וגם לחלוק עם הסביבה.",
@@ -643,20 +659,53 @@ function buildEmpoweringPlanHTML(session: IntakeSession, planData: PersonalPlanD
 
   const firstName = (session.studentName || "").split(" ")[0] || session.studentName;
 
+  // Which domains were actually measured (has data)
+  const measured = withData.map(d => DOMAIN_SHORT_LABEL[d.key as string]).filter(Boolean);
+  const measuredList =
+    measured.length <= 1 ? measured[0] || "" :
+    measured.length === 2 ? `${measured[0]} ו${measured[1]}` :
+    `${measured.slice(0, -1).join(", ")} ו${measured[measured.length - 1]}`;
+
+  const strengthsList = strengths.map(d => DOMAIN_SHORT_LABEL[d.key as string]).filter(Boolean).join(", ");
+  const growthList = growth.map(d => DOMAIN_SHORT_LABEL[d.key as string]).filter(Boolean).join(", ");
+
   let html = `
     <div style="font-family: 'Heebo', 'Rubik', 'Arial', sans-serif; direction: rtl; padding: 44px; max-width: 700px; margin: 0 auto; color: #1a1a2e; line-height: 1.85;">
       <div data-section style="text-align: center; margin-bottom: 28px; border-bottom: 3px solid #4a9a7a; padding-bottom: 20px;">
-        <h1 style="font-size: 26px; font-weight: 800; color: #1a1a2e; margin: 0 0 6px 0;">התכנית האישית שלי</h1>
-        <p style="font-size: 14px; color: #4a9a7a; font-weight: 600; margin: 0 0 10px 0;">מרום בית אקשטיין • יחד נבנה את הצעד הבא</p>
+        <h1 style="font-size: 26px; font-weight: 800; color: #1a1a2e; margin: 0 0 6px 0;">מפה אישית לבניית תכנית משותפת</h1>
+        <p style="font-size: 14px; color: #4a9a7a; font-weight: 600; margin: 0 0 10px 0;">מרום בית אקשטיין • דף עבודה של תלמיד/ה ומחנכת יחד</p>
         <p style="font-size: 18px; font-weight: 700; margin: 0;">${session.studentName}</p>
         <p style="font-size: 12px; color: #666; margin: 4px 0 0 0;">${session.grade || ""} &nbsp;•&nbsp; ${new Date().toLocaleDateString("he-IL")}</p>
       </div>
 
       <div data-section style="margin-bottom: 24px; background: #f0faf4; border-right: 4px solid #4a9a7a; border-radius: 8px; padding: 16px 20px;">
-        <p style="font-size: 14px; margin: 0; color: #1a1a2e;">
-          ${firstName} יקר/ה, המסמך הזה הוא <strong>לא ציונים ולא שיפוט</strong>. הוא מפה קטנה שבנינו יחד — לזהות איפה יש לך כוחות שכבר עוזרים לך,
-          ואיפה אנחנו רוצים לצעוד איתך צעד־צעד. כל מה שכתוב כאן הוא <strong>בסיס לשיחה משותפת</strong>, לא מסקנה סופית.
+        <p style="font-size: 14px; margin: 0 0 8px 0; color: #1a1a2e;">
+          ${firstName} יקר/ה, זה <strong>דף עבודה משותף</strong> — אין כאן מבחן, אין כאן שיפוט. מילאת שאלונים על עצמך, ומהתשובות שלך יצרנו יחד מפה קטנה
+          שמסייעת לנו — לך, למחנכת, למדריכה ולתרפיסטית — <strong>לבנות תכנית תמיכה מותאמת</strong> לצעד הבא שלך.
         </p>
+        <p style="font-size: 14px; margin: 0; color: #1a1a2e;">
+          המפה נוגעת בכמה תחומים חשובים בחיים שלך: <strong>למידה, חברתי, רגשי, תפיסה עצמית וחוסן</strong> — וההחלטות תמיד יילקחו יחד איתך.
+        </p>
+      </div>
+
+      <div data-section style="margin-bottom: 24px;">
+        <h2 style="font-size: 17px; font-weight: 700; color: #4a9a7a; margin: 0 0 10px 0;">📖 מה בדקנו יחד בשאלונים</h2>
+        <p style="font-size: 13px; color: #333; margin: 0 0 10px 0;">
+          בשאלונים שמילאת נגענו בכמה תחומים — לכל אחד יש הסבר קצרצר:
+        </p>
+        ${withData.map(d => `
+          <div style="margin-bottom: 8px; padding: 8px 12px; background: #fafcfd; border: 1px solid #e2e8f0; border-radius: 8px;">
+            <strong style="font-size: 13px; color: #1a1a2e;">${DOMAIN_SHORT_LABEL[d.key as string] || d.label}</strong>
+            <p style="font-size: 12px; color: #555; margin: 2px 0 0 0;">${DOMAIN_ONE_LINER[d.key as string] || ""}</p>
+          </div>
+        `).join("")}
+        ${strengthsList || growthList ? `
+          <p style="font-size: 13px; color: #1a1a2e; margin: 12px 0 0 0;">
+            ${strengthsList ? `היו תחומים שבהם סימנת שאת/ה מרגיש/ה <strong>מוצלח/ת ובעל/ת כוח</strong> — כמו <strong>${strengthsList}</strong>.` : ""}
+            ${growthList ? ` יש גם דברים שבחרת <strong>לסמן על עצמך שהיית רוצה לעבוד עליהם</strong> — כמו <strong>${growthList}</strong>.` : ""}
+            עכשיו נגדיר יחד <strong>אילו מטרות אנחנו רוצים לבחור</strong> כדי לצעוד קדימה.
+          </p>
+        ` : ""}
       </div>`;
 
   if (strengths.length > 0) {
@@ -723,6 +772,83 @@ function buildEmpoweringPlanHTML(session: IntakeSession, planData: PersonalPlanD
     reflections.push(filler);
   }
 
+  // 5-axis mapping — connecting the picture to real life
+  const axes: { emoji: string; title: string; intro: string; questions: string[] }[] = [
+    {
+      emoji: "📚",
+      title: "למידה",
+      intro: "איך הלמידה מרגישה לך — מה עוזר לך להתרכז, לזכור וללמוד בכיף.",
+      questions: [
+        "באיזה שיעור את/ה מרגיש/ה הכי 'זורם/ת'? מה עוזר לך שם?",
+        "מה מפריע לך הכי הרבה בזמן למידה — רעש, עייפות, תחושת עומס?",
+        "איזה כלי עזר קטן היית רוצה לנסות (הפסקה, תזכורת, פירוק משימה)?",
+      ],
+    },
+    {
+      emoji: "🤝",
+      title: "חברתי",
+      intro: "הקשרים שלך עם חברים, שייכות לכיתה, וההרגשה במעגלים החברתיים.",
+      questions: [
+        "מי החברים/המבוגרים שאיתם את/ה מרגיש/ה בנוח להיות עצמך?",
+        "מה היית רוצה שיהיה שונה במפגשים החברתיים בבית הספר?",
+        "מתי לאחרונה הרגשת שייכות טובה — מה קרה שם?",
+      ],
+    },
+    {
+      emoji: "💗",
+      title: "רגשי",
+      intro: "איך את/ה מזהה, מבין/ה ומווסת/ת רגשות — במיוחד ברגעים קשים.",
+      questions: [
+        "מה עוזר לך להירגע כשאת/ה מרגיש/ה מוצף/ת?",
+        "לאיזה רגש היית רוצה להכיר טוב יותר — כעס, פחד, עצב, שמחה?",
+        "מי הכתובת שלך כשקשה — ומה היית רוצה להוסיף לרשימה הזאת?",
+      ],
+    },
+    {
+      emoji: "🪞",
+      title: "תפיסה עצמית",
+      intro: "איך את/ה רואה את עצמך — הכוחות, הערך והאמון בעצמך.",
+      questions: [
+        "מה שלוש המילים שהיית רוצה שיתארו אותך?",
+        "באיזה תחום היית רוצה להרגיש 'אני יכול/ה' יותר?",
+        "מהי הצלחה קטנה מהתקופה האחרונה שאת/ה גאה בה?",
+      ],
+    },
+    {
+      emoji: "🛡️",
+      title: "חוסן",
+      intro: "היכולת שלך לקום אחרי אתגר, לבקש עזרה ולהמשיך הלאה.",
+      questions: [
+        "מה עזר לך פעם להתאושש ממצב לא פשוט?",
+        "מי המבוגר/ת שהיית רוצה לדעת שאפשר לפנות אליו/ה?",
+        "איזה משפט קטן היית רוצה להגיד לעצמך ברגעים קשים?",
+      ],
+    },
+  ];
+
+  html += `
+    <div data-section style="margin-bottom: 22px;">
+      <h2 style="font-size: 17px; font-weight: 700; color: #1a1a2e; margin: 0 0 6px 0;">🗺️ המפה שלנו — חמישה תחומים בחיים שלך</h2>
+      <p style="font-size: 12px; color: #555; margin: 0 0 12px 0;">
+        התכנית שאנחנו בונים יחד נוגעת בכל התחומים האלה. בכל תחום כמה שאלות מנחות שיעזרו לנו לדבר, לחלום ולבחור מטרות ריאליות.
+      </p>
+      ${axes.map(a => `
+        <div style="margin-bottom: 12px; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden;">
+          <div style="background: #f0faf4; padding: 8px 14px;">
+            <strong style="font-size: 14px; color: #276749;">${a.emoji} ${a.title}</strong>
+            <p style="font-size: 11px; color: #555; margin: 2px 0 0 0;">${a.intro}</p>
+          </div>
+          <div style="padding: 10px 16px;">
+            ${a.questions.map((q, i) => `
+              <p style="font-size: 12px; margin: 4px 0; color: #1a1a2e;"><strong style="color: #4a9a7a;">${i + 1}.</strong> ${q}</p>
+            `).join("")}
+            <div style="border-bottom: 1px solid #cbd5e0; height: 18px; margin-top: 6px;"></div>
+            <div style="border-bottom: 1px solid #cbd5e0; height: 18px; margin-top: 6px;"></div>
+          </div>
+        </div>
+      `).join("")}
+    </div>`;
+
   html += `
     <div data-section style="margin-bottom: 22px; background: #faf5ff; border: 1px solid #e9d8fd; border-radius: 10px; padding: 18px 22px;">
       <h2 style="font-size: 17px; font-weight: 700; color: #6b46c1; margin: 0 0 12px 0;">🗣️ שאלות שנחשוב עליהן יחד</h2>
@@ -735,7 +861,7 @@ function buildEmpoweringPlanHTML(session: IntakeSession, planData: PersonalPlanD
   html += `
     <div data-section style="margin-bottom: 22px; background: #f7fafc; border: 1px dashed #cbd5e0; border-radius: 10px; padding: 18px 22px;">
       <h2 style="font-size: 16px; font-weight: 700; color: #1a1a2e; margin: 0 0 10px 0;">📝 המקום שלי לרשום</h2>
-      <p style="font-size: 12px; color: #555; margin: 0 0 12px 0;">בחר/י 1–3 תחומים שהיית רוצה להתחיל בהם, ורשום/י אצלך את הצעדים הראשונים:</p>
+      <p style="font-size: 12px; color: #555; margin: 0 0 12px 0;">בחר/י 1–3 מטרות משותפות שהיית רוצה להתחיל בהן יחד עם המחנכת/המדריכה/התרפיסטית, ורשום/י את הצעדים הראשונים:</p>
       <div style="border-bottom: 1px solid #cbd5e0; height: 20px; margin-bottom: 10px;"></div>
       <div style="border-bottom: 1px solid #cbd5e0; height: 20px; margin-bottom: 10px;"></div>
       <div style="border-bottom: 1px solid #cbd5e0; height: 20px; margin-bottom: 10px;"></div>
@@ -759,4 +885,36 @@ export async function generateEmpoweringPlanPDF(
   const html = buildEmpoweringPlanHTML(session, planData);
   const suffix = options?.grayscale ? "_שחור_לבן" : "";
   await renderHTMLToPDF(html, `${session.studentName}_תכנית_מעצימה${suffix}.pdf`, options);
+}
+
+export async function generateEmpoweringPlanDOC(
+  session: IntakeSession,
+  planData: PersonalPlanData,
+) {
+  const inner = buildEmpoweringPlanHTML(session, planData);
+  const docHtml = `<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:w="urn:schemas-microsoft-com:office:word"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <title>${session.studentName} — תכנית מעצימה</title>
+  <!--[if gte mso 9]><xml>
+    <w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument>
+  </xml><![endif]-->
+  <style>body{direction:rtl;font-family:'Heebo','Rubik','Arial',sans-serif;}</style>
+</head>
+<body dir="rtl">${inner}</body>
+</html>`;
+  // Word opens HTML with the "\ufeff" BOM + application/msword MIME reliably
+  const blob = new Blob(["\ufeff", docHtml], { type: "application/msword" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${session.studentName}_תכנית_מעצימה.doc`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
