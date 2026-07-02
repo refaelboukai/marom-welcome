@@ -648,18 +648,9 @@ function buildEmpoweringPlanHTML(session: IntakeSession, planData: PersonalPlanD
   const withData = domainsInOrder.filter(d => d.score >= 0);
   const strengths = withData.filter(d => d.score >= 4);
   const growth = withData.filter(d => d.score < 3);
-  const neutral = withData.filter(d => d.score >= 3 && d.score < 4);
-
-  const paragraphFor = (d: typeof withData[number]) => {
-    const bits = DOMAIN_NARRATIVES[d.key];
-    if (d.score >= 4) return bits.strengthPhrase;
-    if (d.score < 3) return bits.growthPhrase;
-    return bits.neutralPhrase;
-  };
 
   const firstName = (session.studentName || "").split(" ")[0] || session.studentName;
 
-  // Which domains were actually measured (has data)
   const measured = withData.map(d => DOMAIN_SHORT_LABEL[d.key as string]).filter(Boolean);
   const measuredList =
     measured.length <= 1 ? measured[0] || "" :
@@ -669,210 +660,81 @@ function buildEmpoweringPlanHTML(session: IntakeSession, planData: PersonalPlanD
   const strengthsList = strengths.map(d => DOMAIN_SHORT_LABEL[d.key as string]).filter(Boolean).join(", ");
   const growthList = growth.map(d => DOMAIN_SHORT_LABEL[d.key as string]).filter(Boolean).join(", ");
 
-  let html = `
-    <div style="font-family: 'Heebo', 'Rubik', 'Arial', sans-serif; direction: rtl; padding: 44px; max-width: 700px; margin: 0 auto; color: #1a1a2e; line-height: 1.85;">
-      <div data-section style="text-align: center; margin-bottom: 28px; border-bottom: 3px solid #4a9a7a; padding-bottom: 20px;">
-        <h1 style="font-size: 26px; font-weight: 800; color: #1a1a2e; margin: 0 0 6px 0;">מפה אישית לבניית תכנית משותפת</h1>
-        <p style="font-size: 14px; color: #4a9a7a; font-weight: 600; margin: 0 0 10px 0;">מרום בית אקשטיין • דף עבודה של תלמיד/ה ומחנכת יחד</p>
-        <p style="font-size: 18px; font-weight: 700; margin: 0;">${session.studentName}</p>
-        <p style="font-size: 12px; color: #666; margin: 4px 0 0 0;">${session.grade || ""} &nbsp;•&nbsp; ${new Date().toLocaleDateString("he-IL")}</p>
+  // Build one flowing paragraph describing strengths + growth in the student's own words.
+  const strengthsSentence = strengthsList
+    ? `יש תחומים שסימנת שאת/ה מרגיש/ה בהם <strong>חזק/ה ומוצלח/ת</strong> — במיוחד ב<strong>${strengthsList}</strong>. אלה כוחות אמיתיים שאפשר להישען עליהם.`
+    : "";
+  const growthSentence = growthList
+    ? `יש גם תחומים שסימנת ש<strong>היית רוצה לעבוד עליהם</strong> — כמו <strong>${growthList}</strong>. זה בסדר גמור, וזה בדיוק מה שאנחנו כאן בשבילו.`
+    : (strengthsList ? "בסך הכל התמונה יציבה, ואפשר לבחור יחד תחום קטן להתחיל בו." : "");
+
+  const measuredSentence = measured.length
+    ? `בשאלונים נגענו יחד ב<strong>${measuredList}</strong> — כדי להבין איך את/ה חווה את היום־יום שלך.`
+    : "בשאלונים ניסינו להבין איך את/ה חווה את היום־יום שלך.";
+
+  const html = `
+    <div style="font-family: 'Heebo', 'Rubik', 'Arial', sans-serif; direction: rtl; padding: 40px 44px; max-width: 700px; margin: 0 auto; color: #1a1a2e; line-height: 1.9;">
+
+      <!-- Header -->
+      <div data-section style="text-align: center; margin-bottom: 22px; border-bottom: 2px solid #4a9a7a; padding-bottom: 14px;">
+        <h1 style="font-size: 24px; font-weight: 800; color: #1a1a2e; margin: 0 0 4px 0;">התכנית האישית שלי</h1>
+        <p style="font-size: 13px; color: #4a9a7a; font-weight: 600; margin: 0 0 8px 0;">דף עבודה משותף — תלמיד/ה ומחנכת בונים יחד</p>
+        <p style="font-size: 16px; font-weight: 700; margin: 0;">${session.studentName}</p>
+        <p style="font-size: 11px; color: #666; margin: 2px 0 0 0;">${session.grade || ""} &nbsp;•&nbsp; ${new Date().toLocaleDateString("he-IL")}</p>
       </div>
 
-      <div data-section style="margin-bottom: 24px; background: #f0faf4; border-right: 4px solid #4a9a7a; border-radius: 8px; padding: 16px 20px;">
-        <p style="font-size: 14px; margin: 0 0 8px 0; color: #1a1a2e;">
-          ${firstName} יקר/ה, זה <strong>דף עבודה משותף</strong> — אין כאן מבחן, אין כאן שיפוט. מילאת שאלונים על עצמך, ומהתשובות שלך יצרנו יחד מפה קטנה
-          שמסייעת לנו — לך, למחנכת, למדריכה ולתרפיסטית — <strong>לבנות תכנית תמיכה מותאמת</strong> לצעד הבא שלך.
+      <!-- Short opening paragraphs (no boxes, no lists) -->
+      <div data-section style="margin-bottom: 20px;">
+        <p style="font-size: 14px; margin: 0 0 10px 0;">
+          ${firstName} יקר/ה, זה <strong>דף עבודה משותף</strong>, לא מבחן ולא ציון. מילאת שאלונים על עצמך, ומהתשובות שלך מתגבשת <strong>תמונה קטנה</strong> שעוזרת לנו — לך ולמחנכת — לבנות תכנית שמתאימה בדיוק לך.
         </p>
-        <p style="font-size: 14px; margin: 0; color: #1a1a2e;">
-          המפה נוגעת בכמה תחומים חשובים בחיים שלך: <strong>למידה, חברתי, רגשי, תפיסה עצמית וחוסן</strong> — וההחלטות תמיד יילקחו יחד איתך.
+        <p style="font-size: 14px; margin: 0 0 10px 0;">
+          ${measuredSentence} הדברים האלה חשובים כי הם משפיעים על <strong>איך אנחנו לומדים, מתחברים לאחרים, מרגישים ומתמודדים</strong> עם מה שהחיים מביאים.
+        </p>
+        <p style="font-size: 14px; margin: 0;">
+          ${strengthsSentence} ${growthSentence} עכשיו נבחר יחד <strong>שלוש מטרות</strong> קטנות וברות־השגה להתחיל בהן בסמסטר הראשון.
         </p>
       </div>
 
-      <div data-section style="margin-bottom: 24px;">
-        <h2 style="font-size: 17px; font-weight: 700; color: #4a9a7a; margin: 0 0 10px 0;">📖 מה בדקנו יחד בשאלונים</h2>
-        <p style="font-size: 13px; color: #333; margin: 0 0 10px 0;">
-          בשאלונים שמילאת נגענו בכמה תחומים — לכל אחד יש הסבר קצרצר:
+      ${ai?.recommendations && ai.recommendations.length > 0 ? `
+      <!-- AI ideas as a short prose paragraph, not a list -->
+      <div data-section style="margin-bottom: 20px; background: #f0faf4; border-right: 3px solid #4a9a7a; padding: 12px 16px; border-radius: 6px;">
+        <p style="font-size: 13px; margin: 0; color: #1a1a2e;">
+          <strong>רעיונות פתיחה לשיחה:</strong> ${ai.recommendations.slice(0, 3).map(r => r.replace(/^[-•*]\s*/, "")).join(" • ")}
         </p>
-        ${withData.map(d => `
-          <div style="margin-bottom: 8px; padding: 8px 12px; background: #fafcfd; border: 1px solid #e2e8f0; border-radius: 8px;">
-            <strong style="font-size: 13px; color: #1a1a2e;">${DOMAIN_SHORT_LABEL[d.key as string] || d.label}</strong>
-            <p style="font-size: 12px; color: #555; margin: 2px 0 0 0;">${DOMAIN_ONE_LINER[d.key as string] || ""}</p>
+      </div>` : ""}
+
+      <!-- Three joint goals — the heart of the document -->
+      <div data-section style="margin-bottom: 18px;">
+        <h2 style="font-size: 18px; font-weight: 800; color: #1a1a2e; margin: 0 0 6px 0;">שלוש המטרות שלנו לסמסטר הראשון</h2>
+        <p style="font-size: 12px; color: #555; margin: 0 0 14px 0;">
+          נבחר יחד מטרה מכל תחום שרלוונטי — <strong>חברתית, לימודית, רגשית או התנהגותית</strong>. לכל מטרה נרשום מה נעשה, מי יעזור, ואיך נדע שהצלחנו.
+        </p>
+
+        ${[1, 2, 3].map(n => `
+          <div style="margin-bottom: 14px; border: 1px solid #cbd5e0; border-radius: 10px; padding: 12px 16px; page-break-inside: avoid;">
+            <p style="font-size: 13px; font-weight: 700; margin: 0 0 6px 0; color: #4a9a7a;">מטרה ${n} &nbsp;•&nbsp; <span style="color:#888; font-weight:500;">תחום (חברתי / לימודי / רגשי / התנהגותי):</span></p>
+            <div style="border-bottom: 1px solid #cbd5e0; height: 20px; margin-bottom: 10px;"></div>
+            <p style="font-size: 12px; margin: 6px 0 4px 0; color: #333;"><strong>המטרה שלי במילים שלי:</strong></p>
+            <div style="border-bottom: 1px solid #e2e8f0; height: 18px; margin-bottom: 6px;"></div>
+            <div style="border-bottom: 1px solid #e2e8f0; height: 18px; margin-bottom: 10px;"></div>
+            <p style="font-size: 12px; margin: 6px 0 4px 0; color: #333;"><strong>מה אעשה השבוע כדי להתקדם:</strong></p>
+            <div style="border-bottom: 1px solid #e2e8f0; height: 18px; margin-bottom: 6px;"></div>
+            <div style="border-bottom: 1px solid #e2e8f0; height: 18px; margin-bottom: 10px;"></div>
+            <p style="font-size: 12px; margin: 6px 0 4px 0; color: #333;"><strong>מי יעזור לי (מחנכת / חבר/ה / מדריכה / הורה):</strong></p>
+            <div style="border-bottom: 1px solid #e2e8f0; height: 18px; margin-bottom: 10px;"></div>
+            <p style="font-size: 12px; margin: 6px 0 4px 0; color: #333;"><strong>איך נדע שהצלחנו:</strong></p>
+            <div style="border-bottom: 1px solid #e2e8f0; height: 18px;"></div>
           </div>
         `).join("")}
-        ${strengthsList || growthList ? `
-          <p style="font-size: 13px; color: #1a1a2e; margin: 12px 0 0 0;">
-            ${strengthsList ? `היו תחומים שבהם סימנת שאת/ה מרגיש/ה <strong>מוצלח/ת ובעל/ת כוח</strong> — כמו <strong>${strengthsList}</strong>.` : ""}
-            ${growthList ? ` יש גם דברים שבחרת <strong>לסמן על עצמך שהיית רוצה לעבוד עליהם</strong> — כמו <strong>${growthList}</strong>.` : ""}
-            עכשיו נגדיר יחד <strong>אילו מטרות אנחנו רוצים לבחור</strong> כדי לצעוד קדימה.
-          </p>
-        ` : ""}
-      </div>`;
+      </div>
 
-  if (strengths.length > 0) {
-    html += `
-      <div data-section style="margin-bottom: 22px;">
-        <h2 style="font-size: 17px; font-weight: 700; color: #276749; margin: 0 0 10px 0;">✨ מה בולט אצלך לטובה</h2>
-        ${strengths.map(d => `
-          <div style="margin-bottom: 10px; background: #f0faf4; border: 1px solid #c6f6d5; border-radius: 10px; padding: 12px 16px;">
-            <strong style="font-size: 14px; color: #276749;">${d.label}</strong>
-            <p style="font-size: 13px; margin: 4px 0 0 0; color: #1a1a2e;">${paragraphFor(d)}</p>
-          </div>
-        `).join("")}
-      </div>`;
-  }
-
-  if (growth.length > 0) {
-    html += `
-      <div data-section style="margin-bottom: 22px;">
-        <h2 style="font-size: 17px; font-weight: 700; color: #2b6cb0; margin: 0 0 10px 0;">🌱 מה נצעד בו יחד</h2>
-        ${growth.map(d => `
-          <div style="margin-bottom: 10px; background: #f0f7ff; border: 1px solid #bee3f8; border-radius: 10px; padding: 12px 16px;">
-            <strong style="font-size: 14px; color: #2b6cb0;">${d.label}</strong>
-            <p style="font-size: 13px; margin: 4px 0 0 0; color: #1a1a2e;">${paragraphFor(d)}</p>
-          </div>
-        `).join("")}
-      </div>`;
-  }
-
-  if (neutral.length > 0) {
-    html += `
-      <div data-section style="margin-bottom: 22px;">
-        <h2 style="font-size: 17px; font-weight: 700; color: #4a9a7a; margin: 0 0 10px 0;">🌿 בסיס יציב שאפשר לשכלל</h2>
-        ${neutral.map(d => `
-          <div style="margin-bottom: 10px; background: #f8fdf9; border: 1px solid #d4edda; border-radius: 10px; padding: 12px 16px;">
-            <strong style="font-size: 14px; color: #4a9a7a;">${d.label}</strong>
-            <p style="font-size: 13px; margin: 4px 0 0 0; color: #1a1a2e;">${paragraphFor(d)}</p>
-          </div>
-        `).join("")}
-      </div>`;
-  }
-
-  if (ai?.recommendations && ai.recommendations.length > 0) {
-    html += `
-      <div data-section style="margin-bottom: 22px; background: #fffaf0; border: 1px solid #feebc8; border-radius: 10px; padding: 16px 20px;">
-        <h2 style="font-size: 16px; font-weight: 700; color: #975a16; margin: 0 0 10px 0;">💡 רעיונות ראשונים לצעדים קטנים</h2>
-        ${ai.recommendations.slice(0, 5).map((r) => `
-          <p style="font-size: 13px; margin: 6px 0; color: #1a1a2e;">• ${r}</p>
-        `).join("")}
-        <p style="font-size: 11px; color: #888; margin: 8px 0 0 0;">אלה הצעות פתיחה — נבחר יחד מה מתאים לך ומה נדחה לפעם אחרת.</p>
-      </div>`;
-  }
-
-  // Reflection questions — always show, pull from focus areas + defaults
-  const focusForQuestions = (growth.length > 0 ? growth : neutral).slice(0, 3);
-  const reflections = focusForQuestions.map(d => DOMAIN_NARRATIVES[d.key].reflection);
-  while (reflections.length < 4) {
-    const filler = [
-      "באילו תחומים היית רוצה שנתמקד יחד?",
-      "מה חשוב לך שנדע עליך כשאנחנו בונים את התכנית?",
-      "מי בסביבה שלך יכול לתמוך בך בצעד הזה?",
-      "איך תדע/י שהצלחנו — מה יהיה סימן טוב?",
-    ][reflections.length];
-    if (!filler) break;
-    reflections.push(filler);
-  }
-
-  // 5-axis mapping — connecting the picture to real life
-  const axes: { emoji: string; title: string; intro: string; questions: string[] }[] = [
-    {
-      emoji: "📚",
-      title: "למידה",
-      intro: "איך הלמידה מרגישה לך — מה עוזר לך להתרכז, לזכור וללמוד בכיף.",
-      questions: [
-        "באיזה שיעור את/ה מרגיש/ה הכי 'זורם/ת'? מה עוזר לך שם?",
-        "מה מפריע לך הכי הרבה בזמן למידה — רעש, עייפות, תחושת עומס?",
-        "איזה כלי עזר קטן היית רוצה לנסות (הפסקה, תזכורת, פירוק משימה)?",
-      ],
-    },
-    {
-      emoji: "🤝",
-      title: "חברתי",
-      intro: "הקשרים שלך עם חברים, שייכות לכיתה, וההרגשה במעגלים החברתיים.",
-      questions: [
-        "מי החברים/המבוגרים שאיתם את/ה מרגיש/ה בנוח להיות עצמך?",
-        "מה היית רוצה שיהיה שונה במפגשים החברתיים בבית הספר?",
-        "מתי לאחרונה הרגשת שייכות טובה — מה קרה שם?",
-      ],
-    },
-    {
-      emoji: "💗",
-      title: "רגשי",
-      intro: "איך את/ה מזהה, מבין/ה ומווסת/ת רגשות — במיוחד ברגעים קשים.",
-      questions: [
-        "מה עוזר לך להירגע כשאת/ה מרגיש/ה מוצף/ת?",
-        "לאיזה רגש היית רוצה להכיר טוב יותר — כעס, פחד, עצב, שמחה?",
-        "מי הכתובת שלך כשקשה — ומה היית רוצה להוסיף לרשימה הזאת?",
-      ],
-    },
-    {
-      emoji: "🪞",
-      title: "תפיסה עצמית",
-      intro: "איך את/ה רואה את עצמך — הכוחות, הערך והאמון בעצמך.",
-      questions: [
-        "מה שלוש המילים שהיית רוצה שיתארו אותך?",
-        "באיזה תחום היית רוצה להרגיש 'אני יכול/ה' יותר?",
-        "מהי הצלחה קטנה מהתקופה האחרונה שאת/ה גאה בה?",
-      ],
-    },
-    {
-      emoji: "🛡️",
-      title: "חוסן",
-      intro: "היכולת שלך לקום אחרי אתגר, לבקש עזרה ולהמשיך הלאה.",
-      questions: [
-        "מה עזר לך פעם להתאושש ממצב לא פשוט?",
-        "מי המבוגר/ת שהיית רוצה לדעת שאפשר לפנות אליו/ה?",
-        "איזה משפט קטן היית רוצה להגיד לעצמך ברגעים קשים?",
-      ],
-    },
-  ];
-
-  html += `
-    <div data-section style="margin-bottom: 22px;">
-      <h2 style="font-size: 17px; font-weight: 700; color: #1a1a2e; margin: 0 0 6px 0;">🗺️ המפה שלנו — חמישה תחומים בחיים שלך</h2>
-      <p style="font-size: 12px; color: #555; margin: 0 0 12px 0;">
-        התכנית שאנחנו בונים יחד נוגעת בכל התחומים האלה. בכל תחום כמה שאלות מנחות שיעזרו לנו לדבר, לחלום ולבחור מטרות ריאליות.
-      </p>
-      ${axes.map(a => `
-        <div style="margin-bottom: 12px; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden;">
-          <div style="background: #f0faf4; padding: 8px 14px;">
-            <strong style="font-size: 14px; color: #276749;">${a.emoji} ${a.title}</strong>
-            <p style="font-size: 11px; color: #555; margin: 2px 0 0 0;">${a.intro}</p>
-          </div>
-          <div style="padding: 10px 16px;">
-            ${a.questions.map((q, i) => `
-              <p style="font-size: 12px; margin: 4px 0; color: #1a1a2e;"><strong style="color: #4a9a7a;">${i + 1}.</strong> ${q}</p>
-            `).join("")}
-            <div style="border-bottom: 1px solid #cbd5e0; height: 18px; margin-top: 6px;"></div>
-            <div style="border-bottom: 1px solid #cbd5e0; height: 18px; margin-top: 6px;"></div>
-          </div>
-        </div>
-      `).join("")}
+      <!-- Closing -->
+      <div data-section style="border-top: 1px solid #4a9a7a; padding-top: 10px; text-align: center;">
+        <p style="font-size: 12px; color: #4a9a7a; font-weight: 600; margin: 0;">אנחנו כאן איתך — צעד אחר צעד.</p>
+        <p style="font-size: 10px; color: #999; margin: 4px 0 0 0;">מרום בית אקשטיין • ${new Date().toLocaleDateString("he-IL")}</p>
+      </div>
     </div>`;
-
-  html += `
-    <div data-section style="margin-bottom: 22px; background: #faf5ff; border: 1px solid #e9d8fd; border-radius: 10px; padding: 18px 22px;">
-      <h2 style="font-size: 17px; font-weight: 700; color: #6b46c1; margin: 0 0 12px 0;">🗣️ שאלות שנחשוב עליהן יחד</h2>
-      <p style="font-size: 12px; color: #555; margin: 0 0 10px 0;">אין תשובות נכונות או לא נכונות — רק תשובות שמרגישות לך נכונות.</p>
-      ${reflections.slice(0, 5).map((q, i) => `
-        <p style="font-size: 13px; margin: 8px 0; color: #1a1a2e;"><strong style="color: #6b46c1;">${i + 1}.</strong> ${q}</p>
-      `).join("")}
-    </div>`;
-
-  html += `
-    <div data-section style="margin-bottom: 22px; background: #f7fafc; border: 1px dashed #cbd5e0; border-radius: 10px; padding: 18px 22px;">
-      <h2 style="font-size: 16px; font-weight: 700; color: #1a1a2e; margin: 0 0 10px 0;">📝 המקום שלי לרשום</h2>
-      <p style="font-size: 12px; color: #555; margin: 0 0 12px 0;">בחר/י 1–3 מטרות משותפות שהיית רוצה להתחיל בהן יחד עם המחנכת/המדריכה/התרפיסטית, ורשום/י את הצעדים הראשונים:</p>
-      <div style="border-bottom: 1px solid #cbd5e0; height: 20px; margin-bottom: 10px;"></div>
-      <div style="border-bottom: 1px solid #cbd5e0; height: 20px; margin-bottom: 10px;"></div>
-      <div style="border-bottom: 1px solid #cbd5e0; height: 20px; margin-bottom: 10px;"></div>
-      <div style="border-bottom: 1px solid #cbd5e0; height: 20px;"></div>
-    </div>
-
-    <div data-section style="border-top: 2px solid #4a9a7a; padding-top: 14px; margin-top: 24px; text-align: center;">
-      <p style="font-size: 12px; color: #4a9a7a; font-weight: 600; margin: 0;">אנחנו כאן איתך — צעד אחר צעד.</p>
-      <p style="font-size: 10px; color: #999; margin: 4px 0 0 0;">מרום בית אקשטיין • ${new Date().toLocaleDateString("he-IL")}</p>
-    </div>
-  </div>`;
 
   return html;
 }
