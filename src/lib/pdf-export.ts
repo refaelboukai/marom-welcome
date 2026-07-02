@@ -659,20 +659,53 @@ function buildEmpoweringPlanHTML(session: IntakeSession, planData: PersonalPlanD
 
   const firstName = (session.studentName || "").split(" ")[0] || session.studentName;
 
+  // Which domains were actually measured (has data)
+  const measured = withData.map(d => DOMAIN_SHORT_LABEL[d.key as string]).filter(Boolean);
+  const measuredList =
+    measured.length <= 1 ? measured[0] || "" :
+    measured.length === 2 ? `${measured[0]} ו${measured[1]}` :
+    `${measured.slice(0, -1).join(", ")} ו${measured[measured.length - 1]}`;
+
+  const strengthsList = strengths.map(d => DOMAIN_SHORT_LABEL[d.key as string]).filter(Boolean).join(", ");
+  const growthList = growth.map(d => DOMAIN_SHORT_LABEL[d.key as string]).filter(Boolean).join(", ");
+
   let html = `
     <div style="font-family: 'Heebo', 'Rubik', 'Arial', sans-serif; direction: rtl; padding: 44px; max-width: 700px; margin: 0 auto; color: #1a1a2e; line-height: 1.85;">
       <div data-section style="text-align: center; margin-bottom: 28px; border-bottom: 3px solid #4a9a7a; padding-bottom: 20px;">
-        <h1 style="font-size: 26px; font-weight: 800; color: #1a1a2e; margin: 0 0 6px 0;">התכנית האישית שלי</h1>
-        <p style="font-size: 14px; color: #4a9a7a; font-weight: 600; margin: 0 0 10px 0;">מרום בית אקשטיין • יחד נבנה את הצעד הבא</p>
+        <h1 style="font-size: 26px; font-weight: 800; color: #1a1a2e; margin: 0 0 6px 0;">מפה אישית לבניית תכנית משותפת</h1>
+        <p style="font-size: 14px; color: #4a9a7a; font-weight: 600; margin: 0 0 10px 0;">מרום בית אקשטיין • דף עבודה של תלמיד/ה ומחנכת יחד</p>
         <p style="font-size: 18px; font-weight: 700; margin: 0;">${session.studentName}</p>
         <p style="font-size: 12px; color: #666; margin: 4px 0 0 0;">${session.grade || ""} &nbsp;•&nbsp; ${new Date().toLocaleDateString("he-IL")}</p>
       </div>
 
       <div data-section style="margin-bottom: 24px; background: #f0faf4; border-right: 4px solid #4a9a7a; border-radius: 8px; padding: 16px 20px;">
-        <p style="font-size: 14px; margin: 0; color: #1a1a2e;">
-          ${firstName} יקר/ה, המסמך הזה הוא <strong>לא ציונים ולא שיפוט</strong>. הוא מפה קטנה שבנינו יחד — לזהות איפה יש לך כוחות שכבר עוזרים לך,
-          ואיפה אנחנו רוצים לצעוד איתך צעד־צעד. כל מה שכתוב כאן הוא <strong>בסיס לשיחה משותפת</strong>, לא מסקנה סופית.
+        <p style="font-size: 14px; margin: 0 0 8px 0; color: #1a1a2e;">
+          ${firstName} יקר/ה, זה <strong>דף עבודה משותף</strong> — לא מבחן ולא שיפוט. מילאת שאלונים על עצמך, ומהתשובות שלך יצרנו יחד מפה קטנה
+          שמסייעת לנו — לך, למחנכת, למדריכה ולתרפיסטית — <strong>לבנות תכנית תמיכה מותאמת</strong> לצעד הבא שלך.
         </p>
+        <p style="font-size: 14px; margin: 0; color: #1a1a2e;">
+          המפה נוגעת בכמה תחומים חשובים בחיים שלך: <strong>למידה, חברתי, רגשי, תפיסה עצמית וחוסן</strong> — וההחלטות תמיד יילקחו יחד איתך.
+        </p>
+      </div>
+
+      <div data-section style="margin-bottom: 24px;">
+        <h2 style="font-size: 17px; font-weight: 700; color: #4a9a7a; margin: 0 0 10px 0;">📖 מה בדקנו יחד בשאלונים</h2>
+        <p style="font-size: 13px; color: #333; margin: 0 0 10px 0;">
+          בשאלונים שמילאת נגענו בכמה תחומים — לכל אחד יש הסבר קצרצר:
+        </p>
+        ${withData.map(d => `
+          <div style="margin-bottom: 8px; padding: 8px 12px; background: #fafcfd; border: 1px solid #e2e8f0; border-radius: 8px;">
+            <strong style="font-size: 13px; color: #1a1a2e;">${DOMAIN_SHORT_LABEL[d.key as string] || d.label}</strong>
+            <p style="font-size: 12px; color: #555; margin: 2px 0 0 0;">${DOMAIN_ONE_LINER[d.key as string] || ""}</p>
+          </div>
+        `).join("")}
+        ${strengthsList || growthList ? `
+          <p style="font-size: 13px; color: #1a1a2e; margin: 12px 0 0 0;">
+            ${strengthsList ? `היו תחומים שבהם סימנת שאת/ה מרגיש/ה <strong>מוצלח/ת ובעל/ת כוח</strong> — כמו <strong>${strengthsList}</strong>.` : ""}
+            ${growthList ? ` יש גם דברים שבחרת <strong>לסמן על עצמך שהיית רוצה לעבוד עליהם</strong> — כמו <strong>${growthList}</strong>.` : ""}
+            עכשיו נגדיר יחד <strong>אילו מטרות אנחנו רוצים לבחור</strong> כדי לצעוד קדימה.
+          </p>
+        ` : ""}
       </div>`;
 
   if (strengths.length > 0) {
