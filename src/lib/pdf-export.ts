@@ -648,6 +648,7 @@ function buildEmpoweringPlanHTML(session: IntakeSession, planData: PersonalPlanD
   const withData = domainsInOrder.filter(d => d.score >= 0);
   const strengths = withData.filter(d => d.score >= 4);
   const growth = withData.filter(d => d.score < 3);
+  const neutral = withData.filter(d => d.score >= 3 && d.score < 4);
 
   const firstName = (session.studentName || "").split(" ")[0] || session.studentName;
 
@@ -660,76 +661,96 @@ function buildEmpoweringPlanHTML(session: IntakeSession, planData: PersonalPlanD
   const strengthsList = strengths.map(d => DOMAIN_SHORT_LABEL[d.key as string]).filter(Boolean).join(", ");
   const growthList = growth.map(d => DOMAIN_SHORT_LABEL[d.key as string]).filter(Boolean).join(", ");
 
-  // Build one flowing paragraph describing strengths + growth in the student's own words.
-  const strengthsSentence = strengthsList
-    ? `יש תחומים שסימנת שאת/ה מרגיש/ה בהם <strong>חזק/ה ומוצלח/ת</strong> — במיוחד ב<strong>${strengthsList}</strong>. אלה כוחות אמיתיים שאפשר להישען עליהם.`
-    : "";
-  const growthSentence = growthList
-    ? `יש גם תחומים שסימנת ש<strong>היית רוצה לעבוד עליהם</strong> — כמו <strong>${growthList}</strong>. זה בסדר גמור, וזה בדיוק מה שאנחנו כאן בשבילו.`
-    : (strengthsList ? "בסך הכל התמונה יציבה, ואפשר לבחור יחד תחום קטן להתחיל בו." : "");
-
   const measuredSentence = measured.length
-    ? `בשאלונים נגענו יחד ב<strong>${measuredList}</strong> — כדי להבין איך את/ה חווה את היום־יום שלך.`
-    : "בשאלונים ניסינו להבין איך את/ה חווה את היום־יום שלך.";
+    ? `בשאלונים נגענו ב<strong>${measuredList}</strong> — כדי להבין איך את/ה חווה את היום־יום שלך.`
+    : "";
+
+  // Per-domain narrative sentence (prose with bold key phrases)
+  const domainParagraph = (d: typeof withData[number]) => {
+    const bits = DOMAIN_NARRATIVES[d.key];
+    const short = DOMAIN_SHORT_LABEL[d.key as string] || d.label;
+    const oneLiner = DOMAIN_ONE_LINER[d.key as string] || "";
+    const phrase = d.score >= 4 ? bits.strengthPhrase : d.score < 3 ? bits.growthPhrase : bits.neutralPhrase;
+    return `<p style="font-size: 13.5px; margin: 0 0 12px 0; text-align: justify;">
+      ב<strong>${short}</strong> — ${oneLiner} ${phrase}
+    </p>`;
+  };
+
+  // Supports language — what we want to strengthen and how
+  const supportsIntro = growthList
+    ? `מהתמונה עולה שנרצה יחד <strong>לחזק ולתמוך</strong> במיוחד ב<strong>${growthList}</strong>.`
+    : strengthsList
+      ? `יש לך בסיס יציב — נרצה יחד <strong>לשכלל ולהעמיק</strong> את מה שכבר עובד, במיוחד סביב <strong>${strengthsList}</strong>.`
+      : `נבחר יחד תחום קטן שמרגיש לך משמעותי ונתחיל ממנו.`;
+
+  const supportsList = (growth.length > 0 ? growth : neutral.length > 0 ? neutral : strengths).slice(0, 3);
 
   const html = `
     <div style="font-family: 'Heebo', 'Rubik', 'Arial', sans-serif; direction: rtl; padding: 40px 44px; max-width: 700px; margin: 0 auto; color: #1a1a2e; line-height: 1.9;">
 
-      <!-- Header -->
+      <!-- ===== PAGE 1 — Findings ===== -->
       <div data-section style="text-align: center; margin-bottom: 22px; border-bottom: 2px solid #4a9a7a; padding-bottom: 14px;">
-        <h1 style="font-size: 24px; font-weight: 800; color: #1a1a2e; margin: 0 0 4px 0;">התכנית האישית שלי</h1>
-        <p style="font-size: 13px; color: #4a9a7a; font-weight: 600; margin: 0 0 8px 0;">דף עבודה משותף — תלמיד/ה ומחנכת בונים יחד</p>
+        <h1 style="font-size: 22px; font-weight: 800; color: #1a1a2e; margin: 0 0 4px 0;">תכנית עבודה משותפת</h1>
+        <p style="font-size: 12px; color: #4a9a7a; font-weight: 600; margin: 0 0 8px 0;">לבניית תכנית אישית מותאמת על בסיס השאלונים</p>
         <p style="font-size: 16px; font-weight: 700; margin: 0;">${session.studentName}</p>
         <p style="font-size: 11px; color: #666; margin: 2px 0 0 0;">${session.grade || ""} &nbsp;•&nbsp; ${new Date().toLocaleDateString("he-IL")}</p>
       </div>
 
-      <!-- Short opening paragraphs (no boxes, no lists) -->
-      <div data-section style="margin-bottom: 20px;">
-        <p style="font-size: 14px; margin: 0 0 10px 0;">
-          ${firstName} יקר/ה, זה <strong>דף עבודה משותף</strong>, לא מבחן ולא ציון. מילאת שאלונים על עצמך, ומהתשובות שלך מתגבשת <strong>תמונה קטנה</strong> שעוזרת לנו — לך ולמחנכת — לבנות תכנית שמתאימה בדיוק לך.
+      <div data-section style="margin-bottom: 18px;">
+        <h2 style="font-size: 17px; font-weight: 800; color: #1a1a2e; margin: 0 0 8px 0;">מה עלה בשאלונים</h2>
+        <p style="font-size: 13.5px; margin: 0 0 14px 0; text-align: justify;">
+          ${firstName} יקר/ה, מילאת שאלונים על עצמך — <strong>לא מבחן ולא ציון</strong>. ${measuredSentence}
+          מהתשובות שלך מתגבשת <strong>תמונה מילולית</strong> שנעזר בה יחד כדי להבין <strong>מה עוזר לך</strong>, <strong>מה מאתגר אותך</strong>, ואיפה כדאי להתחיל.
         </p>
-        <p style="font-size: 14px; margin: 0 0 10px 0;">
-          ${measuredSentence} הדברים האלה חשובים כי הם משפיעים על <strong>איך אנחנו לומדים, מתחברים לאחרים, מרגישים ומתמודדים</strong> עם מה שהחיים מביאים.
-        </p>
-        <p style="font-size: 14px; margin: 0;">
-          ${strengthsSentence} ${growthSentence} עכשיו נבחר יחד <strong>שלוש מטרות</strong> קטנות וברות־השגה להתחיל בהן בסמסטר הראשון.
-        </p>
+        ${withData.map(domainParagraph).join("")}
       </div>
 
-      ${ai?.recommendations && ai.recommendations.length > 0 ? `
-      <!-- AI ideas as a short prose paragraph, not a list -->
-      <div data-section style="margin-bottom: 20px; background: #f0faf4; border-right: 3px solid #4a9a7a; padding: 12px 16px; border-radius: 6px;">
-        <p style="font-size: 13px; margin: 0; color: #1a1a2e;">
-          <strong>רעיונות פתיחה לשיחה:</strong> ${ai.recommendations.slice(0, 3).map(r => r.replace(/^[-•*]\s*/, "")).join(" • ")}
-        </p>
-      </div>` : ""}
+      <!-- ===== PAGE 2 — Supports + Goals ===== -->
+      <div style="page-break-before: always;"></div>
 
-      <!-- Three joint goals — the heart of the document -->
+      <div data-section style="margin-bottom: 18px; border-bottom: 2px solid #4a9a7a; padding-bottom: 10px;">
+        <h2 style="font-size: 20px; font-weight: 800; color: #1a1a2e; margin: 0;">מה נרצה לחזק בסמסטר הראשון</h2>
+        <p style="font-size: 12px; color: #4a9a7a; font-weight: 600; margin: 4px 0 0 0;">התמיכות שנתמקד בהן יחד • ${session.studentName}</p>
+      </div>
+
       <div data-section style="margin-bottom: 18px;">
-        <h2 style="font-size: 18px; font-weight: 800; color: #1a1a2e; margin: 0 0 6px 0;">שלוש המטרות שלנו לסמסטר הראשון</h2>
-        <p style="font-size: 12px; color: #555; margin: 0 0 14px 0;">
-          נבחר יחד מטרה מכל תחום שרלוונטי — <strong>חברתית, לימודית, רגשית או התנהגותית</strong>. לכל מטרה נרשום מה נעשה, מי יעזור, ואיך נדע שהצלחנו.
+        <p style="font-size: 13.5px; margin: 0 0 12px 0; text-align: justify;">
+          ${supportsIntro} התמיכות שלנו יכולות להיות <strong>שיחות אישיות</strong> עם המחנכת, <strong>ליווי רגשי</strong> של מדריכה או תרפיסטית, <strong>התאמות למידה</strong> בכיתה, <strong>תרגול מיומנויות חברתיות</strong>, ו<strong>שותפות של ההורים</strong> בבית.
         </p>
+        ${supportsList.length > 0 ? `
+        <p style="font-size: 13.5px; margin: 0 0 6px 0;">בפועל, נשים דגש בעיקר על:</p>
+        ${supportsList.map(d => {
+          const bits = DOMAIN_NARRATIVES[d.key];
+          const short = DOMAIN_SHORT_LABEL[d.key as string] || d.label;
+          return `<p style="font-size: 13px; margin: 0 0 8px 0; text-align: justify;">
+            <strong>${short}:</strong> ${d.score < 3 ? bits.growthPhrase : d.score >= 4 ? bits.strengthPhrase : bits.neutralPhrase}
+          </p>`;
+        }).join("")}
+        ` : ""}
+        ${ai?.recommendations && ai.recommendations.length > 0 ? `
+        <p style="font-size: 13px; margin: 10px 0 0 0; text-align: justify; color: #333;">
+          <strong>רעיונות פתיחה לשיחה:</strong> ${ai.recommendations.slice(0, 3).map(r => r.replace(/^[-•*]\s*/, "")).join(" • ")}
+        </p>` : ""}
+      </div>
 
+      <div data-section style="margin-bottom: 18px;">
+        <h2 style="font-size: 17px; font-weight: 800; color: #1a1a2e; margin: 0 0 6px 0;">שלוש מטרות שנגדיר יחד</h2>
+        <p style="font-size: 12.5px; color: #555; margin: 0 0 12px 0;">
+          נבחר יחד <strong>שלוש מטרות</strong> — יכולות להיות <strong>חברתית, לימודית, רגשית או התנהגותית</strong>. לכל מטרה נרשום את התחום, את המטרה במילים שלך, ואיך נדע שהצלחנו.
+        </p>
         ${[1, 2, 3].map(n => `
           <div style="margin-bottom: 14px; border: 1px solid #cbd5e0; border-radius: 10px; padding: 12px 16px; page-break-inside: avoid;">
             <p style="font-size: 13px; font-weight: 700; margin: 0 0 6px 0; color: #4a9a7a;">מטרה ${n} &nbsp;•&nbsp; <span style="color:#888; font-weight:500;">תחום (חברתי / לימודי / רגשי / התנהגותי):</span></p>
-            <div style="border-bottom: 1px solid #cbd5e0; height: 20px; margin-bottom: 10px;"></div>
-            <p style="font-size: 12px; margin: 6px 0 4px 0; color: #333;"><strong>המטרה שלי במילים שלי:</strong></p>
-            <div style="border-bottom: 1px solid #e2e8f0; height: 18px; margin-bottom: 6px;"></div>
-            <div style="border-bottom: 1px solid #e2e8f0; height: 18px; margin-bottom: 10px;"></div>
-            <p style="font-size: 12px; margin: 6px 0 4px 0; color: #333;"><strong>מה אעשה השבוע כדי להתקדם:</strong></p>
-            <div style="border-bottom: 1px solid #e2e8f0; height: 18px; margin-bottom: 6px;"></div>
-            <div style="border-bottom: 1px solid #e2e8f0; height: 18px; margin-bottom: 10px;"></div>
-            <p style="font-size: 12px; margin: 6px 0 4px 0; color: #333;"><strong>מי יעזור לי (מחנכת / חבר/ה / מדריכה / הורה):</strong></p>
-            <div style="border-bottom: 1px solid #e2e8f0; height: 18px; margin-bottom: 10px;"></div>
-            <p style="font-size: 12px; margin: 6px 0 4px 0; color: #333;"><strong>איך נדע שהצלחנו:</strong></p>
-            <div style="border-bottom: 1px solid #e2e8f0; height: 18px;"></div>
+            <div style="border-bottom: 1px solid #cbd5e0; height: 18px; margin-bottom: 8px;"></div>
+            <p style="font-size: 12px; margin: 4px 0 4px 0; color: #333;"><strong>המטרה במילים שלי:</strong></p>
+            <div style="border-bottom: 1px solid #e2e8f0; height: 16px; margin-bottom: 4px;"></div>
+            <div style="border-bottom: 1px solid #e2e8f0; height: 16px; margin-bottom: 8px;"></div>
+            <p style="font-size: 12px; margin: 4px 0 4px 0; color: #333;"><strong>איך נדע שהצלחנו:</strong></p>
+            <div style="border-bottom: 1px solid #e2e8f0; height: 16px;"></div>
           </div>
         `).join("")}
       </div>
 
-      <!-- Closing -->
       <div data-section style="border-top: 1px solid #4a9a7a; padding-top: 10px; text-align: center;">
         <p style="font-size: 12px; color: #4a9a7a; font-weight: 600; margin: 0;">אנחנו כאן איתך — צעד אחר צעד.</p>
         <p style="font-size: 10px; color: #999; margin: 4px 0 0 0;">מרום בית אקשטיין • ${new Date().toLocaleDateString("he-IL")}</p>
