@@ -994,16 +994,30 @@ const StudentProfile = () => {
         )}
 
         {/* Personal Plan Export */}
-        <div className="print:hidden grid sm:grid-cols-2 gap-2">
-          <button onClick={() => handleExportPersonalPlan()}
-            className="btn-intake bg-success/10 text-success text-sm flex items-center justify-center gap-2 hover:bg-success/20 transition-colors w-full">
-            <ScrollText className="w-4 h-4" /> הפק תכנית אישית — המלצות ודרכי פעולה
-          </button>
-          <button onClick={() => handleExportPersonalPlan({ grayscale: true })}
-            className="btn-intake bg-muted text-foreground text-sm flex items-center justify-center gap-2 hover:bg-muted/80 transition-colors w-full"
-            title="גרסה ללא צבע — קובץ קטן יותר">
-            <ScrollText className="w-4 h-4" /> הפק תכנית אישית — שחור לבן (קובץ קטן)
-          </button>
+        <div className="print:hidden space-y-2">
+          <div className="grid sm:grid-cols-2 gap-2">
+            <button onClick={() => handleExportPersonalPlan()}
+              className="btn-intake bg-success/10 text-success text-sm flex items-center justify-center gap-2 hover:bg-success/20 transition-colors w-full">
+              <ScrollText className="w-4 h-4" /> הפק תכנית אישית — המלצות ודרכי פעולה
+            </button>
+            <button onClick={() => handleExportPersonalPlan({ grayscale: true })}
+              className="btn-intake bg-muted text-foreground text-sm flex items-center justify-center gap-2 hover:bg-muted/80 transition-colors w-full"
+              title="גרסה ללא צבע — קובץ קטן יותר">
+              <ScrollText className="w-4 h-4" /> הפק תכנית אישית — שחור לבן (קובץ קטן)
+            </button>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-2">
+            <button onClick={() => handleExportEmpoweringPlan()}
+              className="btn-intake bg-primary/10 text-primary text-sm flex items-center justify-center gap-2 hover:bg-primary/20 transition-colors w-full"
+              title="גרסה מעצימה בשפה פשוטה — לתלמיד/ה, ללא ציונים מספריים">
+              <ScrollText className="w-4 h-4" /> תכנית מעצימה לתלמיד/ה — ללא ציונים
+            </button>
+            <button onClick={() => handleExportEmpoweringPlan({ grayscale: true })}
+              className="btn-intake bg-muted text-foreground text-sm flex items-center justify-center gap-2 hover:bg-muted/80 transition-colors w-full"
+              title="תכנית מעצימה בשחור לבן — קובץ קטן">
+              <ScrollText className="w-4 h-4" /> תכנית מעצימה — שחור לבן
+            </button>
+          </div>
         </div>
 
         {/* Admin Notes */}
