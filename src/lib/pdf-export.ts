@@ -886,3 +886,35 @@ export async function generateEmpoweringPlanPDF(
   const suffix = options?.grayscale ? "_שחור_לבן" : "";
   await renderHTMLToPDF(html, `${session.studentName}_תכנית_מעצימה${suffix}.pdf`, options);
 }
+
+export async function generateEmpoweringPlanDOC(
+  session: IntakeSession,
+  planData: PersonalPlanData,
+) {
+  const inner = buildEmpoweringPlanHTML(session, planData);
+  const docHtml = `<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:w="urn:schemas-microsoft-com:office:word"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <title>${session.studentName} — תכנית מעצימה</title>
+  <!--[if gte mso 9]><xml>
+    <w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument>
+  </xml><![endif]-->
+  <style>body{direction:rtl;font-family:'Heebo','Rubik','Arial',sans-serif;}</style>
+</head>
+<body dir="rtl">${inner}</body>
+</html>`;
+  // Word opens HTML with the "\ufeff" BOM + application/msword MIME reliably
+  const blob = new Blob(["\ufeff", docHtml], { type: "application/msword" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${session.studentName}_תכנית_מעצימה.doc`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
