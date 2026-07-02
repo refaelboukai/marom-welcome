@@ -584,6 +584,22 @@ interface DomainNarrativeBits {
   reflection: string;       // reflection question for the student
 }
 
+const DOMAIN_SHORT_LABEL: Record<string, string> = {
+  qualityOfLife: "איכות חיים",
+  selfEfficacy: "מסוגלות עצמית",
+  locusOfControl: "מיקוד שליטה",
+  cognitiveFlexibility: "גמישות קוגניטיבית",
+  learningCharacteristics: "מאפייני למידה",
+};
+
+const DOMAIN_ONE_LINER: Record<string, string> = {
+  qualityOfLife: "עד כמה את/ה מרגיש/ה טוב ביום־יום — בבית, בבית הספר ובחברה.",
+  selfEfficacy: "האמונה שלך ביכולת להתמודד עם משימות ואתגרים ולהצליח בהם.",
+  locusOfControl: "התחושה שהמעשים שלך משפיעים על מה שקורה בחיים שלך.",
+  cognitiveFlexibility: "היכולת להסתכל על מצבים מזוויות שונות ולמצוא פתרונות יצירתיים.",
+  learningCharacteristics: "האופן שבו הראש שלך אוהב ללמוד — קשב, זיכרון, ארגון וויסות.",
+};
+
 const DOMAIN_NARRATIVES: Record<string, DomainNarrativeBits> = {
   qualityOfLife: {
     strengthPhrase: "אנחנו רואים אצלך <strong>תחושת רווחה ואיכות חיים טובה</strong> — משאב חשוב שאפשר להישען עליו וגם לחלוק עם הסביבה.",
