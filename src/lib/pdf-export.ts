@@ -680,7 +680,7 @@ function buildEmpoweringPlanHTML(session: IntakeSession, planData: PersonalPlanD
 
       <div data-section style="margin-bottom: 24px; background: #f0faf4; border-right: 4px solid #4a9a7a; border-radius: 8px; padding: 16px 20px;">
         <p style="font-size: 14px; margin: 0 0 8px 0; color: #1a1a2e;">
-          ${firstName} יקר/ה, זה <strong>דף עבודה משותף</strong> — לא מבחן ולא שיפוט. מילאת שאלונים על עצמך, ומהתשובות שלך יצרנו יחד מפה קטנה
+          ${firstName} יקר/ה, זה <strong>דף עבודה משותף</strong> — אין כאן מבחן, אין כאן שיפוט. מילאת שאלונים על עצמך, ומהתשובות שלך יצרנו יחד מפה קטנה
           שמסייעת לנו — לך, למחנכת, למדריכה ולתרפיסטית — <strong>לבנות תכנית תמיכה מותאמת</strong> לצעד הבא שלך.
         </p>
         <p style="font-size: 14px; margin: 0; color: #1a1a2e;">
@@ -861,7 +861,7 @@ function buildEmpoweringPlanHTML(session: IntakeSession, planData: PersonalPlanD
   html += `
     <div data-section style="margin-bottom: 22px; background: #f7fafc; border: 1px dashed #cbd5e0; border-radius: 10px; padding: 18px 22px;">
       <h2 style="font-size: 16px; font-weight: 700; color: #1a1a2e; margin: 0 0 10px 0;">📝 המקום שלי לרשום</h2>
-      <p style="font-size: 12px; color: #555; margin: 0 0 12px 0;">בחר/י 1–3 תחומים שהיית רוצה להתחיל בהם, ורשום/י אצלך את הצעדים הראשונים:</p>
+      <p style="font-size: 12px; color: #555; margin: 0 0 12px 0;">בחר/י 1–3 מטרות משותפות שהיית רוצה להתחיל בהן יחד עם המחנכת/המדריכה/התרפיסטית, ורשום/י את הצעדים הראשונים:</p>
       <div style="border-bottom: 1px solid #cbd5e0; height: 20px; margin-bottom: 10px;"></div>
       <div style="border-bottom: 1px solid #cbd5e0; height: 20px; margin-bottom: 10px;"></div>
       <div style="border-bottom: 1px solid #cbd5e0; height: 20px; margin-bottom: 10px;"></div>
