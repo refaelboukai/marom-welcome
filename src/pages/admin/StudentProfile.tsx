@@ -11,6 +11,7 @@ import { ArrowRight, AlertTriangle, Copy, CheckCircle, Lock, Unlock, FileText, T
 import { generateSemesterSummary, SEMESTER_LABELS, type SemesterType } from "@/lib/summary-generator";
 import SupportPlans from "@/components/SupportPlans";
 import AIRecommendations from "@/components/AIRecommendations";
+import ResponsesViewer from "@/components/ResponsesViewer";
 import { generateStudentPDF, generatePersonalPlanPDF, generateEmpoweringPlanPDF, generateEmpoweringPlanDOC, PersonalPlanData } from "@/lib/pdf-export";
 import { supabase } from "@/integrations/supabase/client";
 import { questionnaireItems } from "@/data/questionnaires";
@@ -47,6 +48,7 @@ const StudentProfile = () => {
   const [deleteError, setDeleteError] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [archiving, setArchiving] = useState(false);
+  const [showResponses, setShowResponses] = useState(false);
 
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState({
