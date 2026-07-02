@@ -1387,6 +1387,7 @@ const StudentProfile = () => {
           </div>
         </div>
       )}
+      <ResponsesViewer session={session} open={showResponses} onClose={() => setShowResponses(false)} />
     </div>
   );
 };
