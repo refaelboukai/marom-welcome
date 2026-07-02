@@ -572,3 +572,191 @@ export async function generatePersonalPlanPDF(session: IntakeSession, planData: 
   const suffix = options?.grayscale ? "_שחור_לבן" : "";
   await renderHTMLToPDF(html, `${session.studentName}_תכנית_אישית${suffix}.pdf`, options);
 }
+
+// ============================================================
+//  Empowering, student-facing narrative plan (no numeric scores)
+// ============================================================
+
+interface DomainNarrativeBits {
+  strengthPhrase: string;   // when score >= 4
+  growthPhrase: string;     // when score < 3
+  neutralPhrase: string;    // when 3 <= score < 4
+  reflection: string;       // reflection question for the student
+}
+
+const DOMAIN_NARRATIVES: Record<string, DomainNarrativeBits> = {
+  qualityOfLife: {
+    strengthPhrase: "אנחנו רואים אצלך <strong>תחושת רווחה ואיכות חיים טובה</strong> — משאב חשוב שאפשר להישען עליו וגם לחלוק עם הסביבה.",
+    growthPhrase: "נשמח לבדוק יחד <strong>איך אפשר להרחיב את תחושת הרווחה והשייכות</strong> — ברמה החברתית, הרגשית והלימודית — ולבנות רשת תמיכה שתעזור לך להרגיש טוב יותר בכל יום.",
+    neutralPhrase: "יש בסיס יציב של תחושת רווחה, ואפשר יחד <strong>לחזק תחומים שבהם תרצה/י להרגיש עוד יותר טוב</strong>.",
+    reflection: "מה יעזור לך להרגיש שהיום־יום בבית הספר מתאים יותר עבורך?",
+  },
+  selfEfficacy: {
+    strengthPhrase: "בולטת אצלך <strong>אמונה ביכולת האישית שלך</strong> להתמודד עם אתגרים ולהצליח — נשמח להמשיך לחזק זאת ולהעניק לך במות נוספות לבטא זאת.",
+    growthPhrase: "יחד נעבוד על <strong>הרחבת תחושת המסוגלות</strong> — לזהות הצלחות קטנות, לחגוג צעדים, ולבנות ביטחון להתמודד עם אתגרים חדשים.",
+    neutralPhrase: "יש לך כוחות של אמונה עצמית — אפשר יחד <strong>לזהות מצבים שבהם המסוגלות שלך מזדהרת</strong> ולהעתיק אותם לתחומים נוספים.",
+    reflection: "באיזה תחום היית רוצה להרגיש 'אני יכול/ה' יותר?",
+  },
+  locusOfControl: {
+    strengthPhrase: "אנחנו רואים <strong>תחושת השפעה על מה שקורה בחייך</strong> — יכולת שתעזור לך להוביל את עצמך קדימה.",
+    growthPhrase: "נבנה יחד תרגול של <strong>זיהוי הבחירות שיש לך בכל סיטואציה</strong> — כדי שתרגיש/י שהמאמצים שלך אכן משנים את מה שקורה סביבך.",
+    neutralPhrase: "יש לך מודעות טובה להשפעה שלך — אפשר לחדד עוד <strong>אילו מהמאמצים שלך יוצרים את השינוי הגדול ביותר</strong>.",
+    reflection: "מה הצעד הקטן שאת/ה מרגיש/ה שתלוי בך היום?",
+  },
+  cognitiveFlexibility: {
+    strengthPhrase: "בולטת אצלך <strong>גמישות מחשבתית ויכולת לראות דברים מכמה זוויות</strong> — כלי משמעותי לפתרון בעיות.",
+    growthPhrase: "נתמקד יחד <strong>ביכולת להסתכל על דברים מנקודות מבט שונות ולהרחיב את הגמישות המחשבתית ופתרון הבעיות</strong> — עם תרגולים קטנים של 'תוכנית ב'' ומעברים בין משימות.",
+    neutralPhrase: "יש לך יכולת גמישות טובה — נחפש יחד <strong>מצבים שבהם היה קשה יותר לשנות כיוון</strong>, ונתרגל דרכי התמודדות רכות.",
+    reflection: "מתי לאחרונה גילית פתרון שלא חשבת עליו קודם?",
+  },
+  learningCharacteristics: {
+    strengthPhrase: "מזהים אצלך <strong>מאפייני למידה אדפטיביים</strong> — היכולות לארגן את עצמך, להתמיד ולהתמודד עם עומס הן חוזקות אמיתיות.",
+    growthPhrase: "נבנה יחד <strong>התאמות למידה אישיות</strong> — פירוק משימות לצעדים קטנים, כלי עזר ויזואליים, הפסקות תנועה ופינה שקטה — כדי שהלמידה תרגיש נוחה ומזמינה יותר.",
+    neutralPhrase: "יש לך סגנון למידה שאפשר לשכלל — נחפש יחד <strong>איזה כלי עזר קטן יעשה את ההבדל הגדול</strong> ביום־יום הלימודי.",
+    reflection: "מה עוזר לך הכי הרבה להתרכז וללמוד טוב?",
+  },
+};
+
+function buildEmpoweringPlanHTML(session: IntakeSession, planData: PersonalPlanData): string {
+  const scores = calculateScores(session.studentResponses, session.parentResponses);
+  const ai = planData.aiRecommendations;
+
+  const domainsInOrder: { key: keyof typeof DOMAIN_NARRATIVES; label: string; score: number }[] = [
+    { key: "qualityOfLife", label: SECTION_LABELS.quality_of_life, score: scores.qualityOfLife.normalized },
+    { key: "selfEfficacy", label: SECTION_LABELS.self_efficacy, score: scores.selfEfficacy.normalized },
+    { key: "locusOfControl", label: SECTION_LABELS.locus_of_control, score: scores.locusOfControl.normalized },
+    { key: "cognitiveFlexibility", label: SECTION_LABELS.cognitive_flexibility, score: scores.cognitiveFlexibility.normalized },
+    { key: "learningCharacteristics", label: SECTION_LABELS.learning_characteristics, score: scores.learningCharacteristics.normalized },
+  ];
+
+  const withData = domainsInOrder.filter(d => d.score >= 0);
+  const strengths = withData.filter(d => d.score >= 4);
+  const growth = withData.filter(d => d.score < 3);
+  const neutral = withData.filter(d => d.score >= 3 && d.score < 4);
+
+  const paragraphFor = (d: typeof withData[number]) => {
+    const bits = DOMAIN_NARRATIVES[d.key];
+    if (d.score >= 4) return bits.strengthPhrase;
+    if (d.score < 3) return bits.growthPhrase;
+    return bits.neutralPhrase;
+  };
+
+  const firstName = (session.studentName || "").split(" ")[0] || session.studentName;
+
+  let html = `
+    <div style="font-family: 'Heebo', 'Rubik', 'Arial', sans-serif; direction: rtl; padding: 44px; max-width: 700px; margin: 0 auto; color: #1a1a2e; line-height: 1.85;">
+      <div data-section style="text-align: center; margin-bottom: 28px; border-bottom: 3px solid #4a9a7a; padding-bottom: 20px;">
+        <h1 style="font-size: 26px; font-weight: 800; color: #1a1a2e; margin: 0 0 6px 0;">התכנית האישית שלי</h1>
+        <p style="font-size: 14px; color: #4a9a7a; font-weight: 600; margin: 0 0 10px 0;">מרום בית אקשטיין • יחד נבנה את הצעד הבא</p>
+        <p style="font-size: 18px; font-weight: 700; margin: 0;">${session.studentName}</p>
+        <p style="font-size: 12px; color: #666; margin: 4px 0 0 0;">${session.grade || ""} &nbsp;•&nbsp; ${new Date().toLocaleDateString("he-IL")}</p>
+      </div>
+
+      <div data-section style="margin-bottom: 24px; background: #f0faf4; border-right: 4px solid #4a9a7a; border-radius: 8px; padding: 16px 20px;">
+        <p style="font-size: 14px; margin: 0; color: #1a1a2e;">
+          ${firstName} יקר/ה, המסמך הזה הוא <strong>לא ציונים ולא שיפוט</strong>. הוא מפה קטנה שבנינו יחד — לזהות איפה יש לך כוחות שכבר עוזרים לך,
+          ואיפה אנחנו רוצים לצעוד איתך צעד־צעד. כל מה שכתוב כאן הוא <strong>בסיס לשיחה משותפת</strong>, לא מסקנה סופית.
+        </p>
+      </div>`;
+
+  if (strengths.length > 0) {
+    html += `
+      <div data-section style="margin-bottom: 22px;">
+        <h2 style="font-size: 17px; font-weight: 700; color: #276749; margin: 0 0 10px 0;">✨ מה בולט אצלך לטובה</h2>
+        ${strengths.map(d => `
+          <div style="margin-bottom: 10px; background: #f0faf4; border: 1px solid #c6f6d5; border-radius: 10px; padding: 12px 16px;">
+            <strong style="font-size: 14px; color: #276749;">${d.label}</strong>
+            <p style="font-size: 13px; margin: 4px 0 0 0; color: #1a1a2e;">${paragraphFor(d)}</p>
+          </div>
+        `).join("")}
+      </div>`;
+  }
+
+  if (growth.length > 0) {
+    html += `
+      <div data-section style="margin-bottom: 22px;">
+        <h2 style="font-size: 17px; font-weight: 700; color: #2b6cb0; margin: 0 0 10px 0;">🌱 מה נצעד בו יחד</h2>
+        ${growth.map(d => `
+          <div style="margin-bottom: 10px; background: #f0f7ff; border: 1px solid #bee3f8; border-radius: 10px; padding: 12px 16px;">
+            <strong style="font-size: 14px; color: #2b6cb0;">${d.label}</strong>
+            <p style="font-size: 13px; margin: 4px 0 0 0; color: #1a1a2e;">${paragraphFor(d)}</p>
+          </div>
+        `).join("")}
+      </div>`;
+  }
+
+  if (neutral.length > 0) {
+    html += `
+      <div data-section style="margin-bottom: 22px;">
+        <h2 style="font-size: 17px; font-weight: 700; color: #4a9a7a; margin: 0 0 10px 0;">🌿 בסיס יציב שאפשר לשכלל</h2>
+        ${neutral.map(d => `
+          <div style="margin-bottom: 10px; background: #f8fdf9; border: 1px solid #d4edda; border-radius: 10px; padding: 12px 16px;">
+            <strong style="font-size: 14px; color: #4a9a7a;">${d.label}</strong>
+            <p style="font-size: 13px; margin: 4px 0 0 0; color: #1a1a2e;">${paragraphFor(d)}</p>
+          </div>
+        `).join("")}
+      </div>`;
+  }
+
+  if (ai?.recommendations && ai.recommendations.length > 0) {
+    html += `
+      <div data-section style="margin-bottom: 22px; background: #fffaf0; border: 1px solid #feebc8; border-radius: 10px; padding: 16px 20px;">
+        <h2 style="font-size: 16px; font-weight: 700; color: #975a16; margin: 0 0 10px 0;">💡 רעיונות ראשונים לצעדים קטנים</h2>
+        ${ai.recommendations.slice(0, 5).map((r) => `
+          <p style="font-size: 13px; margin: 6px 0; color: #1a1a2e;">• ${r}</p>
+        `).join("")}
+        <p style="font-size: 11px; color: #888; margin: 8px 0 0 0;">אלה הצעות פתיחה — נבחר יחד מה מתאים לך ומה נדחה לפעם אחרת.</p>
+      </div>`;
+  }
+
+  // Reflection questions — always show, pull from focus areas + defaults
+  const focusForQuestions = (growth.length > 0 ? growth : neutral).slice(0, 3);
+  const reflections = focusForQuestions.map(d => DOMAIN_NARRATIVES[d.key].reflection);
+  while (reflections.length < 4) {
+    const filler = [
+      "באילו תחומים היית רוצה שנתמקד יחד?",
+      "מה חשוב לך שנדע עליך כשאנחנו בונים את התכנית?",
+      "מי בסביבה שלך יכול לתמוך בך בצעד הזה?",
+      "איך תדע/י שהצלחנו — מה יהיה סימן טוב?",
+    ][reflections.length];
+    if (!filler) break;
+    reflections.push(filler);
+  }
+
+  html += `
+    <div data-section style="margin-bottom: 22px; background: #faf5ff; border: 1px solid #e9d8fd; border-radius: 10px; padding: 18px 22px;">
+      <h2 style="font-size: 17px; font-weight: 700; color: #6b46c1; margin: 0 0 12px 0;">🗣️ שאלות שנחשוב עליהן יחד</h2>
+      <p style="font-size: 12px; color: #555; margin: 0 0 10px 0;">אין תשובות נכונות או לא נכונות — רק תשובות שמרגישות לך נכונות.</p>
+      ${reflections.slice(0, 5).map((q, i) => `
+        <p style="font-size: 13px; margin: 8px 0; color: #1a1a2e;"><strong style="color: #6b46c1;">${i + 1}.</strong> ${q}</p>
+      `).join("")}
+    </div>`;
+
+  html += `
+    <div data-section style="margin-bottom: 22px; background: #f7fafc; border: 1px dashed #cbd5e0; border-radius: 10px; padding: 18px 22px;">
+      <h2 style="font-size: 16px; font-weight: 700; color: #1a1a2e; margin: 0 0 10px 0;">📝 המקום שלי לרשום</h2>
+      <p style="font-size: 12px; color: #555; margin: 0 0 12px 0;">בחר/י 1–3 תחומים שהיית רוצה להתחיל בהם, ורשום/י אצלך את הצעדים הראשונים:</p>
+      <div style="border-bottom: 1px solid #cbd5e0; height: 20px; margin-bottom: 10px;"></div>
+      <div style="border-bottom: 1px solid #cbd5e0; height: 20px; margin-bottom: 10px;"></div>
+      <div style="border-bottom: 1px solid #cbd5e0; height: 20px; margin-bottom: 10px;"></div>
+      <div style="border-bottom: 1px solid #cbd5e0; height: 20px;"></div>
+    </div>
+
+    <div data-section style="border-top: 2px solid #4a9a7a; padding-top: 14px; margin-top: 24px; text-align: center;">
+      <p style="font-size: 12px; color: #4a9a7a; font-weight: 600; margin: 0;">אנחנו כאן איתך — צעד אחר צעד.</p>
+      <p style="font-size: 10px; color: #999; margin: 4px 0 0 0;">מרום בית אקשטיין • ${new Date().toLocaleDateString("he-IL")}</p>
+    </div>
+  </div>`;
+
+  return html;
+}
+
+export async function generateEmpoweringPlanPDF(
+  session: IntakeSession,
+  planData: PersonalPlanData,
+  options?: { grayscale?: boolean },
+) {
+  const html = buildEmpoweringPlanHTML(session, planData);
+  const suffix = options?.grayscale ? "_שחור_לבן" : "";
+  await renderHTMLToPDF(html, `${session.studentName}_תכנית_מעצימה${suffix}.pdf`, options);
+}
