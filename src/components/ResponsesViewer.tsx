@@ -21,7 +21,7 @@ function toneFor(value: number | undefined, isReverse: boolean): "green" | "yell
 }
 
 const TONE_CLASSES: Record<string, string> = {
-  green: "bg-success/10 border-success/30 text-success-foreground",
+  green: "bg-success/10 border-success/30 text-black",
   yellow: "bg-warning/10 border-warning/30 text-foreground",
   red: "bg-destructive/10 border-destructive/30 text-foreground",
   empty: "bg-muted/40 border-border text-muted-foreground",
