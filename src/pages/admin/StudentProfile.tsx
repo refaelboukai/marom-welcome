@@ -11,7 +11,7 @@ import { ArrowRight, AlertTriangle, Copy, CheckCircle, Lock, Unlock, FileText, T
 import { generateSemesterSummary, SEMESTER_LABELS, type SemesterType } from "@/lib/summary-generator";
 import SupportPlans from "@/components/SupportPlans";
 import AIRecommendations from "@/components/AIRecommendations";
-import { generateStudentPDF, generatePersonalPlanPDF, generateEmpoweringPlanPDF, PersonalPlanData } from "@/lib/pdf-export";
+import { generateStudentPDF, generatePersonalPlanPDF, generateEmpoweringPlanPDF, generateEmpoweringPlanDOC, PersonalPlanData } from "@/lib/pdf-export";
 import { supabase } from "@/integrations/supabase/client";
 import { questionnaireItems } from "@/data/questionnaires";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line } from "recharts";
@@ -272,6 +272,13 @@ const StudentProfile = () => {
       aiRecommendations: recs || undefined,
       supportPlans: supportPlansData,
     }, options);
+  };
+
+  const handleExportEmpoweringPlanDoc = async () => {
+    await generateEmpoweringPlanDOC(session, {
+      aiRecommendations: aiResult || undefined,
+      supportPlans: supportPlansData,
+    });
   };
 
   const handleCopy = (text: string, label: string) => {
@@ -1009,13 +1016,20 @@ const StudentProfile = () => {
           <div className="grid sm:grid-cols-2 gap-2">
             <button onClick={() => handleExportEmpoweringPlan()}
               className="btn-intake bg-primary/10 text-primary text-sm flex items-center justify-center gap-2 hover:bg-primary/20 transition-colors w-full"
-              title="גרסה מעצימה בשפה פשוטה — לתלמיד/ה, ללא ציונים מספריים">
-              <ScrollText className="w-4 h-4" /> תכנית מעצימה לתלמיד/ה — ללא ציונים
+              title="דף עבודה משותף בשפה מעצימה — לתלמיד/ה ולמחנכת">
+              <ScrollText className="w-4 h-4" /> דף עבודה — תכנית משותפת (PDF)
             </button>
             <button onClick={() => handleExportEmpoweringPlan({ grayscale: true })}
               className="btn-intake bg-muted text-foreground text-sm flex items-center justify-center gap-2 hover:bg-muted/80 transition-colors w-full"
-              title="תכנית מעצימה בשחור לבן — קובץ קטן">
-              <ScrollText className="w-4 h-4" /> תכנית מעצימה — שחור לבן
+              title="דף עבודה משותף בשחור לבן — קובץ קטן">
+              <ScrollText className="w-4 h-4" /> דף עבודה משותף — שחור לבן
+            </button>
+          </div>
+          <div>
+            <button onClick={handleExportEmpoweringPlanDoc}
+              className="btn-intake bg-accent/10 text-accent-foreground text-sm flex items-center justify-center gap-2 hover:bg-accent/20 transition-colors w-full border border-accent/30"
+              title="הורדת דף העבודה כמסמך Word לעריכה">
+              <ScrollText className="w-4 h-4" /> דף עבודה משותף — הורדה כ־Word (ניתן לעריכה)
             </button>
           </div>
         </div>
