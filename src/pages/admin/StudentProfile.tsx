@@ -389,6 +389,9 @@ const StudentProfile = () => {
             <button onClick={() => navigate(`/staff/${session.id}`)} className="p-2 rounded-lg hover:bg-muted" title="שאלון צוות">
               <ClipboardList className="w-5 h-5 text-warning" />
             </button>
+            <button onClick={() => setShowResponses(true)} className="p-2 rounded-lg hover:bg-muted" title="צפייה בתשובות">
+              <Eye className="w-5 h-5 text-info" />
+            </button>
             <button onClick={() => handleExportPersonalPlan()} className="p-2 rounded-lg hover:bg-muted" title="תכנית אישית — המלצות ודרכי פעולה">
               <ScrollText className="w-5 h-5 text-success" />
             </button>
