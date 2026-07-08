@@ -129,13 +129,14 @@ const Dashboard = () => {
 
   const filtered = useMemo(() => {
     return sessionsWithMeta.filter((s) => {
-      if (tab === "tali" && s.classGroup !== "tali") return false;
-      if (tab === "eden" && s.classGroup !== "eden") return false;
       if (tab === "unassigned" && s.classGroup) return false;
       if (tab === "archive") {
         if (s.status !== "archived") return false;
       } else {
         if (s.status === "archived") return false;
+      }
+      if (tab !== "all" && tab !== "unassigned" && tab !== "archive" && tab !== "codes") {
+        if (s.classGroup !== tab) return false;
       }
       if (filter !== "all" && s.status !== filter) return false;
       if (riskFilter && s.riskFlags.length === 0) return false;
