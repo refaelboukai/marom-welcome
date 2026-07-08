@@ -263,10 +263,15 @@ const Dashboard = () => {
     return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
   }
 
-  const tabs: { key: Tab; label: string; count?: number }[] = [
+  const classKeys = Object.keys(classGroups);
+  const tabs: { key: Tab; label: string; count?: number; deletable?: boolean }[] = [
     { key: "all", label: "כל התלמידים", count: sessionsWithMeta.filter((s) => s.status !== "archived").length },
-    { key: "tali", label: "הכיתה של טלי", count: sessionsWithMeta.filter((s) => s.classGroup === "tali" && s.status !== "archived").length },
-    { key: "eden", label: "הכיתה של עדן", count: sessionsWithMeta.filter((s) => s.classGroup === "eden" && s.status !== "archived").length },
+    ...classKeys.map((k) => ({
+      key: k,
+      label: classGroups[k],
+      count: sessionsWithMeta.filter((s) => s.classGroup === k && s.status !== "archived").length,
+      deletable: !DEFAULT_CLASS_GROUPS[k],
+    })),
     { key: "unassigned", label: "ללא שיוך", count: sessionsWithMeta.filter((s) => !s.classGroup && s.status !== "archived").length },
     { key: "archive", label: "ארכיון", count: sessionsWithMeta.filter((s) => s.status === "archived").length },
     { key: "codes", label: "ניהול קודים" },
