@@ -1043,13 +1043,6 @@ async function renderSectionsToPDF(html: string, filename: string) {
         bottomPx: Math.round((top + el.offsetHeight) * pxPerCssPx),
       };
     });
-    // eslint-disable-next-line no-console
-    console.log("[PDF] sec", sectionEls.length, "canvasH", fullCanvas.height, "scrollH", container.scrollHeight, JSON.stringify(sections));
-    // Debug: expose the fullCanvas dataURL for inspection.
-    if (typeof window !== "undefined") {
-      (window as any).__pdfDebugCanvas = fullCanvas.toDataURL("image/jpeg", 0.4);
-    }
-
     const pdf = new jsPDF("p", "mm", "a4");
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = pdf.internal.pageSize.getHeight();
@@ -1061,11 +1054,10 @@ async function renderSectionsToPDF(html: string, filename: string) {
     const pxPerMm = fullCanvas.width / usableWmm;
 
     let cursorMm = 0; // used vertical space on current page, in mm
-    let firstPage = true;
-
+    // jsPDF starts with a blank first page. We draw directly onto it and only
+    // add a new page on overflow.
     const newPage = () => {
-      if (!firstPage) pdf.addPage();
-      firstPage = false;
+      pdf.addPage();
       cursorMm = 0;
     };
 
