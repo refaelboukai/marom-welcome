@@ -38,6 +38,7 @@ export interface IntakeSession {
   studentPhone?: string;
   secondParentName?: string;
   notes?: string;
+  gender?: "male" | "female" | "unspecified" | "";
   studentCode: string;
   parentCode: string;
   studentCodeActive?: boolean;

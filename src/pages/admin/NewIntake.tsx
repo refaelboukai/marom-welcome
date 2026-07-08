@@ -16,6 +16,7 @@ const NewIntake = () => {
     parentPhone: "",
     studentPhone: "",
     secondParentName: "",
+    gender: "",
     classGroup: "",
     academicYear: 'תשפ"ו',
     notes: "",
@@ -71,7 +72,7 @@ const NewIntake = () => {
   const handleSubmit = async () => {
     if (!form.studentName.trim()) return;
     setLoading(true);
-    const session = await createSessionDB(form);
+    const session = await createSessionDB(form as any);
     setLoading(false);
     if (session) {
       setCreated({ studentCode: session.studentCode, parentCode: session.parentCode });
@@ -192,7 +193,7 @@ const NewIntake = () => {
               <button
                 onClick={() => {
                   setCreated(null);
-                  setForm({ studentName: "", studentIdNumber: "", grade: "", intakeDate: new Date().toISOString().split("T")[0], parentName: "", parentPhone: "", studentPhone: "", secondParentName: "", classGroup: "", academicYear: 'תשפ"ו', notes: "" });
+                  setForm({ studentName: "", studentIdNumber: "", grade: "", intakeDate: new Date().toISOString().split("T")[0], parentName: "", parentPhone: "", studentPhone: "", secondParentName: "", gender: "", classGroup: "", academicYear: 'תשפ"ו', notes: "" });
                 }}
                 className="btn-intake bg-secondary text-secondary-foreground flex-1 text-sm"
               >
@@ -245,6 +246,17 @@ const NewIntake = () => {
               />
             </div>
           ))}
+
+          {/* Gender selector */}
+          <div>
+            <label className="block text-sm font-medium mb-1.5">מגדר</label>
+            <select value={form.gender} onChange={(e) => updateField("gender", e.target.value)}
+              className="w-full bg-card border border-input rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+              <option value="">לא צוין</option>
+              <option value="male">זכר</option>
+              <option value="female">נקבה</option>
+            </select>
+          </div>
 
           {/* Class group selector */}
           <div>

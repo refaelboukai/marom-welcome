@@ -135,6 +135,7 @@ export type Database = {
           consent_date: string | null
           consent_signature: string | null
           created_at: string
+          gender: string | null
           grade: string | null
           id: string
           intake_date: string
@@ -171,6 +172,7 @@ export type Database = {
           consent_date?: string | null
           consent_signature?: string | null
           created_at?: string
+          gender?: string | null
           grade?: string | null
           id?: string
           intake_date?: string
@@ -207,6 +209,7 @@ export type Database = {
           consent_date?: string | null
           consent_signature?: string | null
           created_at?: string
+          gender?: string | null
           grade?: string | null
           id?: string
           intake_date?: string

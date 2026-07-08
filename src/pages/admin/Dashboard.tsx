@@ -13,7 +13,7 @@ import PhonesImportDialog from "@/components/PhonesImportDialog";
 import { openWhatsApp, normalizePhone, REMINDER_MESSAGE } from "@/lib/whatsapp";
 
 import logo from "@/assets/logo.jpeg";
-import { Plus, Users, AlertTriangle, CheckCircle, Clock, Search, LogOut, XCircle, Loader2, Download, Key, FileText, Copy, ClipboardList, Trash2, ShieldAlert, Calendar, ArrowLeftRight, BookOpen, MessageCircle, Bell, FileSpreadsheet, Send, Archive, ArchiveRestore } from "lucide-react";
+import { Plus, Users, AlertTriangle, CheckCircle, Clock, Search, LogOut, XCircle, Loader2, Download, Key, FileText, Copy, ClipboardList, Trash2, ShieldAlert, Calendar, ArrowLeftRight, BookOpen, MessageCircle, Bell, FileSpreadsheet, Send, Archive, ArchiveRestore, Sparkles, BarChart3 } from "lucide-react";
 import { calculateScores, generateRiskFlags, getCompletionPercentage } from "@/lib/scoring";
 import { exportToExcel } from "@/lib/export-utils";
 import { generateStudentPDF } from "@/lib/pdf-export";
@@ -308,6 +308,9 @@ const Dashboard = () => {
             <button onClick={() => navigate("/admin/new")} className="btn-intake bg-primary text-primary-foreground text-xs sm:text-sm px-2.5 sm:px-4 py-2 shadow-md hover:shadow-lg transition-all flex items-center gap-1">
               <Plus className="w-4 h-4" /> קליטה חדשה
             </button>
+            <button onClick={() => navigate("/admin/placement")} className="btn-intake bg-primary/10 text-primary text-xs sm:text-sm px-2.5 sm:px-4 py-2 hover:bg-primary/20 flex items-center gap-1" title="מנוע שיבוץ חכם">
+              <Sparkles className="w-4 h-4" /> מנוע שיבוץ
+            </button>
             <button onClick={() => navigate("/")} className="p-2 rounded-xl hover:bg-muted transition-colors" title="יציאה">
               <LogOut className="w-5 h-5 text-muted-foreground" />
             </button>
@@ -394,6 +397,12 @@ const Dashboard = () => {
 
             {/* Export Bar */}
             <div className="flex flex-wrap gap-2 mb-4">
+              {classGroups[tab] && (
+                <button onClick={() => navigate(`/admin/class/${tab}`)}
+                  className="btn-intake bg-primary text-primary-foreground text-xs px-3 py-2 gap-1 hover:opacity-90 shadow-md">
+                  <BarChart3 className="w-3.5 h-3.5" /> תמונה כיתתית — {classGroups[tab]}
+                </button>
+              )}
               <button onClick={() => exportToExcel(tab === "all" ? sessions : filtered, tab === "tali" ? "הכיתה_של_טלי" : tab === "eden" ? "הכיתה_של_עדן" : "כל_התלמידים")}
                 className="btn-intake bg-success/10 text-success text-xs px-3 py-2 gap-1 hover:bg-success/20">
                 <Download className="w-3.5 h-3.5" /> ייצוא Excel
