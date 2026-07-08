@@ -64,13 +64,36 @@ const ClassInsights = () => {
 
   const snapshot = useMemo(() => (aggregate ? computeClassSnapshot(aggregate) : null), [aggregate]);
 
-  // Auto-run insights once when aggregate is ready
+  // Fingerprint of the class's questionnaire state — changes only when a student
+  // completes/updates a questionnaire. Used to cache insights.
+  const fingerprint = useMemo(() => {
+    if (!aggregate) return null;
+    const classSessions = sessions
+      .filter((s) => s.classGroup === classKey && s.status !== "archived")
+      .map((s) => `${s.id}:${s.status}:${(s as any).updatedAt || (s as any).completedAt || ""}`)
+      .sort()
+      .join("|");
+    return `${aggregate.studentCount}:${aggregate.completedCount}:${classSessions}`;
+  }, [aggregate, sessions, classKey]);
+
+  const cacheKey = `class-insights:${classKey}`;
+
+  // Load cache once aggregate is ready; auto-run only if fingerprint changed.
   useEffect(() => {
-    if (aggregate && !insights && !aiLoading && !error) {
-      runAi();
-    }
+    if (!aggregate || !fingerprint) return;
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed.fingerprint === fingerprint && parsed.insights) {
+          setInsights(parsed.insights);
+          return;
+        }
+      }
+    } catch { /* ignore */ }
+    if (!aiLoading && !error) runAi();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [aggregate]);
+  }, [aggregate, fingerprint]);
 
   const exportPDF = async () => {
     if (!aggregate) return;
@@ -132,6 +155,9 @@ const ClassInsights = () => {
       if (err) throw err;
       if (data?.error) throw new Error(data.error);
       setInsights(data);
+      try {
+        if (fingerprint) localStorage.setItem(cacheKey, JSON.stringify({ fingerprint, insights: data }));
+      } catch { /* ignore */ }
     } catch (e: any) {
       setError(e?.message || "שגיאה בהפקת התובנות");
     } finally {
