@@ -982,5 +982,177 @@ function buildClassInsightsHTML(p: ClassInsightsPDFPayload): string {
 export async function generateClassInsightsPDF(payload: ClassInsightsPDFPayload) {
   const html = buildClassInsightsHTML(payload);
   const safe = payload.classLabel.replace(/[^\p{L}\p{N}_-]+/gu, "_");
-  await renderHTMLToPDF(html, `תמונה_כיתתית_${safe}.pdf`);
+  await renderSectionsToPDF(html, `תמונה_כיתתית_${safe}.pdf`);
+}
+
+/**
+ * Section-based PDF renderer: renders each top-level [data-section] as its own
+ * bitmap and packs them onto A4 pages without splitting a section unless it is
+ * taller than a full page. When a section is oversized, it is sliced only at
+ * horizontal whitespace rows so no text line is cut mid-glyph. Empty trailing
+ * pages are never produced.
+ */
+async function renderSectionsToPDF(html: string, filename: string) {
+  const container = document.createElement("div");
+  container.style.position = "fixed";
+  container.style.left = "-9999px";
+  container.style.top = "0";
+  container.style.width = "700px";
+  container.style.background = "white";
+  container.innerHTML = html;
+  document.body.appendChild(container);
+
+  await document.fonts.ready;
+
+  try {
+    // The HTML wraps everything in a single outer div. Grab its direct
+    // [data-section] children — nested sections inside cards stay atomic.
+    const wrapper = container.firstElementChild as HTMLElement;
+    const sectionEls = wrapper
+      ? (Array.from(wrapper.children).filter((el) =>
+          (el as HTMLElement).hasAttribute("data-section"),
+        ) as HTMLElement[])
+      : [];
+
+    // Render the whole container once, then slice per-section. This preserves
+    // any layout that html2canvas struggles with when capturing single elements
+    // (e.g. flex rows, negative offsets, contexts inherited from parents).
+    const fullCanvas = await html2canvas(container, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      backgroundColor: "#ffffff",
+    });
+    const pxPerCssPx = fullCanvas.height / container.scrollHeight;
+
+    // Measure each section relative to the container using offsetTop chain,
+    // which is robust to fixed/absolute positioning of the container.
+    const offsetFromContainer = (el: HTMLElement): number => {
+      let y = 0;
+      let cur: HTMLElement | null = el;
+      while (cur && cur !== container) {
+        y += cur.offsetTop;
+        cur = cur.offsetParent as HTMLElement | null;
+      }
+      return y;
+    };
+    const sections = sectionEls.map((el) => {
+      const top = offsetFromContainer(el);
+      return {
+        topPx: Math.max(0, Math.round(top * pxPerCssPx)),
+        bottomPx: Math.round((top + el.offsetHeight) * pxPerCssPx),
+      };
+    });
+    // eslint-disable-next-line no-console
+    console.log("[PDF] sec", sectionEls.length, "canvasH", fullCanvas.height, "scrollH", container.scrollHeight, JSON.stringify(sections));
+    // Debug: expose the fullCanvas dataURL for inspection.
+    if (typeof window !== "undefined") {
+      (window as any).__pdfDebugCanvas = fullCanvas.toDataURL("image/jpeg", 0.4);
+    }
+
+    const pdf = new jsPDF("p", "mm", "a4");
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+    const marginMm = 8;
+    const usableWmm = pdfWidth - marginMm * 2;
+    const usableHmm = pdfHeight - marginMm * 2;
+    const gapMm = 4;
+    // Canvas-px per mm along the width axis.
+    const pxPerMm = fullCanvas.width / usableWmm;
+
+    let cursorMm = 0; // used vertical space on current page, in mm
+    let firstPage = true;
+
+    const newPage = () => {
+      if (!firstPage) pdf.addPage();
+      firstPage = false;
+      cursorMm = 0;
+    };
+
+    const addImage = (
+      dataUrl: string,
+      widthMm: number,
+      heightMm: number,
+      yMm: number,
+    ) => {
+      pdf.addImage(dataUrl, "PNG", marginMm, yMm, widthMm, heightMm);
+    };
+
+    /** Find a whitespace break row scanning up from targetY. */
+    const findWhitespaceRow = (
+      canvas: HTMLCanvasElement,
+      targetY: number,
+      minY: number,
+    ): number | null => {
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return null;
+      const w = canvas.width;
+      const searchLimit = Math.max(minY, targetY - Math.floor(canvas.height * 0.25));
+      for (let y = Math.min(targetY, canvas.height - 1); y >= searchLimit; y -= 2) {
+        const row = ctx.getImageData(0, y, w, 1).data;
+        let whiteish = true;
+        for (let i = 0; i < row.length; i += 4) {
+          if (row[i] < 245 || row[i + 1] < 245 || row[i + 2] < 245) { whiteish = false; break; }
+        }
+        if (whiteish) return y;
+      }
+      return null;
+    };
+
+    const drawSlice = (canvas: HTMLCanvasElement, sliceStart: number, sliceEnd: number): string => {
+      const sliceH = sliceEnd - sliceStart;
+      const c = document.createElement("canvas");
+      c.width = canvas.width;
+      c.height = sliceH;
+      const cx = c.getContext("2d")!;
+      cx.fillStyle = "#ffffff";
+      cx.fillRect(0, 0, c.width, c.height);
+      cx.drawImage(canvas, 0, sliceStart, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+      return c.toDataURL("image/png");
+    };
+
+    for (const sec of sections) {
+      const sliceStartPx = sec.topPx;
+      const sliceEndPx = sec.bottomPx;
+      if (sliceEndPx <= sliceStartPx) continue;
+      const secWmm = usableWmm;
+      const secFullHmm = (sliceEndPx - sliceStartPx) / pxPerMm;
+
+      // Case A: fits on a page as a single image.
+      if (secFullHmm <= usableHmm) {
+        const gapNeeded = cursorMm > 0 ? gapMm : 0;
+        if (cursorMm + gapNeeded + secFullHmm > usableHmm) newPage();
+        const yMm = marginMm + cursorMm + (cursorMm > 0 ? gapMm : 0);
+        const dataUrl = drawSlice(fullCanvas, sliceStartPx, sliceEndPx);
+        addImage(dataUrl, secWmm, secFullHmm, yMm);
+        cursorMm += (cursorMm > 0 ? gapMm : 0) + secFullHmm;
+        continue;
+      }
+
+      // Case B: taller than a page — slice at whitespace rows.
+      if (cursorMm > 0) newPage();
+      const pxPerPage = usableHmm * pxPerMm;
+      let sliceStart = sliceStartPx;
+      while (sliceStart < sliceEndPx) {
+        const targetEnd = Math.min(sliceStart + pxPerPage, sliceEndPx);
+        let sliceEnd = targetEnd;
+        if (targetEnd < sliceEndPx) {
+          const ws = findWhitespaceRow(fullCanvas, Math.floor(targetEnd), sliceStart + Math.floor(pxPerPage * 0.4));
+          if (ws && ws > sliceStart + 40) sliceEnd = ws;
+        }
+        if (sliceEnd <= sliceStart) sliceEnd = Math.min(sliceStart + Math.floor(pxPerPage), sliceEndPx);
+        const dataUrl = drawSlice(fullCanvas, sliceStart, sliceEnd);
+        const sliceHmm = (sliceEnd - sliceStart) / pxPerMm;
+        addImage(dataUrl, secWmm, sliceHmm, marginMm);
+        sliceStart = sliceEnd;
+        if (sliceStart < sliceEndPx) newPage();
+      }
+      cursorMm = usableHmm; // force next section to a new page
+    }
+
+    // No trailing empty pages — we only call addPage between real content.
+    pdf.save(filename);
+  } finally {
+    document.body.removeChild(container);
+  }
 }
