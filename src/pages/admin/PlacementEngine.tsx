@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { getSessionsDB, getClassGroups, DEFAULT_CLASS_GROUPS, ClassGroupsMap, updateSessionDB } from "@/lib/supabase-storage";
 import { IntakeSession } from "@/lib/types";
 import { aggregateClass, buildStudentProfile } from "@/lib/class-aggregations";
-import { ArrowRight, Loader2, Sparkles, CheckCircle, AlertTriangle, User } from "lucide-react";
+import { ArrowRight, Loader2, Sparkles, CheckCircle, AlertTriangle, User, Target, GitCompare } from "lucide-react";
+import { getTeacherProfiles, TeacherProfilesMap } from "@/lib/supabase-storage";
 
 interface Suggestion {
   recommendedClassKey?: string;
@@ -19,17 +20,22 @@ const PlacementEngine = () => {
   const navigate = useNavigate();
   const [sessions, setSessions] = useState<IntakeSession[]>([]);
   const [classGroups, setClassGroups] = useState<ClassGroupsMap>(DEFAULT_CLASS_GROUPS);
+  const [teachers, setTeachers] = useState<TeacherProfilesMap>({});
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [confirmed, setConfirmed] = useState<Record<string, string>>({});
   const [showAssigned, setShowAssigned] = useState(false);
+  const [mode, setMode] = useState<"all" | "single" | "compare">("all");
+  const [targetClass, setTargetClass] = useState<string>("");
+  const [compareClasses, setCompareClasses] = useState<string[]>([]);
 
   useEffect(() => {
-    Promise.all([getSessionsDB(), getClassGroups()]).then(([s, g]) => {
+    Promise.all([getSessionsDB(), getClassGroups(), getTeacherProfiles()]).then(([s, g, t]) => {
       setSessions(s);
       setClassGroups(g);
+      setTeachers(t);
       setLoading(false);
     });
   }, []);
@@ -49,9 +55,17 @@ const PlacementEngine = () => {
     setAiLoading(true);
     try {
       const studentProfile = buildStudentProfile(session);
-      const classesPayload = classAggregates.map((c) => ({
+      // Filter class list by mode
+      let selected = classAggregates;
+      if (mode === "single" && targetClass) {
+        selected = classAggregates.filter((c) => c.key === targetClass);
+      } else if (mode === "compare" && compareClasses.length === 2) {
+        selected = classAggregates.filter((c) => compareClasses.includes(c.key));
+      }
+      const classesPayload = selected.map((c) => ({
         key: c.key,
         label: c.label,
+        teacher: teachers[c.key]?.name || undefined,
         studentCount: c.aggregate.studentCount,
         genderBreakdown: c.aggregate.genderBreakdown,
         gradeDistribution: c.aggregate.gradeDistribution,
@@ -66,7 +80,7 @@ const PlacementEngine = () => {
         })),
       }));
       const { data, error } = await supabase.functions.invoke("placement-suggest", {
-        body: { student: studentProfile, classes: classesPayload },
+        body: { student: studentProfile, classes: classesPayload, mode },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
@@ -76,6 +90,16 @@ const PlacementEngine = () => {
     } finally {
       setAiLoading(false);
     }
+  };
+
+  const canRun = mode === "all" || (mode === "single" && !!targetClass) || (mode === "compare" && compareClasses.length === 2);
+
+  const toggleCompare = (key: string) => {
+    setCompareClasses((prev) => {
+      if (prev.includes(key)) return prev.filter((k) => k !== key);
+      if (prev.length >= 2) return [prev[1], key];
+      return [...prev, key];
+    });
   };
 
   const confirmAssign = async () => {
@@ -109,6 +133,44 @@ const PlacementEngine = () => {
       <div className="max-w-6xl mx-auto p-4 grid md:grid-cols-[320px_1fr] gap-4">
         {/* Students list */}
         <div className="intake-card p-3 h-fit">
+          {/* Match mode selector */}
+          <div className="mb-3 pb-3 border-b border-border">
+            <p className="text-[11px] font-bold text-muted-foreground mb-1.5">מצב בדיקה</p>
+            <div className="grid grid-cols-3 gap-1">
+              <button onClick={() => setMode("all")}
+                className={`text-[11px] rounded-lg px-2 py-1.5 flex flex-col items-center gap-0.5 transition-colors ${mode === "all" ? "bg-primary text-primary-foreground" : "bg-muted/50 hover:bg-muted"}`}>
+                <Sparkles className="w-3.5 h-3.5" /> כל הכיתות
+              </button>
+              <button onClick={() => setMode("single")}
+                className={`text-[11px] rounded-lg px-2 py-1.5 flex flex-col items-center gap-0.5 transition-colors ${mode === "single" ? "bg-primary text-primary-foreground" : "bg-muted/50 hover:bg-muted"}`}>
+                <Target className="w-3.5 h-3.5" /> לכיתה מסוימת
+              </button>
+              <button onClick={() => setMode("compare")}
+                className={`text-[11px] rounded-lg px-2 py-1.5 flex flex-col items-center gap-0.5 transition-colors ${mode === "compare" ? "bg-primary text-primary-foreground" : "bg-muted/50 hover:bg-muted"}`}>
+                <GitCompare className="w-3.5 h-3.5" /> השוואת 2
+              </button>
+            </div>
+            {mode === "single" && (
+              <select value={targetClass} onChange={(e) => setTargetClass(e.target.value)}
+                className="mt-2 w-full bg-card border border-input rounded-lg px-2 py-1.5 text-xs">
+                <option value="">בחר כיתה...</option>
+                {Object.entries(classGroups).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+              </select>
+            )}
+            {mode === "compare" && (
+              <div className="mt-2 space-y-1">
+                <p className="text-[10px] text-muted-foreground">בחר 2 כיתות ({compareClasses.length}/2)</p>
+                <div className="flex flex-wrap gap-1">
+                  {Object.entries(classGroups).map(([k, l]) => (
+                    <button key={k} onClick={() => toggleCompare(k)}
+                      className={`text-[10px] px-2 py-1 rounded-full transition-colors ${compareClasses.includes(k) ? "bg-primary text-primary-foreground" : "bg-muted/50 hover:bg-muted"}`}>
+                      {l}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-heading font-bold">תלמידים</h3>
             <label className="flex items-center gap-1.5 text-[11px] cursor-pointer">
@@ -121,8 +183,8 @@ const PlacementEngine = () => {
           ) : (
             <div className="space-y-1 max-h-[70vh] overflow-y-auto">
               {candidates.map((s) => (
-                <button key={s.id} onClick={() => runSuggest(s)}
-                  className={`w-full text-right rounded-xl px-3 py-2 transition-colors ${selectedId === s.id ? "bg-primary/10" : "hover:bg-muted/50"}`}>
+                <button key={s.id} onClick={() => canRun && runSuggest(s)} disabled={!canRun}
+                  className={`w-full text-right rounded-xl px-3 py-2 transition-colors disabled:opacity-40 ${selectedId === s.id ? "bg-primary/10" : "hover:bg-muted/50"}`}>
                   <div className="flex items-center gap-2">
                     <User className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                     <div className="flex-1 min-w-0">

@@ -562,3 +562,38 @@ export async function saveClassGroups(groups: ClassGroupsMap): Promise<boolean> 
   }
   return true;
 }
+
+// ---------- Teacher Profiles ----------
+
+export interface TeacherProfile {
+  name: string;
+  photoDataUrl?: string;
+  notes?: string;
+}
+
+export type TeacherProfilesMap = Record<string, TeacherProfile>; // classKey -> profile
+
+export async function getTeacherProfiles(): Promise<TeacherProfilesMap> {
+  const { data, error } = await (supabase as any)
+    .from("school_settings")
+    .select("value")
+    .eq("key", "teacher_profiles")
+    .maybeSingle();
+  if (error || !data) return {};
+  const value = data.value;
+  if (value && typeof value === "object" && !Array.isArray(value)) return value as TeacherProfilesMap;
+  return {};
+}
+
+export async function saveTeacherProfile(classKey: string, profile: TeacherProfile): Promise<boolean> {
+  const current = await getTeacherProfiles();
+  const next = { ...current, [classKey]: profile };
+  const { error } = await (supabase as any)
+    .from("school_settings")
+    .upsert(
+      { key: "teacher_profiles", value: next, updated_at: new Date().toISOString() },
+      { onConflict: "key" }
+    );
+  if (error) { console.error("Error saving teacher profile:", error); return false; }
+  return true;
+}
