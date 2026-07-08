@@ -1143,6 +1143,8 @@ async function renderSectionsToPDF(html: string, filename: string) {
           if (ws && ws > sliceStart + 40) sliceEnd = ws;
         }
         if (sliceEnd <= sliceStart) sliceEnd = Math.min(sliceStart + Math.floor(pxPerPage), sliceEndPx);
+        // eslint-disable-next-line no-console
+        console.log("[PDF]slice", sliceStart, sliceEnd, "of", sliceEndPx, "page", pdf.getNumberOfPages());
         const dataUrl = drawSlice(fullCanvas, sliceStart, sliceEnd);
         const sliceHmm = (sliceEnd - sliceStart) / pxPerMm;
         addImage(dataUrl, secWmm, sliceHmm, marginMm);
