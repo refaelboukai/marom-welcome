@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { getSessionsDB, resetAllSessionsDB, createSessionDB, getReminderMessage } from "@/lib/supabase-storage";
+import { getSessionsDB, resetAllSessionsDB, createSessionDB, getReminderMessage, updateSessionDB } from "@/lib/supabase-storage";
 import { IntakeSession, IntakeStatus } from "@/lib/types";
 import { questionnaireItems } from "@/data/questionnaires";
 import { CLASS_GROUPS, ADMIN_CODE } from "@/data/students";
@@ -13,7 +13,7 @@ import PhonesImportDialog from "@/components/PhonesImportDialog";
 import { openWhatsApp, normalizePhone, REMINDER_MESSAGE } from "@/lib/whatsapp";
 
 import logo from "@/assets/logo.jpeg";
-import { Plus, Users, AlertTriangle, CheckCircle, Clock, Search, LogOut, XCircle, Loader2, Download, Key, FileText, Copy, ClipboardList, Trash2, ShieldAlert, Calendar, ArrowLeftRight, BookOpen, MessageCircle, Bell, FileSpreadsheet, Send } from "lucide-react";
+import { Plus, Users, AlertTriangle, CheckCircle, Clock, Search, LogOut, XCircle, Loader2, Download, Key, FileText, Copy, ClipboardList, Trash2, ShieldAlert, Calendar, ArrowLeftRight, BookOpen, MessageCircle, Bell, FileSpreadsheet, Send, Archive, ArchiveRestore } from "lucide-react";
 import { calculateScores, generateRiskFlags, getCompletionPercentage } from "@/lib/scoring";
 import { exportToExcel } from "@/lib/export-utils";
 import { generateStudentPDF } from "@/lib/pdf-export";
@@ -111,6 +111,19 @@ const Dashboard = () => {
     navigator.clipboard.writeText(text);
     setCopied(key);
     setTimeout(() => setCopied(null), 1500);
+  };
+
+  const handleArchive = async (session: IntakeSession) => {
+    const isArchived = session.status === "archived";
+    const msg = isArchived
+      ? `לשחזר את ${session.studentName} מהארכיון?`
+      : `להעביר את ${session.studentName} לארכיון? התלמיד/ה לא יופיע/תופיע ברשימה הראשית.`;
+    if (!confirm(msg)) return;
+    const prevStatus = ((session as any)._prevStatus as IntakeStatus | undefined) || "not_started";
+    await updateSessionDB(session.id, {
+      status: isArchived ? prevStatus : "archived",
+    });
+    await reloadSessions();
   };
 
   const handleExportClass = (classKey: string) => {
@@ -420,6 +433,12 @@ const Dashboard = () => {
                                 <button onClick={() => generateStudentPDF(session, "staff")} className="p-1.5 rounded-lg hover:bg-muted" title="PDF צוות">
                                   <FileText className="w-3.5 h-3.5 text-primary" />
                                 </button>
+                                <button onClick={(e) => { e.stopPropagation(); handleArchive(session); }}
+                                  className="p-1.5 rounded-lg hover:bg-muted" title={session.status === "archived" ? "שחזר מהארכיון" : "העבר לארכיון"}>
+                                  {session.status === "archived"
+                                    ? <ArchiveRestore className="w-3.5 h-3.5 text-info" />
+                                    : <Archive className="w-3.5 h-3.5 text-muted-foreground" />}
+                                </button>
                               </div>
                             </td>
                           </tr>
@@ -464,6 +483,12 @@ const Dashboard = () => {
                         </button>
                         <button onClick={() => generateStudentPDF(session, "staff")} className="p-1.5 rounded-lg hover:bg-muted mr-auto">
                           <FileText className="w-3.5 h-3.5 text-primary" />
+                        </button>
+                        <button onClick={(e) => { e.stopPropagation(); handleArchive(session); }}
+                          className="p-1.5 rounded-lg hover:bg-muted" title={session.status === "archived" ? "שחזר מהארכיון" : "העבר לארכיון"}>
+                          {session.status === "archived"
+                            ? <ArchiveRestore className="w-3.5 h-3.5 text-info" />
+                            : <Archive className="w-3.5 h-3.5 text-muted-foreground" />}
                         </button>
                       </div>
                     </div>
