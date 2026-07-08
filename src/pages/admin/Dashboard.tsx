@@ -408,7 +408,22 @@ const Dashboard = () => {
                         return (
                           <tr key={session.id} className="border-t border-border hover:bg-muted/30 transition-colors">
                             <td className="px-4 py-3 font-medium cursor-pointer hover:text-primary" onClick={() => navigate(`/admin/student/${session.id}`)}>{session.studentName}</td>
-                            <td className="px-4 py-3 text-muted-foreground">{session.grade || "—"}</td>
+                            <td className="px-4 py-3 text-muted-foreground">
+                              <div className="flex flex-col gap-1">
+                                <span>{session.grade || "—"}</span>
+                                <select
+                                  value={session.classGroup || ""}
+                                  onChange={(e) => handleAssignClass(session, e.target.value)}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="text-[11px] bg-muted/40 border border-input rounded-md px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-ring"
+                                  title="שיוך לכיתה"
+                                >
+                                  <option value="">ללא שיוך</option>
+                                  <option value="tali">טלי</option>
+                                  <option value="eden">עדן</option>
+                                </select>
+                              </div>
+                            </td>
                             <td className="px-4 py-3"><StatusBadge status={session.status} /></td>
                             <td className="px-4 py-3 text-center"><span className={`text-xs font-medium ${session.studentCompletion === 100 ? "text-success" : "text-muted-foreground"}`}>{session.studentCompletion}%</span></td>
                             <td className="px-4 py-3 text-center"><span className={`text-xs font-medium ${session.parentCompletion === 100 ? "text-success" : "text-muted-foreground"}`}>{session.parentCompletion}%</span></td>
