@@ -64,6 +64,14 @@ const ClassInsights = () => {
 
   const snapshot = useMemo(() => (aggregate ? computeClassSnapshot(aggregate) : null), [aggregate]);
 
+  // Auto-run insights once when aggregate is ready
+  useEffect(() => {
+    if (aggregate && !insights && !aiLoading && !error) {
+      runAi();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aggregate]);
+
   const exportPDF = async () => {
     if (!aggregate) return;
     setPdfLoading(true);
