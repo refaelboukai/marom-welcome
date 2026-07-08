@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { getSessionsDB, resetAllSessionsDB, createSessionDB, getReminderMessage, updateSessionDB } from "@/lib/supabase-storage";
+import { getSessionsDB, resetAllSessionsDB, createSessionDB, getReminderMessage, updateSessionDB, getClassGroups, saveClassGroups, DEFAULT_CLASS_GROUPS, ClassGroupsMap } from "@/lib/supabase-storage";
 import { IntakeSession, IntakeStatus } from "@/lib/types";
 import { questionnaireItems } from "@/data/questionnaires";
 import { CLASS_GROUPS, ADMIN_CODE } from "@/data/students";
@@ -18,7 +18,7 @@ import { calculateScores, generateRiskFlags, getCompletionPercentage } from "@/l
 import { exportToExcel } from "@/lib/export-utils";
 import { generateStudentPDF } from "@/lib/pdf-export";
 
-type Tab = "all" | "tali" | "eden" | "unassigned" | "codes" | "archive";
+type Tab = string; // "all" | "unassigned" | "codes" | "archive" | any classGroup key
 
 const ACADEMIC_YEARS = ['תשפ"ו', 'תשפ"ז', 'תשפ"ח', 'תשפ"ט'];
 
@@ -46,16 +46,62 @@ const Dashboard = () => {
   const [showReminderEditor, setShowReminderEditor] = useState(false);
   const [showPhonesImport, setShowPhonesImport] = useState(false);
   const [reminderMessage, setReminderMessage] = useState<string>(REMINDER_MESSAGE);
+  const [classGroups, setClassGroups] = useState<ClassGroupsMap>(DEFAULT_CLASS_GROUPS);
   const APP_URL = "https://marom-welcome.vercel.app";
 
   useEffect(() => {
     getSessionsDB().then((data) => { setSessions(data); setLoading(false); });
     getReminderMessage().then(setReminderMessage).catch(() => {});
+    getClassGroups().then(setClassGroups).catch(() => {});
   }, []);
 
   const reloadSessions = async () => {
     const data = await getSessionsDB();
     setSessions(data);
+  };
+
+  const handleAddClass = async () => {
+    const label = prompt("שם הכיתה החדשה:");
+    if (!label || !label.trim()) return;
+    const trimmedLabel = label.trim();
+    // generate a stable key from label
+    let baseKey = trimmedLabel
+      .toLowerCase()
+      .replace(/\s+/g, "_")
+      .replace(/[^a-z0-9_\u0590-\u05FF]/gi, "");
+    if (!baseKey) baseKey = `class_${Date.now()}`;
+    let key = baseKey;
+    let i = 2;
+    while (classGroups[key]) { key = `${baseKey}_${i++}`; }
+    const next = { ...classGroups, [key]: trimmedLabel };
+    setClassGroups(next);
+    await saveClassGroups(next);
+  };
+
+  const handleRenameClass = async (key: string) => {
+    if (DEFAULT_CLASS_GROUPS[key]) { alert("לא ניתן לערוך כיתה מובנית"); return; }
+    const label = prompt("שם חדש לכיתה:", classGroups[key] || "");
+    if (!label || !label.trim()) return;
+    const next = { ...classGroups, [key]: label.trim() };
+    setClassGroups(next);
+    await saveClassGroups(next);
+  };
+
+  const handleDeleteClass = async (key: string) => {
+    if (DEFAULT_CLASS_GROUPS[key]) { alert("לא ניתן למחוק כיתה מובנית"); return; }
+    const inUse = sessions.some((s) => s.classGroup === key);
+    if (inUse && !confirm("קיימים תלמידים המשוייכים לכיתה זו. הם יעברו למצב 'ללא שיוך'. להמשיך?")) return;
+    const next = { ...classGroups };
+    delete next[key];
+    setClassGroups(next);
+    await saveClassGroups(next);
+    if (inUse) {
+      for (const s of sessions.filter((x) => x.classGroup === key)) {
+        await updateSessionDB(s.id, { classGroup: null } as any);
+      }
+      await reloadSessions();
+    }
+    if (tab === key) setTab("all");
   };
 
   const sendReminder = (phone: string | undefined, code: string, name: string) => {
