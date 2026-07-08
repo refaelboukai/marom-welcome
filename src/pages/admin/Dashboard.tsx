@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { getSessionsDB, resetAllSessionsDB, createSessionDB, getReminderMessage, updateSessionDB } from "@/lib/supabase-storage";
+import { getSessionsDB, resetAllSessionsDB, createSessionDB, getReminderMessage, updateSessionDB, getClassGroups, saveClassGroups, DEFAULT_CLASS_GROUPS, ClassGroupsMap } from "@/lib/supabase-storage";
 import { IntakeSession, IntakeStatus } from "@/lib/types";
 import { questionnaireItems } from "@/data/questionnaires";
 import { CLASS_GROUPS, ADMIN_CODE } from "@/data/students";
@@ -18,7 +18,7 @@ import { calculateScores, generateRiskFlags, getCompletionPercentage } from "@/l
 import { exportToExcel } from "@/lib/export-utils";
 import { generateStudentPDF } from "@/lib/pdf-export";
 
-type Tab = "all" | "tali" | "eden" | "unassigned" | "codes" | "archive";
+type Tab = string; // "all" | "unassigned" | "codes" | "archive" | any classGroup key
 
 const ACADEMIC_YEARS = ['תשפ"ו', 'תשפ"ז', 'תשפ"ח', 'תשפ"ט'];
 
@@ -46,16 +46,62 @@ const Dashboard = () => {
   const [showReminderEditor, setShowReminderEditor] = useState(false);
   const [showPhonesImport, setShowPhonesImport] = useState(false);
   const [reminderMessage, setReminderMessage] = useState<string>(REMINDER_MESSAGE);
+  const [classGroups, setClassGroups] = useState<ClassGroupsMap>(DEFAULT_CLASS_GROUPS);
   const APP_URL = "https://marom-welcome.vercel.app";
 
   useEffect(() => {
     getSessionsDB().then((data) => { setSessions(data); setLoading(false); });
     getReminderMessage().then(setReminderMessage).catch(() => {});
+    getClassGroups().then(setClassGroups).catch(() => {});
   }, []);
 
   const reloadSessions = async () => {
     const data = await getSessionsDB();
     setSessions(data);
+  };
+
+  const handleAddClass = async () => {
+    const label = prompt("שם הכיתה החדשה:");
+    if (!label || !label.trim()) return;
+    const trimmedLabel = label.trim();
+    // generate a stable key from label
+    let baseKey = trimmedLabel
+      .toLowerCase()
+      .replace(/\s+/g, "_")
+      .replace(/[^a-z0-9_\u0590-\u05FF]/gi, "");
+    if (!baseKey) baseKey = `class_${Date.now()}`;
+    let key = baseKey;
+    let i = 2;
+    while (classGroups[key]) { key = `${baseKey}_${i++}`; }
+    const next = { ...classGroups, [key]: trimmedLabel };
+    setClassGroups(next);
+    await saveClassGroups(next);
+  };
+
+  const handleRenameClass = async (key: string) => {
+    if (DEFAULT_CLASS_GROUPS[key]) { alert("לא ניתן לערוך כיתה מובנית"); return; }
+    const label = prompt("שם חדש לכיתה:", classGroups[key] || "");
+    if (!label || !label.trim()) return;
+    const next = { ...classGroups, [key]: label.trim() };
+    setClassGroups(next);
+    await saveClassGroups(next);
+  };
+
+  const handleDeleteClass = async (key: string) => {
+    if (DEFAULT_CLASS_GROUPS[key]) { alert("לא ניתן למחוק כיתה מובנית"); return; }
+    const inUse = sessions.some((s) => s.classGroup === key);
+    if (inUse && !confirm("קיימים תלמידים המשוייכים לכיתה זו. הם יעברו למצב 'ללא שיוך'. להמשיך?")) return;
+    const next = { ...classGroups };
+    delete next[key];
+    setClassGroups(next);
+    await saveClassGroups(next);
+    if (inUse) {
+      for (const s of sessions.filter((x) => x.classGroup === key)) {
+        await updateSessionDB(s.id, { classGroup: null } as any);
+      }
+      await reloadSessions();
+    }
+    if (tab === key) setTab("all");
   };
 
   const sendReminder = (phone: string | undefined, code: string, name: string) => {
@@ -83,13 +129,14 @@ const Dashboard = () => {
 
   const filtered = useMemo(() => {
     return sessionsWithMeta.filter((s) => {
-      if (tab === "tali" && s.classGroup !== "tali") return false;
-      if (tab === "eden" && s.classGroup !== "eden") return false;
       if (tab === "unassigned" && s.classGroup) return false;
       if (tab === "archive") {
         if (s.status !== "archived") return false;
       } else {
         if (s.status === "archived") return false;
+      }
+      if (tab !== "all" && tab !== "unassigned" && tab !== "archive" && tab !== "codes") {
+        if (s.classGroup !== tab) return false;
       }
       if (filter !== "all" && s.status !== filter) return false;
       if (riskFilter && s.riskFlags.length === 0) return false;
@@ -216,10 +263,15 @@ const Dashboard = () => {
     return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
   }
 
-  const tabs: { key: Tab; label: string; count?: number }[] = [
+  const classKeys = Object.keys(classGroups);
+  const tabs: { key: Tab; label: string; count?: number; deletable?: boolean }[] = [
     { key: "all", label: "כל התלמידים", count: sessionsWithMeta.filter((s) => s.status !== "archived").length },
-    { key: "tali", label: "הכיתה של טלי", count: sessionsWithMeta.filter((s) => s.classGroup === "tali" && s.status !== "archived").length },
-    { key: "eden", label: "הכיתה של עדן", count: sessionsWithMeta.filter((s) => s.classGroup === "eden" && s.status !== "archived").length },
+    ...classKeys.map((k) => ({
+      key: k,
+      label: classGroups[k],
+      count: sessionsWithMeta.filter((s) => s.classGroup === k && s.status !== "archived").length,
+      deletable: !DEFAULT_CLASS_GROUPS[k],
+    })),
     { key: "unassigned", label: "ללא שיוך", count: sessionsWithMeta.filter((s) => !s.classGroup && s.status !== "archived").length },
     { key: "archive", label: "ארכיון", count: sessionsWithMeta.filter((s) => s.status === "archived").length },
     { key: "codes", label: "ניהול קודים" },
@@ -306,15 +358,31 @@ const Dashboard = () => {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 mb-4 overflow-x-auto pb-1">
+        <div className="flex gap-1 mb-4 overflow-x-auto pb-1 items-center">
           {tabs.map((t) => (
-            <button key={t.key} onClick={() => setTab(t.key)}
-              className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
-                tab === t.key ? "bg-primary text-primary-foreground shadow-md" : "bg-muted/50 text-muted-foreground hover:bg-muted"
-              }`}>
-              {t.label} {t.count != null && <span className="mr-1 opacity-70">({t.count})</span>}
-            </button>
+            <div key={t.key} className="inline-flex items-center">
+              <button onClick={() => setTab(t.key)}
+                onDoubleClick={() => t.deletable && handleRenameClass(t.key)}
+                className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
+                  tab === t.key ? "bg-primary text-primary-foreground shadow-md" : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                }`}
+                title={t.deletable ? "לחיצה כפולה לשינוי שם" : undefined}>
+                {t.label} {t.count != null && <span className="mr-1 opacity-70">({t.count})</span>}
+              </button>
+              {t.deletable && (
+                <button onClick={() => handleDeleteClass(t.key)}
+                  className="mr-0.5 -ml-1 p-1 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                  title="מחיקת כיתה">
+                  <XCircle className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
           ))}
+          <button onClick={handleAddClass}
+            className="px-3 py-2 rounded-xl text-sm font-medium whitespace-nowrap bg-primary/10 text-primary hover:bg-primary/20 inline-flex items-center gap-1"
+            title="הוספת כיתה חדשה">
+            <Plus className="w-3.5 h-3.5" /> הוסף כיתה
+          </button>
         </div>
 
         {/* Codes Tab */}
@@ -419,8 +487,12 @@ const Dashboard = () => {
                                   title="שיוך לכיתה"
                                 >
                                   <option value="">ללא שיוך</option>
-                                  <option value="tali">טלי</option>
-                                  <option value="eden">עדן</option>
+                                  {Object.entries(classGroups).map(([k, label]) => (
+                                    <option key={k} value={k}>{label}</option>
+                                  ))}
+                                  {session.classGroup && !classGroups[session.classGroup] && (
+                                    <option value={session.classGroup}>{session.classGroup}</option>
+                                  )}
                                 </select>
                               </div>
                             </td>
@@ -498,8 +570,12 @@ const Dashboard = () => {
                           title="שיוך לכיתה"
                         >
                           <option value="">ללא שיוך</option>
-                          <option value="tali">טלי</option>
-                          <option value="eden">עדן</option>
+                          {Object.entries(classGroups).map(([k, label]) => (
+                            <option key={k} value={k}>{label}</option>
+                          ))}
+                          {session.classGroup && !classGroups[session.classGroup] && (
+                            <option value={session.classGroup}>{session.classGroup}</option>
+                          )}
                         </select>
                         <button onClick={() => handleCopy(session.parentCode, `mpc-${session.id}`)}
                           className="flex items-center gap-1 text-[10px] font-mono bg-info/5 text-info px-2 py-1 rounded-lg">
