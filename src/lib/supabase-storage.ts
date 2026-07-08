@@ -15,6 +15,7 @@ function rowToSession(row: any): IntakeSession {
     studentPhone: row.student_phone || "",
     secondParentName: row.second_parent_name,
     notes: row.notes,
+    gender: row.gender || "",
     studentCode: row.student_code,
     parentCode: row.parent_code,
     studentCodeActive: row.student_code_active !== false,
@@ -149,6 +150,7 @@ export async function updateSessionDB(id: string, updates: Partial<IntakeSession
   if ((updates as any).studentPhone !== undefined) dbUpdates.student_phone = (updates as any).studentPhone;
   if (updates.secondParentName !== undefined) dbUpdates.second_parent_name = updates.secondParentName;
   if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
+  if ((updates as any).gender !== undefined) dbUpdates.gender = (updates as any).gender || null;
   if (updates.status !== undefined) dbUpdates.status = updates.status;
   if (updates.studentResponses !== undefined) dbUpdates.student_responses = updates.studentResponses;
   if (updates.studentOpenResponses !== undefined) dbUpdates.student_open_responses = updates.studentOpenResponses;
@@ -192,6 +194,7 @@ export async function createSessionDB(data: Partial<IntakeSession>): Promise<Int
     student_phone: (data as any).studentPhone || "",
     second_parent_name: data.secondParentName,
     notes: data.notes,
+    gender: (data as any).gender || null,
     student_code: generateCode(),
     parent_code: generateCode(),
     staff_code: generateCode(),
