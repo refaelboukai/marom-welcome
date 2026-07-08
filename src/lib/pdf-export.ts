@@ -1117,6 +1117,8 @@ async function renderSectionsToPDF(html: string, filename: string) {
       if (sliceEndPx <= sliceStartPx) continue;
       const secWmm = usableWmm;
       const secFullHmm = (sliceEndPx - sliceStartPx) / pxPerMm;
+      // eslint-disable-next-line no-console
+      console.log("[PDF]sec", sliceStartPx, sliceEndPx, "hmm", secFullHmm.toFixed(1), "cursor", cursorMm.toFixed(1), "page", pdf.getNumberOfPages());
 
       // Case A: fits on a page as a single image.
       if (secFullHmm <= usableHmm) {
