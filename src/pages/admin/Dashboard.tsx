@@ -397,6 +397,12 @@ const Dashboard = () => {
 
             {/* Export Bar */}
             <div className="flex flex-wrap gap-2 mb-4">
+              {classGroups[tab] && (
+                <button onClick={() => navigate(`/admin/class/${tab}`)}
+                  className="btn-intake bg-primary text-primary-foreground text-xs px-3 py-2 gap-1 hover:opacity-90 shadow-md">
+                  <BarChart3 className="w-3.5 h-3.5" /> תמונה כיתתית — {classGroups[tab]}
+                </button>
+              )}
               <button onClick={() => exportToExcel(tab === "all" ? sessions : filtered, tab === "tali" ? "הכיתה_של_טלי" : tab === "eden" ? "הכיתה_של_עדן" : "כל_התלמידים")}
                 className="btn-intake bg-success/10 text-success text-xs px-3 py-2 gap-1 hover:bg-success/20">
                 <Download className="w-3.5 h-3.5" /> ייצוא Excel
