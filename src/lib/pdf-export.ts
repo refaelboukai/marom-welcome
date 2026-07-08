@@ -810,3 +810,177 @@ export async function generateEmpoweringPlanDOC(
   document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
+// ---------------- Class Insights PDF ----------------
+
+export interface ClassInsightsPDFPayload {
+  classLabel: string;
+  teacherName?: string;
+  studentCount: number;
+  completedCount: number;
+  genderBreakdown: { male: number; female: number; unspecified: number };
+  avgScores: Record<string, number>;
+  atRiskCount: number;
+  cohesion?: number;
+  diversity?: number;
+  classSummary?: string;
+  themedCategories?: {
+    title: string;
+    type?: string;
+    description: string;
+    relatedItems?: string[];
+    students?: string[];
+    practices?: string[];
+  }[];
+  groupTherapyFocus?: { topic: string; rationale: string; techniques: string[] };
+  groupWorkGoals?: {
+    goal: string;
+    domain?: string;
+    indicator?: string;
+    weeklyPractice?: string;
+    targetStudents?: string[];
+  }[];
+  subGroups?: { label: string; students: string[]; sharedNeed: string; suggestedIntervention: string }[];
+  anchors?: { name: string; why: string }[];
+  atRisk?: { name: string; why: string; priority?: string }[];
+  pedagogicalNote?: string;
+}
+
+function buildClassInsightsHTML(p: ClassInsightsPDFPayload): string {
+  const domainLabelHe: Record<string, string> = {
+    qualityOfLife: "איכות חיים",
+    selfEfficacy: "מסוגלות עצמית",
+    locusOfControl: "מיקוד שליטה",
+    cognitiveFlexibility: "גמישות קוגניטיבית",
+    learningCharacteristics: "מאפייני למידה",
+  };
+  const fmt = (n: number) => (n > 0 ? n.toFixed(2) : "—");
+  return `
+  <div style="font-family: 'Heebo','Rubik','Arial',sans-serif; direction: rtl; padding: 32px; max-width: 700px; margin: 0 auto; color: #1a1a2e; line-height: 1.6;">
+    <div data-section style="border-bottom: 3px solid #4a9a7a; padding-bottom: 14px; margin-bottom: 20px;">
+      <h1 style="font-size: 22px; font-weight: 800; margin: 0 0 6px 0;">תמונה כיתתית — ${p.classLabel}</h1>
+      <p style="font-size: 12px; color: #4a9a7a; font-weight: 600; margin: 0;">מרום בית אקשטיין • מסמך עבודה קבוצתית</p>
+      ${p.teacherName ? `<p style="font-size: 12px; color: #555; margin: 4px 0 0 0;">מחנכת: ${p.teacherName}</p>` : ""}
+      <p style="font-size: 11px; color: #888; margin: 4px 0 0 0;">${new Date().toLocaleDateString("he-IL")}</p>
+    </div>
+
+    <div data-section style="margin-bottom: 18px;">
+      <h2 style="font-size: 15px; font-weight: 700; margin: 0 0 10px 0;">מבט מהיר</h2>
+      <table style="width:100%; border-collapse: collapse; font-size: 12px;">
+        <tr>
+          <td style="border:1px solid #e2e8f0; padding:8px; background:#f8faff;"><b>תלמידים בכיתה:</b> ${p.studentCount}</td>
+          <td style="border:1px solid #e2e8f0; padding:8px; background:#f8faff;"><b>מילאו שאלון:</b> ${p.completedCount}</td>
+        </tr>
+        <tr>
+          <td style="border:1px solid #e2e8f0; padding:8px;"><b>בנים:</b> ${p.genderBreakdown.male} · <b>בנות:</b> ${p.genderBreakdown.female}${p.genderBreakdown.unspecified ? ` · לא צוין: ${p.genderBreakdown.unspecified}` : ""}</td>
+          <td style="border:1px solid #e2e8f0; padding:8px;"><b>דגלי תשומת לב:</b> ${p.atRiskCount}</td>
+        </tr>
+        ${p.cohesion !== undefined ? `<tr>
+          <td style="border:1px solid #e2e8f0; padding:8px;"><b>לכידות פרופיל:</b> ${p.cohesion}%</td>
+          <td style="border:1px solid #e2e8f0; padding:8px;"><b>מגוון בכיתה:</b> ${p.diversity ?? 100 - (p.cohesion || 0)}%</td>
+        </tr>` : ""}
+      </table>
+    </div>
+
+    <div data-section style="margin-bottom: 18px;">
+      <h2 style="font-size: 15px; font-weight: 700; margin: 0 0 10px 0;">ממוצעים כיתתיים לפי תחום (1–5)</h2>
+      <table style="width:100%; border-collapse: collapse; font-size: 12px;">
+        ${Object.entries(p.avgScores).map(([k, v]) => `
+          <tr>
+            <td style="border:1px solid #e2e8f0; padding:6px 8px; background:#fafcfd;">${domainLabelHe[k] || k}</td>
+            <td style="border:1px solid #e2e8f0; padding:6px 8px; font-weight:700; text-align:center;">${fmt(v)}</td>
+          </tr>`).join("")}
+      </table>
+    </div>
+
+    ${p.classSummary ? `
+    <div data-section style="margin-bottom: 18px; background:#f0f7f2; border:1px solid #cfe3d6; border-radius:8px; padding:12px 14px;">
+      <h2 style="font-size: 15px; font-weight: 700; margin: 0 0 6px 0; color:#276749;">תמונה כללית</h2>
+      <p style="font-size: 13px; margin:0; text-align: justify;">${p.classSummary}</p>
+    </div>` : ""}
+
+    ${p.themedCategories && p.themedCategories.length ? `
+    <div data-section style="margin-bottom: 18px;">
+      <h2 style="font-size: 16px; font-weight: 800; margin: 0 0 10px 0;">קטגוריות עבודה</h2>
+      ${p.themedCategories.map(c => `
+        <div data-section style="border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px; margin-bottom: 10px; background:#fff;">
+          <p style="font-size: 14px; font-weight:800; margin:0 0 4px 0;">${c.title}${c.type ? ` <span style="font-size:10px; font-weight:600; color:#666;">(${c.type === "strength" ? "חוזקה" : c.type === "challenge" ? "אתגר" : "מעורב"})</span>` : ""}</p>
+          <p style="font-size: 12.5px; margin:0 0 6px 0; text-align: justify;">${c.description}</p>
+          ${c.students && c.students.length ? `<p style="font-size:11.5px; color:#4a9a7a; margin:0 0 4px 0;"><b>תלמידים רלוונטיים:</b> ${c.students.join(" · ")}</p>` : ""}
+          ${c.practices && c.practices.length ? `
+            <p style="font-size:12px; font-weight:700; margin:6px 0 2px 0;">פרקטיקות מומלצות:</p>
+            <ul style="margin:0; padding-inline-start:18px; font-size:12px;">
+              ${c.practices.map(pr => `<li style="margin-bottom:2px;">${pr}</li>`).join("")}
+            </ul>` : ""}
+        </div>`).join("")}
+    </div>` : ""}
+
+    ${p.groupTherapyFocus ? `
+    <div data-section style="margin-bottom: 18px; background:#fffaf0; border:1px solid #f4d9a5; border-radius:8px; padding:12px 14px;">
+      <h2 style="font-size: 15px; font-weight: 800; margin: 0 0 6px 0; color:#8a5b00;">מוקד הטיפול הקבוצתי השבועי</h2>
+      <p style="font-size: 13px; font-weight:700; margin:0 0 4px 0;">${p.groupTherapyFocus.topic}</p>
+      <p style="font-size: 12px; margin:0 0 6px 0; text-align:justify;">${p.groupTherapyFocus.rationale}</p>
+      ${p.groupTherapyFocus.techniques?.length ? `<ul style="margin:0; padding-inline-start:18px; font-size:12px;">${p.groupTherapyFocus.techniques.map(t => `<li>${t}</li>`).join("")}</ul>` : ""}
+    </div>` : ""}
+
+    ${p.groupWorkGoals && p.groupWorkGoals.length ? `
+    <div data-section style="margin-bottom: 18px;">
+      <h2 style="font-size: 16px; font-weight: 800; margin: 0 0 10px 0;">מטרות עבודה קבוצתית</h2>
+      ${p.groupWorkGoals.map((g, i) => `
+        <div data-section style="border:1px solid #cbd5e0; border-radius:8px; padding:10px 14px; margin-bottom:8px;">
+          <p style="font-size:13px; font-weight:800; margin:0 0 4px 0; color:#276749;">מטרה ${i + 1}${g.domain ? ` · ${g.domain}` : ""}</p>
+          <p style="font-size:13px; margin:0 0 4px 0;">${g.goal}</p>
+          ${g.indicator ? `<p style="font-size:11.5px; margin:0 0 2px 0;"><b>אינדיקטור התקדמות:</b> ${g.indicator}</p>` : ""}
+          ${g.weeklyPractice ? `<p style="font-size:11.5px; margin:0 0 2px 0;"><b>פרקטיקה שבועית:</b> ${g.weeklyPractice}</p>` : ""}
+          ${g.targetStudents && g.targetStudents.length ? `<p style="font-size:11.5px; margin:0; color:#4a9a7a;"><b>מיועד ל:</b> ${g.targetStudents.join(" · ")}</p>` : ""}
+        </div>`).join("")}
+    </div>` : ""}
+
+    ${p.subGroups && p.subGroups.length ? `
+    <div data-section style="margin-bottom: 18px;">
+      <h2 style="font-size: 15px; font-weight: 700; margin: 0 0 8px 0;">תת-קבוצות</h2>
+      ${p.subGroups.map(g => `
+        <div data-section style="border:1px solid #e2e8f0; border-radius:8px; padding:10px 12px; margin-bottom:8px;">
+          <p style="font-size:13px; font-weight:700; margin:0;">${g.label}</p>
+          <p style="font-size:11.5px; color:#666; margin:2px 0 4px 0;">${g.students.join(" · ")}</p>
+          <p style="font-size:12px; margin:0 0 2px 0;"><b>משותף:</b> ${g.sharedNeed}</p>
+          <p style="font-size:12px; margin:0;"><b>מומלץ:</b> ${g.suggestedIntervention}</p>
+        </div>`).join("")}
+    </div>` : ""}
+
+    ${(p.anchors && p.anchors.length) || (p.atRisk && p.atRisk.length) ? `
+    <div data-section style="margin-bottom: 18px; display: flex; gap: 12px;">
+      ${p.anchors && p.anchors.length ? `
+        <div style="flex:1; border:1px solid #cfe3d6; border-radius:8px; padding:10px 12px; background:#f0f7f2;">
+          <p style="font-size:13px; font-weight:700; margin:0 0 6px 0; color:#276749;">תלמידים עוגן</p>
+          <ul style="margin:0; padding-inline-start:16px; font-size:11.5px;">
+            ${p.anchors.map(a => `<li><b>${a.name}:</b> ${a.why}</li>`).join("")}
+          </ul>
+        </div>` : ""}
+      ${p.atRisk && p.atRisk.length ? `
+        <div style="flex:1; border:1px solid #f4d9a5; border-radius:8px; padding:10px 12px; background:#fffaf0;">
+          <p style="font-size:13px; font-weight:700; margin:0 0 6px 0; color:#8a5b00;">בסיכון מוגבר</p>
+          <ul style="margin:0; padding-inline-start:16px; font-size:11.5px;">
+            ${p.atRisk.map(a => `<li><b>${a.name}:</b> ${a.why}</li>`).join("")}
+          </ul>
+        </div>` : ""}
+    </div>` : ""}
+
+    ${p.pedagogicalNote ? `
+    <div data-section style="margin-bottom: 18px; background:#f8faff; border:1px solid #dbe4f0; border-radius:8px; padding:12px 14px;">
+      <h2 style="font-size: 14px; font-weight: 700; margin: 0 0 4px 0;">הערה למחנכת</h2>
+      <p style="font-size: 12.5px; margin:0; text-align:justify;">${p.pedagogicalNote}</p>
+    </div>` : ""}
+
+    <div data-section style="border-top: 1px solid #4a9a7a; padding-top: 10px; text-align: center; margin-top: 20px;">
+      <p style="font-size: 11px; color: #4a9a7a; font-weight: 600; margin: 0;">מרום בית אקשטיין • תמונה כיתתית לעבודה קבוצתית</p>
+      <p style="font-size: 10px; color: #999; margin: 4px 0 0 0;">מסמך חסוי — ${new Date().toLocaleDateString("he-IL")}</p>
+    </div>
+  </div>`;
+}
+
+export async function generateClassInsightsPDF(payload: ClassInsightsPDFPayload) {
+  const html = buildClassInsightsHTML(payload);
+  const safe = payload.classLabel.replace(/[^\p{L}\p{N}_-]+/gu, "_");
+  await renderHTMLToPDF(html, `תמונה_כיתתית_${safe}.pdf`);
+}
