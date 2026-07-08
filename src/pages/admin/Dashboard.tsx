@@ -358,15 +358,31 @@ const Dashboard = () => {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 mb-4 overflow-x-auto pb-1">
+        <div className="flex gap-1 mb-4 overflow-x-auto pb-1 items-center">
           {tabs.map((t) => (
-            <button key={t.key} onClick={() => setTab(t.key)}
-              className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
-                tab === t.key ? "bg-primary text-primary-foreground shadow-md" : "bg-muted/50 text-muted-foreground hover:bg-muted"
-              }`}>
-              {t.label} {t.count != null && <span className="mr-1 opacity-70">({t.count})</span>}
-            </button>
+            <div key={t.key} className="inline-flex items-center">
+              <button onClick={() => setTab(t.key)}
+                onDoubleClick={() => t.deletable && handleRenameClass(t.key)}
+                className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
+                  tab === t.key ? "bg-primary text-primary-foreground shadow-md" : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                }`}
+                title={t.deletable ? "לחיצה כפולה לשינוי שם" : undefined}>
+                {t.label} {t.count != null && <span className="mr-1 opacity-70">({t.count})</span>}
+              </button>
+              {t.deletable && (
+                <button onClick={() => handleDeleteClass(t.key)}
+                  className="mr-0.5 -ml-1 p-1 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                  title="מחיקת כיתה">
+                  <XCircle className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
           ))}
+          <button onClick={handleAddClass}
+            className="px-3 py-2 rounded-xl text-sm font-medium whitespace-nowrap bg-primary/10 text-primary hover:bg-primary/20 inline-flex items-center gap-1"
+            title="הוספת כיתה חדשה">
+            <Plus className="w-3.5 h-3.5" /> הוסף כיתה
+          </button>
         </div>
 
         {/* Codes Tab */}
