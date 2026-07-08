@@ -170,3 +170,66 @@ export function aggregateClass(classKey: string, classLabel: string, sessions: I
 
 export const DOMAIN_LABELS_HE = SECTION_LABELS;
 export const OPEN_LABELS_HE = OPEN_QUESTION_LABELS;
+
+export interface ClassSnapshot {
+  cohesion: number; // 0-100, how similar the class profiles are
+  diversity: number; // 0-100, how varied the class is
+  needsFocus: { key: string; label: string; avg: number }[]; // 2 lowest domains
+  strengthsFocus: { key: string; label: string; avg: number }[]; // 2 highest domains
+  riskPercent: number;
+  genderBalance: "מאוזן" | "רוב בנים" | "רוב בנות" | "לא צוין";
+  ageSpread: number; // number of distinct grades represented
+}
+
+const DOMAIN_LABEL_HE: Record<string, string> = {
+  qualityOfLife: "איכות חיים",
+  selfEfficacy: "מסוגלות עצמית",
+  locusOfControl: "מיקוד שליטה",
+  cognitiveFlexibility: "גמישות קוגניטיבית",
+  learningCharacteristics: "מאפייני למידה",
+};
+
+export function computeClassSnapshot(aggregate: ClassAggregate): ClassSnapshot {
+  const withData = aggregate.studentProfiles.filter((p) => p.completion > 0);
+  const domainKeys = Object.keys(aggregate.avgScores);
+
+  // Cohesion: mean of (1 - normalized stddev per domain across students)
+  let cohesionSum = 0;
+  let cohesionCount = 0;
+  for (const k of domainKeys) {
+    const vals = withData.map((p) => p.scores[k]).filter((v) => v > 0);
+    if (vals.length < 2) continue;
+    const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+    const variance = vals.reduce((a, b) => a + (b - mean) ** 2, 0) / vals.length;
+    const sd = Math.sqrt(variance);
+    // scale sd (0..2 range for 1-5 scale) into 0..1
+    const normSd = Math.min(sd / 1.5, 1);
+    cohesionSum += 1 - normSd;
+    cohesionCount++;
+  }
+  const cohesion = cohesionCount ? Math.round((cohesionSum / cohesionCount) * 100) : 0;
+  const diversity = 100 - cohesion;
+
+  const scoreEntries = Object.entries(aggregate.avgScores)
+    .filter(([, v]) => v > 0)
+    .map(([key, avg]) => ({ key, label: DOMAIN_LABEL_HE[key] || key, avg }));
+  const needsFocus = [...scoreEntries].sort((a, b) => a.avg - b.avg).slice(0, 2);
+  const strengthsFocus = [...scoreEntries].sort((a, b) => b.avg - a.avg).slice(0, 2);
+
+  const total = aggregate.studentCount || 1;
+  const riskPercent = Math.round((aggregate.studentsAtRisk.length / total) * 100);
+
+  const { male, female, unspecified } = aggregate.genderBreakdown;
+  const known = male + female;
+  let genderBalance: ClassSnapshot["genderBalance"] = "לא צוין";
+  if (known > 0) {
+    const ratio = male / known;
+    if (ratio >= 0.6) genderBalance = "רוב בנים";
+    else if (ratio <= 0.4) genderBalance = "רוב בנות";
+    else genderBalance = "מאוזן";
+  }
+
+  const ageSpread = Object.keys(aggregate.gradeDistribution).filter((k) => k !== "—").length;
+
+  return { cohesion, diversity, needsFocus, strengthsFocus, riskPercent, genderBalance, ageSpread };
+}

@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { getSessionsDB, getClassGroups, DEFAULT_CLASS_GROUPS, ClassGroupsMap, updateSessionDB } from "@/lib/supabase-storage";
 import { IntakeSession } from "@/lib/types";
-import { aggregateClass, buildStudentProfile } from "@/lib/class-aggregations";
-import { ArrowRight, Loader2, Sparkles, CheckCircle, AlertTriangle, User, Target, GitCompare } from "lucide-react";
+import { aggregateClass, buildStudentProfile, computeClassSnapshot } from "@/lib/class-aggregations";
+import { ArrowRight, Loader2, Sparkles, CheckCircle, AlertTriangle, User, Target, GitCompare, Users, TrendingUp, TrendingDown } from "lucide-react";
 import { getTeacherProfiles, TeacherProfilesMap } from "@/lib/supabase-storage";
 
 interface Suggestion {
@@ -45,7 +45,9 @@ const PlacementEngine = () => {
   const classAggregates = useMemo(() => {
     return Object.entries(classGroups).map(([key, label]) => {
       const classSessions = sessions.filter((s) => s.classGroup === key && s.status !== "archived");
-      return { key, label, aggregate: aggregateClass(key, label, classSessions) };
+      const aggregate = aggregateClass(key, label, classSessions);
+      const snapshot = computeClassSnapshot(aggregate);
+      return { key, label, aggregate, snapshot };
     });
   }, [sessions, classGroups]);
 
@@ -130,7 +132,35 @@ const PlacementEngine = () => {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto p-4 grid md:grid-cols-[320px_1fr] gap-4">
+      <div className="max-w-6xl mx-auto p-4 space-y-4">
+        {/* Class snapshots — always visible */}
+        <div className="intake-card">
+          <h3 className="font-heading font-bold text-sm mb-3 flex items-center gap-2"><Users className="w-4 h-4 text-primary" /> תמונת מצב לכיתות</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {classAggregates.map(({ key, label, aggregate, snapshot }) => (
+              <div key={key} className="rounded-xl border border-border p-3 bg-muted/10">
+                <div className="flex items-center justify-between mb-1.5">
+                  <p className="text-sm font-bold">{label}</p>
+                  <span className="text-[10px] text-muted-foreground">{aggregate.studentCount} תלמידים</span>
+                </div>
+                <div className="flex flex-wrap gap-1 text-[10px] mb-2">
+                  <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary">לכידות {snapshot.cohesion}%</span>
+                  <span className="px-1.5 py-0.5 rounded bg-info/10 text-info">מגוון {snapshot.diversity}%</span>
+                  <span className="px-1.5 py-0.5 rounded bg-muted text-foreground/70">{snapshot.genderBalance}</span>
+                  {snapshot.riskPercent > 0 && <span className="px-1.5 py-0.5 rounded bg-warning/10 text-warning">{snapshot.riskPercent}% בסיכון</span>}
+                </div>
+                {snapshot.strengthsFocus[0] && (
+                  <p className="text-[10.5px] text-success flex items-center gap-1"><TrendingUp className="w-3 h-3" /> חוזק: {snapshot.strengthsFocus[0].label} ({snapshot.strengthsFocus[0].avg.toFixed(1)})</p>
+                )}
+                {snapshot.needsFocus[0] && (
+                  <p className="text-[10.5px] text-warning flex items-center gap-1"><TrendingDown className="w-3 h-3" /> חיזוק: {snapshot.needsFocus[0].label} ({snapshot.needsFocus[0].avg.toFixed(1)})</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+      <div className="grid md:grid-cols-[320px_1fr] gap-4">
         {/* Students list */}
         <div className="intake-card p-3 h-fit">
           {/* Match mode selector */}
@@ -262,6 +292,7 @@ const PlacementEngine = () => {
             </>
           ) : null}
         </div>
+      </div>
       </div>
     </div>
   );
