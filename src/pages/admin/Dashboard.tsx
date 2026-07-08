@@ -490,6 +490,17 @@ const Dashboard = () => {
                         <StatusBadge status={session.status} />
                       </div>
                       <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border/30">
+                        <select
+                          value={session.classGroup || ""}
+                          onChange={(e) => handleAssignClass(session, e.target.value)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-[10px] bg-muted/40 border border-input rounded-md px-1.5 py-1 focus:outline-none focus:ring-1 focus:ring-ring"
+                          title="שיוך לכיתה"
+                        >
+                          <option value="">ללא שיוך</option>
+                          <option value="tali">טלי</option>
+                          <option value="eden">עדן</option>
+                        </select>
                         <button onClick={() => handleCopy(session.parentCode, `mpc-${session.id}`)}
                           className="flex items-center gap-1 text-[10px] font-mono bg-info/5 text-info px-2 py-1 rounded-lg">
                           {copied === `mpc-${session.id}` ? <CheckCircle className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
