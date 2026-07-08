@@ -18,7 +18,7 @@ import { calculateScores, generateRiskFlags, getCompletionPercentage } from "@/l
 import { exportToExcel } from "@/lib/export-utils";
 import { generateStudentPDF } from "@/lib/pdf-export";
 
-type Tab = "all" | "tali" | "eden" | "codes" | "archive";
+type Tab = "all" | "tali" | "eden" | "unassigned" | "codes" | "archive";
 
 const ACADEMIC_YEARS = ['תשפ"ו', 'תשפ"ז', 'תשפ"ח', 'תשפ"ט'];
 
@@ -85,6 +85,7 @@ const Dashboard = () => {
     return sessionsWithMeta.filter((s) => {
       if (tab === "tali" && s.classGroup !== "tali") return false;
       if (tab === "eden" && s.classGroup !== "eden") return false;
+      if (tab === "unassigned" && s.classGroup) return false;
       if (tab === "archive") {
         if (s.status !== "archived") return false;
       } else {
@@ -214,6 +215,7 @@ const Dashboard = () => {
     { key: "all", label: "כל התלמידים", count: sessionsWithMeta.filter((s) => s.status !== "archived").length },
     { key: "tali", label: "הכיתה של טלי", count: sessionsWithMeta.filter((s) => s.classGroup === "tali" && s.status !== "archived").length },
     { key: "eden", label: "הכיתה של עדן", count: sessionsWithMeta.filter((s) => s.classGroup === "eden" && s.status !== "archived").length },
+    { key: "unassigned", label: "ללא שיוך", count: sessionsWithMeta.filter((s) => !s.classGroup && s.status !== "archived").length },
     { key: "archive", label: "ארכיון", count: sessionsWithMeta.filter((s) => s.status === "archived").length },
     { key: "codes", label: "ניהול קודים" },
   ];
