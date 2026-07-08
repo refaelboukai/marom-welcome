@@ -11,6 +11,8 @@ import StaffFlow from "./pages/StaffFlow";
 import Dashboard from "./pages/admin/Dashboard";
 import StudentProfile from "./pages/admin/StudentProfile";
 import NewIntake from "./pages/admin/NewIntake";
+import ClassInsights from "./pages/admin/ClassInsights";
+import PlacementEngine from "./pages/admin/PlacementEngine";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +35,8 @@ const App = () => {
           <Route path="/admin" element={<Dashboard />} />
           <Route path="/admin/student/:sessionId" element={<StudentProfile />} />
           <Route path="/admin/new" element={<NewIntake />} />
+          <Route path="/admin/class/:classKey" element={<ClassInsights />} />
+          <Route path="/admin/placement" element={<PlacementEngine />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
