@@ -127,6 +127,11 @@ const Dashboard = () => {
     await reloadSessions();
   };
 
+  const handleAssignClass = async (session: IntakeSession, classGroup: string) => {
+    await updateSessionDB(session.id, { classGroup: classGroup || null } as any);
+    await reloadSessions();
+  };
+
   const handleExportClass = (classKey: string) => {
     const classSessions = sessions.filter((s) => s.classGroup === classKey);
     const label = classKey === "tali" ? "הכיתה_של_טלי" : "הכיתה_של_עדן";
