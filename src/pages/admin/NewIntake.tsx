@@ -72,7 +72,7 @@ const NewIntake = () => {
   const handleSubmit = async () => {
     if (!form.studentName.trim()) return;
     setLoading(true);
-    const session = await createSessionDB(form);
+    const session = await createSessionDB(form as any);
     setLoading(false);
     if (session) {
       setCreated({ studentCode: session.studentCode, parentCode: session.parentCode });
