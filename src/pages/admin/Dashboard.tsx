@@ -570,8 +570,12 @@ const Dashboard = () => {
                           title="שיוך לכיתה"
                         >
                           <option value="">ללא שיוך</option>
-                          <option value="tali">טלי</option>
-                          <option value="eden">עדן</option>
+                          {Object.entries(classGroups).map(([k, label]) => (
+                            <option key={k} value={k}>{label}</option>
+                          ))}
+                          {session.classGroup && !classGroups[session.classGroup] && (
+                            <option value={session.classGroup}>{session.classGroup}</option>
+                          )}
                         </select>
                         <button onClick={() => handleCopy(session.parentCode, `mpc-${session.id}`)}
                           className="flex items-center gap-1 text-[10px] font-mono bg-info/5 text-info px-2 py-1 rounded-lg">
