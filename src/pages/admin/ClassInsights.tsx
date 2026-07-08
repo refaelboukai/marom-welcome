@@ -242,35 +242,7 @@ const ClassInsights = () => {
               </div>
             </div>
 
-            {/* Common items heatmap-like list */}
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="intake-card">
-                <h3 className="font-heading font-bold mb-3 text-sm flex items-center gap-2"><Star className="w-4 h-4 text-success" /> חוזקות משותפות</h3>
-                {aggregate.commonStrengths.length === 0 ? <p className="text-xs text-muted-foreground">אין נתונים</p> : (
-                  <ul className="space-y-1.5">
-                    {aggregate.commonStrengths.map((it) => (
-                      <li key={it.itemId} className="flex items-start gap-2 text-xs">
-                        <span className="inline-block px-2 py-0.5 rounded-full bg-success/15 text-success font-bold min-w-[2rem] text-center">{it.count}</span>
-                        <span className="flex-1 text-foreground/80">{it.text}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-              <div className="intake-card">
-                <h3 className="font-heading font-bold mb-3 text-sm flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-warning" /> אתגרים משותפים</h3>
-                {aggregate.commonChallenges.length === 0 ? <p className="text-xs text-muted-foreground">אין נתונים</p> : (
-                  <ul className="space-y-1.5">
-                    {aggregate.commonChallenges.map((it) => (
-                      <li key={it.itemId} className="flex items-start gap-2 text-xs">
-                        <span className="inline-block px-2 py-0.5 rounded-full bg-warning/15 text-warning font-bold min-w-[2rem] text-center">{it.count}</span>
-                        <span className="flex-1 text-foreground/80">{it.text}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </div>
+            {/* Raw item lists removed intentionally — themes and categories replace them */}
 
             {/* AI Insights */}
             {error && <div className="intake-card bg-destructive/5 border-destructive/20 text-destructive text-sm">{error}</div>}
