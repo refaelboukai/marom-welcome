@@ -18,7 +18,7 @@ import { calculateScores, generateRiskFlags, getCompletionPercentage } from "@/l
 import { exportToExcel } from "@/lib/export-utils";
 import { generateStudentPDF } from "@/lib/pdf-export";
 
-type Tab = "all" | "tali" | "eden" | "codes" | "archive";
+type Tab = "all" | "tali" | "eden" | "unassigned" | "codes" | "archive";
 
 const ACADEMIC_YEARS = ['תשפ"ו', 'תשפ"ז', 'תשפ"ח', 'תשפ"ט'];
 
@@ -85,6 +85,7 @@ const Dashboard = () => {
     return sessionsWithMeta.filter((s) => {
       if (tab === "tali" && s.classGroup !== "tali") return false;
       if (tab === "eden" && s.classGroup !== "eden") return false;
+      if (tab === "unassigned" && s.classGroup) return false;
       if (tab === "archive") {
         if (s.status !== "archived") return false;
       } else {
@@ -123,6 +124,11 @@ const Dashboard = () => {
     await updateSessionDB(session.id, {
       status: isArchived ? prevStatus : "archived",
     });
+    await reloadSessions();
+  };
+
+  const handleAssignClass = async (session: IntakeSession, classGroup: string) => {
+    await updateSessionDB(session.id, { classGroup: classGroup || null } as any);
     await reloadSessions();
   };
 
@@ -214,6 +220,7 @@ const Dashboard = () => {
     { key: "all", label: "כל התלמידים", count: sessionsWithMeta.filter((s) => s.status !== "archived").length },
     { key: "tali", label: "הכיתה של טלי", count: sessionsWithMeta.filter((s) => s.classGroup === "tali" && s.status !== "archived").length },
     { key: "eden", label: "הכיתה של עדן", count: sessionsWithMeta.filter((s) => s.classGroup === "eden" && s.status !== "archived").length },
+    { key: "unassigned", label: "ללא שיוך", count: sessionsWithMeta.filter((s) => !s.classGroup && s.status !== "archived").length },
     { key: "archive", label: "ארכיון", count: sessionsWithMeta.filter((s) => s.status === "archived").length },
     { key: "codes", label: "ניהול קודים" },
   ];
@@ -401,7 +408,22 @@ const Dashboard = () => {
                         return (
                           <tr key={session.id} className="border-t border-border hover:bg-muted/30 transition-colors">
                             <td className="px-4 py-3 font-medium cursor-pointer hover:text-primary" onClick={() => navigate(`/admin/student/${session.id}`)}>{session.studentName}</td>
-                            <td className="px-4 py-3 text-muted-foreground">{session.grade || "—"}</td>
+                            <td className="px-4 py-3 text-muted-foreground">
+                              <div className="flex flex-col gap-1">
+                                <span>{session.grade || "—"}</span>
+                                <select
+                                  value={session.classGroup || ""}
+                                  onChange={(e) => handleAssignClass(session, e.target.value)}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="text-[11px] bg-muted/40 border border-input rounded-md px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-ring"
+                                  title="שיוך לכיתה"
+                                >
+                                  <option value="">ללא שיוך</option>
+                                  <option value="tali">טלי</option>
+                                  <option value="eden">עדן</option>
+                                </select>
+                              </div>
+                            </td>
                             <td className="px-4 py-3"><StatusBadge status={session.status} /></td>
                             <td className="px-4 py-3 text-center"><span className={`text-xs font-medium ${session.studentCompletion === 100 ? "text-success" : "text-muted-foreground"}`}>{session.studentCompletion}%</span></td>
                             <td className="px-4 py-3 text-center"><span className={`text-xs font-medium ${session.parentCompletion === 100 ? "text-success" : "text-muted-foreground"}`}>{session.parentCompletion}%</span></td>
@@ -468,6 +490,17 @@ const Dashboard = () => {
                         <StatusBadge status={session.status} />
                       </div>
                       <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border/30">
+                        <select
+                          value={session.classGroup || ""}
+                          onChange={(e) => handleAssignClass(session, e.target.value)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-[10px] bg-muted/40 border border-input rounded-md px-1.5 py-1 focus:outline-none focus:ring-1 focus:ring-ring"
+                          title="שיוך לכיתה"
+                        >
+                          <option value="">ללא שיוך</option>
+                          <option value="tali">טלי</option>
+                          <option value="eden">עדן</option>
+                        </select>
                         <button onClick={() => handleCopy(session.parentCode, `mpc-${session.id}`)}
                           className="flex items-center gap-1 text-[10px] font-mono bg-info/5 text-info px-2 py-1 rounded-lg">
                           {copied === `mpc-${session.id}` ? <CheckCircle className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
