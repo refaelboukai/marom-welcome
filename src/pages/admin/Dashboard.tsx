@@ -487,8 +487,12 @@ const Dashboard = () => {
                                   title="שיוך לכיתה"
                                 >
                                   <option value="">ללא שיוך</option>
-                                  <option value="tali">טלי</option>
-                                  <option value="eden">עדן</option>
+                                  {Object.entries(classGroups).map(([k, label]) => (
+                                    <option key={k} value={k}>{label}</option>
+                                  ))}
+                                  {session.classGroup && !classGroups[session.classGroup] && (
+                                    <option value={session.classGroup}>{session.classGroup}</option>
+                                  )}
                                 </select>
                               </div>
                             </td>
