@@ -522,3 +522,40 @@ export async function saveReminderMessage(text: string): Promise<boolean> {
   }
   return true;
 }
+
+// ---------- Custom Class Groups ----------
+
+export type ClassGroupsMap = Record<string, string>; // key -> label
+
+export const DEFAULT_CLASS_GROUPS: ClassGroupsMap = {
+  tali: "הכיתה של טלי",
+  eden: "הכיתה של עדן",
+};
+
+export async function getClassGroups(): Promise<ClassGroupsMap> {
+  const { data, error } = await (supabase as any)
+    .from("school_settings")
+    .select("value")
+    .eq("key", "class_groups")
+    .maybeSingle();
+  if (error || !data) return { ...DEFAULT_CLASS_GROUPS };
+  const value = data.value;
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return { ...DEFAULT_CLASS_GROUPS, ...value };
+  }
+  return { ...DEFAULT_CLASS_GROUPS };
+}
+
+export async function saveClassGroups(groups: ClassGroupsMap): Promise<boolean> {
+  const { error } = await (supabase as any)
+    .from("school_settings")
+    .upsert(
+      { key: "class_groups", value: groups, updated_at: new Date().toISOString() },
+      { onConflict: "key" }
+    );
+  if (error) {
+    console.error("Error saving class groups:", error);
+    return false;
+  }
+  return true;
+}
