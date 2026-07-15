@@ -11,6 +11,7 @@ interface Suggestion {
   recommendedClassKey?: string;
   confidence?: "high" | "medium" | "low";
   rationale?: string;
+  teacherFit?: { teacherName?: string; strengths?: string[]; risks?: string[] };
   alternative?: { classKey: string; whyLess: string };
   flags?: string[];
   error?: string;
@@ -269,6 +270,23 @@ const PlacementEngine = () => {
                   )}
                 </div>
                 {suggestion.rationale && <p className="text-sm text-foreground/85 leading-relaxed whitespace-pre-line">{suggestion.rationale}</p>}
+                {suggestion.teacherFit && (suggestion.teacherFit.strengths?.length || suggestion.teacherFit.risks?.length) ? (
+                  <div className="mt-3 pt-3 border-t border-primary/20 space-y-1.5">
+                    <p className="text-[11px] font-bold text-muted-foreground">התאמה למחנכת {suggestion.teacherFit.teacherName || ""}</p>
+                    {suggestion.teacherFit.strengths && suggestion.teacherFit.strengths.length > 0 && (
+                      <div className="text-xs text-success">
+                        <span className="font-bold">חוזקות חפיפה: </span>
+                        {suggestion.teacherFit.strengths.join(" · ")}
+                      </div>
+                    )}
+                    {suggestion.teacherFit.risks && suggestion.teacherFit.risks.length > 0 && (
+                      <div className="text-xs text-warning">
+                        <span className="font-bold">נקודות חיכוך אפשריות: </span>
+                        {suggestion.teacherFit.risks.join(" · ")}
+                      </div>
+                    )}
+                  </div>
+                ) : null}
                 <button onClick={confirmAssign}
                   disabled={!suggestion.recommendedClassKey}
                   className="btn-intake bg-primary text-primary-foreground text-sm mt-4 gap-1 disabled:opacity-50">
