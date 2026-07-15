@@ -68,6 +68,8 @@ const PlacementEngine = () => {
         key: c.key,
         label: c.label,
         teacher: teachers[c.key]?.name || undefined,
+        teacherBio: teachers[c.key]?.bio || undefined,
+        teacherNotes: teachers[c.key]?.notes || undefined,
         studentCount: c.aggregate.studentCount,
         genderBreakdown: c.aggregate.genderBreakdown,
         gradeDistribution: c.aggregate.gradeDistribution,
