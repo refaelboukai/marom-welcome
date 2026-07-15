@@ -13,6 +13,7 @@ import StudentProfile from "./pages/admin/StudentProfile";
 import NewIntake from "./pages/admin/NewIntake";
 import ClassInsights from "./pages/admin/ClassInsights";
 import PlacementEngine from "./pages/admin/PlacementEngine";
+import TeacherProfiles from "./pages/admin/TeacherProfiles";
 import ClassVisual from "./pages/admin/ClassVisual";
 import NotFound from "./pages/NotFound";
 
@@ -39,6 +40,7 @@ const App = () => {
           <Route path="/admin/class/:classKey" element={<ClassInsights />} />
           <Route path="/admin/class/:classKey/visual" element={<ClassVisual />} />
           <Route path="/admin/placement" element={<PlacementEngine />} />
+          <Route path="/admin/teachers" element={<TeacherProfiles />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
