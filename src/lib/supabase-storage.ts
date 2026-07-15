@@ -533,6 +533,8 @@ export type ClassGroupsMap = Record<string, string>; // key -> label
 export const DEFAULT_CLASS_GROUPS: ClassGroupsMap = {
   tali: "הכיתה של טלי",
   eden: "הכיתה של עדן",
+  chava: "הכיתה של חווה",
+  ilana: "הכיתה של אילנה",
 };
 
 export async function getClassGroups(): Promise<ClassGroupsMap> {
@@ -569,6 +571,7 @@ export interface TeacherProfile {
   name: string;
   photoDataUrl?: string;
   notes?: string;
+  bio?: string;
 }
 
 export type TeacherProfilesMap = Record<string, TeacherProfile>; // classKey -> profile
