@@ -13,7 +13,7 @@ import PhonesImportDialog from "@/components/PhonesImportDialog";
 import { openWhatsApp, normalizePhone, REMINDER_MESSAGE } from "@/lib/whatsapp";
 
 import logo from "@/assets/logo.jpeg";
-import { Plus, Users, AlertTriangle, CheckCircle, Clock, Search, LogOut, XCircle, Loader2, Download, Key, FileText, Copy, ClipboardList, Trash2, ShieldAlert, Calendar, ArrowLeftRight, BookOpen, MessageCircle, Bell, FileSpreadsheet, Send, Archive, ArchiveRestore, Sparkles, BarChart3 } from "lucide-react";
+import { Plus, Users, User, AlertTriangle, CheckCircle, Clock, Search, LogOut, XCircle, Loader2, Download, Key, FileText, Copy, ClipboardList, Trash2, ShieldAlert, Calendar, ArrowLeftRight, BookOpen, MessageCircle, Bell, FileSpreadsheet, Send, Archive, ArchiveRestore, Sparkles, BarChart3 } from "lucide-react";
 import { calculateScores, generateRiskFlags, getCompletionPercentage } from "@/lib/scoring";
 import { exportToExcel } from "@/lib/export-utils";
 import { generateStudentPDF } from "@/lib/pdf-export";
