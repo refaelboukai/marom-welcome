@@ -50,14 +50,6 @@ const StudentProfile = () => {
   const [archiving, setArchiving] = useState(false);
   const [showResponses, setShowResponses] = useState(false);
 
-  // Narrative summary (verbal profile document)
-  const [narrative, setNarrative] = useState("");
-  const [narrativeSaved, setNarrativeSaved] = useState(false);
-  const [narrativeSaving, setNarrativeSaving] = useState(false);
-  const [narrativeUploading, setNarrativeUploading] = useState(false);
-  const [narrativeError, setNarrativeError] = useState("");
-  const narrativeFileRef = useRef<HTMLInputElement>(null);
-
   // Reset questionnaires dialog
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [resetTargets, setResetTargets] = useState<{ student: boolean; parent: boolean; staff: boolean }>({ student: false, parent: false, staff: false });
@@ -184,7 +176,6 @@ const StudentProfile = () => {
     if (!s) { navigate("/admin"); return; }
     setSession(s);
     setNotes(s.adminNotes || "");
-    setNarrative((s as any).narrativeSummary || "");
 
     const [consentResult, roundsData] = await Promise.all([
       (supabase as any).from("intake_sessions").select("consent_signature").eq("id", sessionId).maybeSingle(),
@@ -359,59 +350,6 @@ const StudentProfile = () => {
     setTimeout(() => setNotesSaved(false), 2000);
   };
 
-  const handleSaveNarrative = async () => {
-    if (!session) return;
-    setNarrativeSaving(true);
-    await updateSessionDB(session.id, { narrativeSummary: narrative } as any);
-    setSession((prev) => prev ? { ...prev, narrativeSummary: narrative } as any : null);
-    setNarrativeSaving(false);
-    setNarrativeSaved(true);
-    setTimeout(() => setNarrativeSaved(false), 2000);
-  };
-
-  const handleNarrativeFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setNarrativeError("");
-    if (file.size > 15 * 1024 * 1024) {
-      setNarrativeError("קובץ גדול מ-15MB");
-      e.target.value = "";
-      return;
-    }
-    setNarrativeUploading(true);
-    try {
-      // Read as base64
-      const base64: string = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const result = reader.result as string;
-          resolve(result.split(",")[1] || "");
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-
-      // Short-circuit for .txt files
-      if (file.type.startsWith("text/") || /\.txt$/i.test(file.name)) {
-        const txt = await file.text();
-        setNarrative((prev) => (prev ? prev + "\n\n" : "") + txt);
-      } else {
-        const { data, error } = await supabase.functions.invoke("extract-document-text", {
-          body: { filename: file.name, mimeType: file.type || "application/octet-stream", base64 },
-        });
-        if (error) throw error;
-        if ((data as any)?.error) throw new Error((data as any).error);
-        const extracted = (data as any)?.text || "";
-        if (!extracted) throw new Error("לא ניתן לחלץ טקסט מהקובץ");
-        setNarrative((prev) => (prev ? prev + "\n\n" : "") + extracted);
-      }
-    } catch (err: any) {
-      setNarrativeError(err?.message || "שגיאה בטעינת הקובץ");
-    } finally {
-      setNarrativeUploading(false);
-      if (narrativeFileRef.current) narrativeFileRef.current.value = "";
-    }
-  };
 
   const handleCloseIntake = async () => {
     await updateSessionDB(session.id, { status: "completed", closedAt: new Date().toISOString() });
