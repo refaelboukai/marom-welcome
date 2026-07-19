@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getSessionsDB, getClassGroups, DEFAULT_CLASS_GROUPS, ClassGroupsMap, updateSessionDB } from "@/lib/supabase-storage";
 import { IntakeSession } from "@/lib/types";
 import { aggregateClass, buildStudentProfile, computeClassSnapshot } from "@/lib/class-aggregations";
-import { ArrowRight, Loader2, Sparkles, CheckCircle, AlertTriangle, User, Target, GitCompare, Users, TrendingUp, TrendingDown, FileText, Upload } from "lucide-react";
+import { ArrowRight, Loader2, Sparkles, CheckCircle, AlertTriangle, User, Target, GitCompare, Users, TrendingUp, TrendingDown, FileText, Upload, FileUp, X } from "lucide-react";
 import { getTeacherProfiles, TeacherProfilesMap } from "@/lib/supabase-storage";
 
 interface Suggestion {
@@ -39,6 +39,14 @@ const PlacementEngine = () => {
   const [narrativeUploading, setNarrativeUploading] = useState(false);
   const [narrativeError, setNarrativeError] = useState("");
   const narrativeFileRef = useRef<HTMLInputElement>(null);
+
+  // Bulk narrative upload (one file → many students)
+  const bulkFileRef = useRef<HTMLInputElement>(null);
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const [bulkError, setBulkError] = useState("");
+  const [bulkResults, setBulkResults] = useState<Array<{ studentId: string; studentName: string; found: boolean; summary: string; selected: boolean }> | null>(null);
+  const [bulkSaving, setBulkSaving] = useState(false);
+  const [bulkSavedCount, setBulkSavedCount] = useState(0);
 
   useEffect(() => {
     Promise.all([getSessionsDB(), getClassGroups(), getTeacherProfiles()]).then(([s, g, t]) => {
@@ -159,6 +167,77 @@ const PlacementEngine = () => {
     }
   };
 
+  const handleBulkFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setBulkError("");
+    setBulkResults(null);
+    setBulkSavedCount(0);
+    if (file.size > 20 * 1024 * 1024) {
+      setBulkError("קובץ גדול מ-20MB");
+      e.target.value = "";
+      return;
+    }
+    setBulkLoading(true);
+    try {
+      // 1) Extract text from file
+      let extracted = "";
+      if (file.type.startsWith("text/") || /\.txt$/i.test(file.name) || /\.csv$/i.test(file.name)) {
+        extracted = await file.text();
+      } else {
+        const base64: string = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(((reader.result as string) || "").split(",")[1] || "");
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        const { data, error } = await supabase.functions.invoke("extract-document-text", {
+          body: { filename: file.name, mimeType: file.type || "application/octet-stream", base64 },
+        });
+        if (error) throw error;
+        if ((data as any)?.error) throw new Error((data as any).error);
+        extracted = (data as any)?.text || "";
+      }
+      if (!extracted.trim()) throw new Error("לא ניתן לחלץ טקסט מהקובץ");
+
+      // 2) Split by student
+      const studentList = sessions
+        .filter((s) => s.status !== "archived")
+        .map((s) => ({ id: s.id, name: s.studentName }));
+      const { data: splitData, error: splitErr } = await supabase.functions.invoke("split-narratives", {
+        body: { text: extracted, students: studentList },
+      });
+      if (splitErr) throw splitErr;
+      if ((splitData as any)?.error) throw new Error((splitData as any).error);
+      const results = (((splitData as any)?.results) || []) as Array<{ studentId: string; studentName: string; found: boolean; summary: string }>;
+      setBulkResults(results.map((r) => ({ ...r, selected: !!r.found && !!r.summary?.trim() })));
+    } catch (err: any) {
+      setBulkError(err?.message || "שגיאה בעיבוד הקובץ");
+    } finally {
+      setBulkLoading(false);
+      if (bulkFileRef.current) bulkFileRef.current.value = "";
+    }
+  };
+
+  const applyBulk = async () => {
+    if (!bulkResults) return;
+    setBulkSaving(true);
+    let count = 0;
+    for (const r of bulkResults) {
+      if (!r.selected || !r.summary?.trim()) continue;
+      try {
+        await updateSessionDB(r.studentId, { narrativeSummary: r.summary } as any);
+        count++;
+      } catch (e) {
+        console.error("bulk save error", r.studentId, e);
+      }
+    }
+    const fresh = await getSessionsDB();
+    setSessions(fresh);
+    setBulkSavedCount(count);
+    setBulkSaving(false);
+  };
+
   const canRun = mode === "all" || (mode === "single" && !!targetClass) || (mode === "compare" && compareClasses.length === 2);
 
   const toggleCompare = (key: string) => {
@@ -198,6 +277,103 @@ const PlacementEngine = () => {
       </div>
 
       <div className="max-w-6xl mx-auto p-4 space-y-4">
+        {/* Bulk narrative upload */}
+        <div className="intake-card border-primary/20">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <h3 className="font-heading font-bold text-sm flex items-center gap-2">
+              <FileUp className="w-4 h-4 text-primary" />
+              העלאת קובץ סיכומים לכל התלמידים
+            </h3>
+            {bulkResults && (
+              <button onClick={() => { setBulkResults(null); setBulkSavedCount(0); setBulkError(""); }} className="text-[11px] text-muted-foreground hover:text-destructive flex items-center gap-1">
+                <X className="w-3 h-3" /> נקה
+              </button>
+            )}
+          </div>
+          <p className="text-[11px] text-muted-foreground mb-2">
+            העלה קובץ אחד (PDF / Word / TXT) שמכיל תיאורים על תלמידים לפי שם. המערכת תזהה את כל התלמידים ותשמור לכל אחד את הסיכום שלו.
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              ref={bulkFileRef}
+              type="file"
+              accept=".pdf,.doc,.docx,.txt,.csv,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/csv"
+              onChange={handleBulkFile}
+              className="hidden"
+            />
+            <button
+              onClick={() => bulkFileRef.current?.click()}
+              disabled={bulkLoading || bulkSaving}
+              className="btn-intake bg-primary text-primary-foreground text-xs flex items-center gap-1.5 disabled:opacity-50"
+            >
+              {bulkLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+              {bulkLoading ? "מעבד קובץ..." : "בחירת קובץ"}
+            </button>
+            {bulkResults && (
+              <span className="text-[11px] text-muted-foreground">
+                זוהו {bulkResults.filter((r) => r.found && r.summary?.trim()).length} מתוך {bulkResults.length} תלמידים
+              </span>
+            )}
+          </div>
+          {bulkError && <div className="text-[11px] text-destructive mt-2">{bulkError}</div>}
+
+          {bulkResults && (
+            <div className="mt-3 space-y-2">
+              <div className="max-h-80 overflow-y-auto space-y-2 pr-1">
+                {bulkResults.map((r, i) => (
+                  <div key={r.studentId} className={`rounded-xl border p-2.5 ${r.found && r.summary?.trim() ? "border-success/30 bg-success/5" : "border-border bg-muted/20 opacity-70"}`}>
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={r.selected}
+                          disabled={!r.found || !r.summary?.trim()}
+                          onChange={(e) => {
+                            const v = e.target.checked;
+                            setBulkResults((prev) => prev ? prev.map((x, j) => j === i ? { ...x, selected: v } : x) : prev);
+                          }}
+                          className="accent-primary"
+                        />
+                        <span className="text-sm font-medium">{r.studentName}</span>
+                      </label>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded ${r.found && r.summary?.trim() ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}>
+                        {r.found && r.summary?.trim() ? "זוהה" : "לא נמצא"}
+                      </span>
+                    </div>
+                    {r.summary?.trim() && (
+                      <textarea
+                        value={r.summary}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setBulkResults((prev) => prev ? prev.map((x, j) => j === i ? { ...x, summary: v } : x) : prev);
+                        }}
+                        rows={3}
+                        dir="rtl"
+                        className="w-full bg-background border border-input rounded-lg p-2 text-xs resize-y"
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center gap-2 pt-2 border-t border-border">
+                <button
+                  onClick={applyBulk}
+                  disabled={bulkSaving || !bulkResults.some((r) => r.selected && r.summary?.trim())}
+                  className="btn-intake bg-primary text-primary-foreground text-xs flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  {bulkSaving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  שמור סיכומים לתלמידים המסומנים
+                </button>
+                {bulkSavedCount > 0 && (
+                  <span className="text-[11px] text-success flex items-center gap-1">
+                    <CheckCircle className="w-3 h-3" /> נשמרו {bulkSavedCount} סיכומים
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Class snapshots — always visible */}
         <div className="intake-card">
           <h3 className="font-heading font-bold text-sm mb-3 flex items-center gap-2"><Users className="w-4 h-4 text-primary" /> תמונת מצב לכיתות</h3>
