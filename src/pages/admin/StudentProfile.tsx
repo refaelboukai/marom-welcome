@@ -7,7 +7,7 @@ import { IntakeSession, SECTION_LABELS, OPEN_QUESTION_LABELS, QOL_SUBDOMAIN_LABE
 import { calculateScores, calculateQoLSubdomains, calculateLearningSubdomains, generateRiskFlags, generateInsights, generateGASGoals, getScoreLabel, getScoreColor, getTopFocusAreas } from "@/lib/scoring";
 import { DOMAIN_DESCRIPTIONS, QOL_SUBDOMAIN_DESCRIPTIONS, LC_SUBDOMAIN_DESCRIPTIONS, getScoreInterpretation } from "@/lib/domain-descriptions";
 import StatusBadge from "@/components/StatusBadge";
-import { ArrowRight, AlertTriangle, Copy, CheckCircle, Lock, Unlock, FileText, Target, Lightbulb, TrendingUp, Users, Printer, MessageSquare, BarChart3, Shield, Loader2, RefreshCw, Download, PenLine, ScrollText, ClipboardList, Heart, Info, FileBarChart, Brain, Trash2, Archive, Eye } from "lucide-react";
+import { ArrowRight, AlertTriangle, Copy, CheckCircle, Lock, Unlock, FileText, Target, Lightbulb, TrendingUp, Users, Printer, MessageSquare, BarChart3, Shield, Loader2, RefreshCw, Download, PenLine, ScrollText, ClipboardList, Heart, Info, FileBarChart, Brain, Trash2, Archive, Eye, RotateCcw } from "lucide-react";
 import { generateSemesterSummary, SEMESTER_LABELS, type SemesterType } from "@/lib/summary-generator";
 import SupportPlans from "@/components/SupportPlans";
 import AIRecommendations from "@/components/AIRecommendations";
@@ -49,6 +49,60 @@ const StudentProfile = () => {
   const [deleting, setDeleting] = useState(false);
   const [archiving, setArchiving] = useState(false);
   const [showResponses, setShowResponses] = useState(false);
+
+  // Reset questionnaires dialog
+  const [showResetDialog, setShowResetDialog] = useState(false);
+  const [resetTargets, setResetTargets] = useState<{ student: boolean; parent: boolean; staff: boolean }>({ student: false, parent: false, staff: false });
+  const [resetPassword, setResetPassword] = useState("");
+  const [resetError, setResetError] = useState("");
+  const [resetting, setResetting] = useState(false);
+  const [resetDone, setResetDone] = useState(false);
+
+  const handleResetQuestionnaires = async () => {
+    if (!session) return;
+    if (resetPassword !== ADMIN_CODE) { setResetError("סיסמת מנהל שגויה"); return; }
+    if (!resetTargets.student && !resetTargets.parent && !resetTargets.staff) {
+      setResetError("יש לבחור לפחות שאלון אחד לאיפוס");
+      return;
+    }
+    setResetting(true);
+    const patch: Partial<IntakeSession> = {};
+    if (resetTargets.student) {
+      patch.studentResponses = {};
+      patch.studentOpenResponses = {};
+    }
+    if (resetTargets.parent) {
+      patch.parentResponses = {};
+      patch.parentOpenResponse = "";
+    }
+    if (resetTargets.staff) {
+      patch.staffResponses = {};
+      patch.staffOpenResponses = {};
+    }
+    // Recompute status conservatively
+    const nextStudent = resetTargets.student ? {} : session.studentResponses || {};
+    const nextParent = resetTargets.parent ? {} : session.parentResponses || {};
+    const studentDone = Object.keys(nextStudent).length > 0;
+    const parentDone = Object.keys(nextParent).length > 0;
+    let nextStatus: IntakeSession["status"] = "not_started";
+    if (studentDone && parentDone) nextStatus = "parent_completed";
+    else if (studentDone) nextStatus = "student_completed";
+    else if (parentDone) nextStatus = "parent_started";
+    if (session.status !== "archived") patch.status = nextStatus;
+
+    const updated = await updateSessionDB(session.id, patch);
+    setResetting(false);
+    if (updated) {
+      setSession(updated);
+      setResetDone(true);
+      setTimeout(() => {
+        setShowResetDialog(false);
+        setResetDone(false);
+        setResetPassword("");
+        setResetTargets({ student: false, parent: false, staff: false });
+      }, 900);
+    }
+  };
 
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState({
