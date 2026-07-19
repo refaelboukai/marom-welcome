@@ -16,6 +16,7 @@ export interface StudentProfileForAI {
   topStrengths: string[]; // items scored high (>=4)
   topChallenges: string[]; // items scored low (<=2)
   openResponses: Record<string, string>;
+  narrativeSummary?: string;
 }
 
 export interface ClassAggregate {
@@ -86,6 +87,7 @@ export function buildStudentProfile(s: IntakeSession): StudentProfileForAI {
     topStrengths: strong.slice(0, 6).map((x) => x.text),
     topChallenges: weak.slice(0, 6).map((x) => x.text),
     openResponses: s.studentOpenResponses || {},
+    narrativeSummary: (s as any).narrativeSummary || "",
   };
 }
 

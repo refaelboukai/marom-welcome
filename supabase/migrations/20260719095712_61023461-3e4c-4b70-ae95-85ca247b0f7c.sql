@@ -1,0 +1,1 @@
+ALTER TABLE public.intake_sessions ADD COLUMN IF NOT EXISTS narrative_summary TEXT;
