@@ -7,7 +7,7 @@ import { IntakeSession, SECTION_LABELS, OPEN_QUESTION_LABELS, QOL_SUBDOMAIN_LABE
 import { calculateScores, calculateQoLSubdomains, calculateLearningSubdomains, generateRiskFlags, generateInsights, generateGASGoals, getScoreLabel, getScoreColor, getTopFocusAreas } from "@/lib/scoring";
 import { DOMAIN_DESCRIPTIONS, QOL_SUBDOMAIN_DESCRIPTIONS, LC_SUBDOMAIN_DESCRIPTIONS, getScoreInterpretation } from "@/lib/domain-descriptions";
 import StatusBadge from "@/components/StatusBadge";
-import { ArrowRight, AlertTriangle, Copy, CheckCircle, Lock, Unlock, FileText, Target, Lightbulb, TrendingUp, Users, Printer, MessageSquare, BarChart3, Shield, Loader2, RefreshCw, Download, PenLine, ScrollText, ClipboardList, Heart, Info, FileBarChart, Brain, Trash2, Archive, Eye } from "lucide-react";
+import { ArrowRight, AlertTriangle, Copy, CheckCircle, Lock, Unlock, FileText, Target, Lightbulb, TrendingUp, Users, Printer, MessageSquare, BarChart3, Shield, Loader2, RefreshCw, Download, PenLine, ScrollText, ClipboardList, Heart, Info, FileBarChart, Brain, Trash2, Archive, Eye, RotateCcw } from "lucide-react";
 import { generateSemesterSummary, SEMESTER_LABELS, type SemesterType } from "@/lib/summary-generator";
 import SupportPlans from "@/components/SupportPlans";
 import AIRecommendations from "@/components/AIRecommendations";
@@ -49,6 +49,60 @@ const StudentProfile = () => {
   const [deleting, setDeleting] = useState(false);
   const [archiving, setArchiving] = useState(false);
   const [showResponses, setShowResponses] = useState(false);
+
+  // Reset questionnaires dialog
+  const [showResetDialog, setShowResetDialog] = useState(false);
+  const [resetTargets, setResetTargets] = useState<{ student: boolean; parent: boolean; staff: boolean }>({ student: false, parent: false, staff: false });
+  const [resetPassword, setResetPassword] = useState("");
+  const [resetError, setResetError] = useState("");
+  const [resetting, setResetting] = useState(false);
+  const [resetDone, setResetDone] = useState(false);
+
+  const handleResetQuestionnaires = async () => {
+    if (!session) return;
+    if (resetPassword !== ADMIN_CODE) { setResetError("סיסמת מנהל שגויה"); return; }
+    if (!resetTargets.student && !resetTargets.parent && !resetTargets.staff) {
+      setResetError("יש לבחור לפחות שאלון אחד לאיפוס");
+      return;
+    }
+    setResetting(true);
+    const patch: Partial<IntakeSession> = {};
+    if (resetTargets.student) {
+      patch.studentResponses = {};
+      patch.studentOpenResponses = {};
+    }
+    if (resetTargets.parent) {
+      patch.parentResponses = {};
+      patch.parentOpenResponse = "";
+    }
+    if (resetTargets.staff) {
+      patch.staffResponses = {};
+      patch.staffOpenResponses = {};
+    }
+    // Recompute status conservatively
+    const nextStudent = resetTargets.student ? {} : session.studentResponses || {};
+    const nextParent = resetTargets.parent ? {} : session.parentResponses || {};
+    const studentDone = Object.keys(nextStudent).length > 0;
+    const parentDone = Object.keys(nextParent).length > 0;
+    let nextStatus: IntakeSession["status"] = "not_started";
+    if (studentDone && parentDone) nextStatus = "parent_completed";
+    else if (studentDone) nextStatus = "student_completed";
+    else if (parentDone) nextStatus = "parent_started";
+    if (session.status !== "archived") patch.status = nextStatus;
+
+    const updated = await updateSessionDB(session.id, patch);
+    setResetting(false);
+    if (updated) {
+      setSession(updated);
+      setResetDone(true);
+      setTimeout(() => {
+        setShowResetDialog(false);
+        setResetDone(false);
+        setResetPassword("");
+        setResetTargets({ student: false, parent: false, staff: false });
+      }, 900);
+    }
+  };
 
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -1294,6 +1348,13 @@ const StudentProfile = () => {
           </p>
           <div className="flex flex-wrap gap-2">
             <button
+              onClick={() => { setShowResetDialog(true); setResetPassword(""); setResetError(""); setResetTargets({ student: false, parent: false, staff: false }); }}
+              className="btn-intake bg-amber-100 text-amber-900 text-sm flex items-center gap-2 hover:bg-amber-200"
+            >
+              <RotateCcw className="w-4 h-4" />
+              איפוס שאלונים
+            </button>
+            <button
               onClick={handleArchive}
               disabled={archiving}
               className="btn-intake bg-muted text-foreground text-sm flex items-center gap-2 hover:bg-muted/70 disabled:opacity-50"
@@ -1310,6 +1371,59 @@ const StudentProfile = () => {
             </button>
           </div>
         </div>
+
+        {showResetDialog && (
+          <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => !resetting && setShowResetDialog(false)}>
+            <div className="bg-card rounded-2xl p-6 max-w-sm w-full shadow-xl" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center gap-2 mb-3 text-amber-700">
+                <RotateCcw className="w-5 h-5" />
+                <h3 className="font-heading font-bold text-lg">איפוס שאלונים</h3>
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">
+                הפעולה תמחק את התשובות של השאלונים שנבחרו עבור <strong className="text-foreground">{session.studentName}</strong>. פעולה זו אינה הפיכה.
+              </p>
+              <div className="space-y-2 mb-3">
+                {[
+                  { key: "student" as const, label: "שאלון תלמיד/ה", count: Object.keys(session.studentResponses || {}).length },
+                  { key: "parent" as const, label: "שאלון הורה", count: Object.keys(session.parentResponses || {}).length },
+                  { key: "staff" as const, label: "הערכת צוות", count: Object.keys(session.staffResponses || {}).length },
+                ].map((opt) => (
+                  <label key={opt.key} className="flex items-center gap-2 p-2 rounded-lg border border-input hover:bg-muted/40 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={resetTargets[opt.key]}
+                      onChange={(e) => { setResetTargets((prev) => ({ ...prev, [opt.key]: e.target.checked })); setResetError(""); }}
+                    />
+                    <span className="text-sm flex-1">{opt.label}</span>
+                    <span className="text-xs text-muted-foreground">{opt.count} תשובות</span>
+                  </label>
+                ))}
+              </div>
+              <label className="block text-xs font-medium mb-1">סיסמת מנהל</label>
+              <input
+                type="password"
+                value={resetPassword}
+                onChange={(e) => { setResetPassword(e.target.value); setResetError(""); }}
+                className="w-full p-2 rounded-lg border border-input bg-background text-sm mb-2"
+                placeholder="הזן 9020"
+              />
+              {resetError && <p className="text-xs text-destructive mb-2">{resetError}</p>}
+              {resetDone && <p className="text-xs text-success mb-2">האיפוס בוצע ✓</p>}
+              <div className="flex gap-2 mt-3">
+                <button
+                  onClick={handleResetQuestionnaires}
+                  disabled={resetting || !resetPassword}
+                  className="btn-intake bg-amber-600 text-white text-sm flex-1 disabled:opacity-50"
+                >
+                  {resetting ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "אפס שאלונים"}
+                </button>
+                <button onClick={() => setShowResetDialog(false)} disabled={resetting} className="btn-intake bg-muted text-muted-foreground text-sm">
+                  ביטול
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {showDeleteDialog && (
           <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => !deleting && setShowDeleteDialog(false)}>
