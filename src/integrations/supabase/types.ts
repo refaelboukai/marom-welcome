@@ -139,6 +139,7 @@ export type Database = {
           grade: string | null
           id: string
           intake_date: string
+          narrative_summary: string | null
           notes: string | null
           parent_code: string
           parent_code_active: boolean
@@ -176,6 +177,7 @@ export type Database = {
           grade?: string | null
           id?: string
           intake_date?: string
+          narrative_summary?: string | null
           notes?: string | null
           parent_code: string
           parent_code_active?: boolean
@@ -213,6 +215,7 @@ export type Database = {
           grade?: string | null
           id?: string
           intake_date?: string
+          narrative_summary?: string | null
           notes?: string | null
           parent_code?: string
           parent_code_active?: boolean
