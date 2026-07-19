@@ -50,6 +50,14 @@ const StudentProfile = () => {
   const [archiving, setArchiving] = useState(false);
   const [showResponses, setShowResponses] = useState(false);
 
+  // Narrative summary (verbal profile document)
+  const [narrative, setNarrative] = useState("");
+  const [narrativeSaved, setNarrativeSaved] = useState(false);
+  const [narrativeSaving, setNarrativeSaving] = useState(false);
+  const [narrativeUploading, setNarrativeUploading] = useState(false);
+  const [narrativeError, setNarrativeError] = useState("");
+  const narrativeFileRef = useRef<HTMLInputElement>(null);
+
   // Reset questionnaires dialog
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [resetTargets, setResetTargets] = useState<{ student: boolean; parent: boolean; staff: boolean }>({ student: false, parent: false, staff: false });
@@ -176,6 +184,7 @@ const StudentProfile = () => {
     if (!s) { navigate("/admin"); return; }
     setSession(s);
     setNotes(s.adminNotes || "");
+    setNarrative((s as any).narrativeSummary || "");
 
     const [consentResult, roundsData] = await Promise.all([
       (supabase as any).from("intake_sessions").select("consent_signature").eq("id", sessionId).maybeSingle(),
