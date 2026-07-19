@@ -359,6 +359,60 @@ const StudentProfile = () => {
     setTimeout(() => setNotesSaved(false), 2000);
   };
 
+  const handleSaveNarrative = async () => {
+    if (!session) return;
+    setNarrativeSaving(true);
+    await updateSessionDB(session.id, { narrativeSummary: narrative } as any);
+    setSession((prev) => prev ? { ...prev, narrativeSummary: narrative } as any : null);
+    setNarrativeSaving(false);
+    setNarrativeSaved(true);
+    setTimeout(() => setNarrativeSaved(false), 2000);
+  };
+
+  const handleNarrativeFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setNarrativeError("");
+    if (file.size > 15 * 1024 * 1024) {
+      setNarrativeError("קובץ גדול מ-15MB");
+      e.target.value = "";
+      return;
+    }
+    setNarrativeUploading(true);
+    try {
+      // Read as base64
+      const base64: string = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result as string;
+          resolve(result.split(",")[1] || "");
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      // Short-circuit for .txt files
+      if (file.type.startsWith("text/") || /\.txt$/i.test(file.name)) {
+        const txt = await file.text();
+        setNarrative((prev) => (prev ? prev + "\n\n" : "") + txt);
+      } else {
+        const { data, error } = await supabase.functions.invoke("extract-document-text", {
+          body: { filename: file.name, mimeType: file.type || "application/octet-stream", base64 },
+        });
+        if (error) throw error;
+        if ((data as any)?.error) throw new Error((data as any).error);
+        const extracted = (data as any)?.text || "";
+        if (!extracted) throw new Error("לא ניתן לחלץ טקסט מהקובץ");
+        setNarrative((prev) => (prev ? prev + "\n\n" : "") + extracted);
+      }
+    } catch (err: any) {
+      setNarrativeError(err?.message || "שגיאה בטעינת הקובץ");
+    } finally {
+      setNarrativeUploading(false);
+      if (narrativeFileRef.current) narrativeFileRef.current.value = "";
+    }
+  };
+
   const handleCloseIntake = async () => {
     await updateSessionDB(session.id, { status: "completed", closedAt: new Date().toISOString() });
     setSession((prev) => prev ? { ...prev, status: "completed", closedAt: new Date().toISOString() } : null);
@@ -1115,6 +1169,67 @@ const StudentProfile = () => {
           <div className="flex items-center gap-2 mt-2">
             <button onClick={handleSaveNotes} className="btn-intake bg-secondary text-secondary-foreground text-sm">שמור הערות</button>
             {notesSaved && <span className="text-xs text-success flex items-center gap-1 animate-fade-in"><CheckCircle className="w-3 h-3" /> נשמר</span>}
+          </div>
+        </div>
+
+        {/* Narrative Summary — verbal profile document */}
+        <div className="intake-card print:hidden border-primary/20">
+          <h3 className="font-heading font-semibold mb-2 flex items-center gap-2">
+            <FileText className="w-5 h-5 text-primary" />
+            סיכום מילולי על התלמיד/ה
+          </h3>
+          <p className="text-xs text-muted-foreground mb-3">
+            טקסט חופשי או קובץ (PDF / Word / טקסט) עם רקע, אבחונים, המלצות ומידע איכותני. משמש כמקור מידע ראשי במנוע השיבוץ.
+          </p>
+          <div className="flex flex-wrap items-center gap-2 mb-3">
+            <input
+              ref={narrativeFileRef}
+              type="file"
+              accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+              onChange={handleNarrativeFile}
+              className="hidden"
+            />
+            <button
+              onClick={() => narrativeFileRef.current?.click()}
+              disabled={narrativeUploading}
+              className="btn-intake bg-primary/10 text-primary text-sm flex items-center gap-2 hover:bg-primary/20 border border-primary/20"
+            >
+              {narrativeUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+              {narrativeUploading ? "מחלץ טקסט מהקובץ..." : "העלאת קובץ (PDF / Word / טקסט)"}
+            </button>
+            {narrative && (
+              <button
+                onClick={() => { setNarrative(""); setNarrativeSaved(false); }}
+                className="text-xs text-muted-foreground hover:text-destructive"
+              >
+                נקה טקסט
+              </button>
+            )}
+          </div>
+          {narrativeError && (
+            <div className="text-xs text-destructive mb-2">{narrativeError}</div>
+          )}
+          <textarea
+            className="w-full bg-background border border-input rounded-xl p-3 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-ring"
+            rows={8}
+            value={narrative}
+            onChange={(e) => { setNarrative(e.target.value); setNarrativeSaved(false); }}
+            placeholder="הדבק/י כאן טקסט או העלה/י קובץ עם סיכום מילולי על התלמיד..."
+            dir="rtl"
+          />
+          <div className="flex items-center gap-2 mt-2">
+            <button
+              onClick={handleSaveNarrative}
+              disabled={narrativeSaving}
+              className="btn-intake bg-primary text-primary-foreground text-sm flex items-center gap-2"
+            >
+              {narrativeSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+              שמור סיכום מילולי
+            </button>
+            {narrativeSaved && <span className="text-xs text-success flex items-center gap-1 animate-fade-in"><CheckCircle className="w-3 h-3" /> נשמר</span>}
+            <span className="text-xs text-muted-foreground mr-auto">
+              {narrative.length.toLocaleString()} תווים
+            </span>
           </div>
         </div>
 
