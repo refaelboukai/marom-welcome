@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { getSessionsDB, getClassGroups, DEFAULT_CLASS_GROUPS, ClassGroupsMap, updateSessionDB } from "@/lib/supabase-storage";
 import { IntakeSession } from "@/lib/types";
 import { aggregateClass, buildStudentProfile, computeClassSnapshot } from "@/lib/class-aggregations";
-import { ArrowRight, Loader2, Sparkles, CheckCircle, AlertTriangle, User, Target, GitCompare, Users, TrendingUp, TrendingDown } from "lucide-react";
+import { ArrowRight, Loader2, Sparkles, CheckCircle, AlertTriangle, User, Target, GitCompare, Users, TrendingUp, TrendingDown, FileText, Upload } from "lucide-react";
 import { getTeacherProfiles, TeacherProfilesMap } from "@/lib/supabase-storage";
 
 interface Suggestion {
@@ -32,6 +32,14 @@ const PlacementEngine = () => {
   const [targetClass, setTargetClass] = useState<string>("");
   const [compareClasses, setCompareClasses] = useState<string[]>([]);
 
+  // Narrative summary state (per selected student)
+  const [narrative, setNarrative] = useState("");
+  const [narrativeSaved, setNarrativeSaved] = useState(false);
+  const [narrativeSaving, setNarrativeSaving] = useState(false);
+  const [narrativeUploading, setNarrativeUploading] = useState(false);
+  const [narrativeError, setNarrativeError] = useState("");
+  const narrativeFileRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     Promise.all([getSessionsDB(), getClassGroups(), getTeacherProfiles()]).then(([s, g, t]) => {
       setSessions(s);
@@ -56,8 +64,13 @@ const PlacementEngine = () => {
     setSelectedId(session.id);
     setSuggestion(null);
     setAiLoading(true);
+    setNarrative((session as any).narrativeSummary || "");
+    setNarrativeSaved(false);
+    setNarrativeError("");
     try {
       const studentProfile = buildStudentProfile(session);
+      // Ensure the latest edits are included even if not saved yet
+      (studentProfile as any).narrativeSummary = narrative || (session as any).narrativeSummary || "";
       // Filter class list by mode
       let selected = classAggregates;
       if (mode === "single" && targetClass) {
@@ -94,6 +107,55 @@ const PlacementEngine = () => {
       setSuggestion({ error: e?.message || "שגיאה בהפקת ההמלצה" });
     } finally {
       setAiLoading(false);
+    }
+  };
+
+  const handleSaveNarrative = async () => {
+    if (!selectedId) return;
+    setNarrativeSaving(true);
+    await updateSessionDB(selectedId, { narrativeSummary: narrative } as any);
+    setSessions((prev) => prev.map((s) => s.id === selectedId ? ({ ...s, narrativeSummary: narrative } as any) : s));
+    setNarrativeSaving(false);
+    setNarrativeSaved(true);
+    setTimeout(() => setNarrativeSaved(false), 2000);
+  };
+
+  const handleNarrativeFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setNarrativeError("");
+    if (file.size > 15 * 1024 * 1024) {
+      setNarrativeError("קובץ גדול מ-15MB");
+      e.target.value = "";
+      return;
+    }
+    setNarrativeUploading(true);
+    try {
+      if (file.type.startsWith("text/") || /\.txt$/i.test(file.name)) {
+        const txt = await file.text();
+        setNarrative((prev) => (prev ? prev + "\n\n" : "") + txt);
+      } else {
+        const base64: string = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(((reader.result as string) || "").split(",")[1] || "");
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        const { data, error } = await supabase.functions.invoke("extract-document-text", {
+          body: { filename: file.name, mimeType: file.type || "application/octet-stream", base64 },
+        });
+        if (error) throw error;
+        if ((data as any)?.error) throw new Error((data as any).error);
+        const extracted = (data as any)?.text || "";
+        if (!extracted) throw new Error("לא ניתן לחלץ טקסט מהקובץ");
+        setNarrative((prev) => (prev ? prev + "\n\n" : "") + extracted);
+      }
+      setNarrativeSaved(false);
+    } catch (err: any) {
+      setNarrativeError(err?.message || "שגיאה בטעינת הקובץ");
+    } finally {
+      setNarrativeUploading(false);
+      if (narrativeFileRef.current) narrativeFileRef.current.value = "";
     }
   };
 
@@ -242,7 +304,69 @@ const PlacementEngine = () => {
               <Sparkles className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
               <p className="text-muted-foreground">בחר תלמיד מהרשימה כדי לקבל המלצת שיבוץ</p>
             </div>
-          ) : aiLoading ? (
+          ) : (
+            <>
+              {/* Narrative Summary — feeds the placement engine */}
+              <div className="intake-card border-primary/20">
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <h3 className="font-heading font-bold text-sm flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-primary" />
+                    סיכום מילולי — {selected.studentName}
+                  </h3>
+                  <span className="text-[10px] text-muted-foreground">{narrative.length.toLocaleString()} תווים</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground mb-2">
+                  רקע איכותני, אבחונים, המלצות ותובנות. מוזן למנוע השיבוץ כמקור מידע ראשי לצד השאלונים.
+                </p>
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <input
+                    ref={narrativeFileRef}
+                    type="file"
+                    accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+                    onChange={handleNarrativeFile}
+                    className="hidden"
+                  />
+                  <button
+                    onClick={() => narrativeFileRef.current?.click()}
+                    disabled={narrativeUploading}
+                    className="btn-intake bg-primary/10 text-primary text-xs flex items-center gap-1.5 hover:bg-primary/20 border border-primary/20"
+                  >
+                    {narrativeUploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                    {narrativeUploading ? "מחלץ טקסט..." : "העלאת קובץ (PDF/Word/TXT)"}
+                  </button>
+                  {narrative && (
+                    <button
+                      onClick={() => { setNarrative(""); setNarrativeSaved(false); }}
+                      className="text-[11px] text-muted-foreground hover:text-destructive"
+                    >
+                      נקה
+                    </button>
+                  )}
+                  <button
+                    onClick={handleSaveNarrative}
+                    disabled={narrativeSaving}
+                    className="btn-intake bg-secondary text-secondary-foreground text-xs mr-auto flex items-center gap-1.5"
+                  >
+                    {narrativeSaving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                    שמור
+                  </button>
+                  {narrativeSaved && <span className="text-[11px] text-success flex items-center gap-1"><CheckCircle className="w-3 h-3" /> נשמר</span>}
+                </div>
+                {narrativeError && <div className="text-[11px] text-destructive mb-2">{narrativeError}</div>}
+                <textarea
+                  className="w-full bg-background border border-input rounded-xl p-2.5 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-ring"
+                  rows={5}
+                  value={narrative}
+                  onChange={(e) => { setNarrative(e.target.value); setNarrativeSaved(false); }}
+                  placeholder="הדבק/י טקסט או העלה/י קובץ עם רקע וסיכום מילולי על התלמיד/ה..."
+                  dir="rtl"
+                />
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  יש ללחוץ "שמור" לפני הפקת המלצה כדי שהמנוע ישתמש במידע המעודכן.
+                </p>
+              </div>
+
+              {aiLoading ? (
             <div className="intake-card text-center py-16">
               <Loader2 className="w-8 h-8 mx-auto animate-spin text-primary mb-3" />
               <p className="text-sm text-muted-foreground">מנתח פרופיל ומתאים לכיתה...</p>
@@ -311,6 +435,8 @@ const PlacementEngine = () => {
               )}
             </>
           ) : null}
+            </>
+          )}
         </div>
       </div>
       </div>
