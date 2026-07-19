@@ -1348,6 +1348,13 @@ const StudentProfile = () => {
           </p>
           <div className="flex flex-wrap gap-2">
             <button
+              onClick={() => { setShowResetDialog(true); setResetPassword(""); setResetError(""); setResetTargets({ student: false, parent: false, staff: false }); }}
+              className="btn-intake bg-amber-100 text-amber-900 text-sm flex items-center gap-2 hover:bg-amber-200"
+            >
+              <RotateCcw className="w-4 h-4" />
+              איפוס שאלונים
+            </button>
+            <button
               onClick={handleArchive}
               disabled={archiving}
               className="btn-intake bg-muted text-foreground text-sm flex items-center gap-2 hover:bg-muted/70 disabled:opacity-50"
