@@ -1372,6 +1372,59 @@ const StudentProfile = () => {
           </div>
         </div>
 
+        {showResetDialog && (
+          <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => !resetting && setShowResetDialog(false)}>
+            <div className="bg-card rounded-2xl p-6 max-w-sm w-full shadow-xl" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center gap-2 mb-3 text-amber-700">
+                <RotateCcw className="w-5 h-5" />
+                <h3 className="font-heading font-bold text-lg">איפוס שאלונים</h3>
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">
+                הפעולה תמחק את התשובות של השאלונים שנבחרו עבור <strong className="text-foreground">{session.studentName}</strong>. פעולה זו אינה הפיכה.
+              </p>
+              <div className="space-y-2 mb-3">
+                {[
+                  { key: "student" as const, label: "שאלון תלמיד/ה", count: Object.keys(session.studentResponses || {}).length },
+                  { key: "parent" as const, label: "שאלון הורה", count: Object.keys(session.parentResponses || {}).length },
+                  { key: "staff" as const, label: "הערכת צוות", count: Object.keys(session.staffResponses || {}).length },
+                ].map((opt) => (
+                  <label key={opt.key} className="flex items-center gap-2 p-2 rounded-lg border border-input hover:bg-muted/40 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={resetTargets[opt.key]}
+                      onChange={(e) => { setResetTargets((prev) => ({ ...prev, [opt.key]: e.target.checked })); setResetError(""); }}
+                    />
+                    <span className="text-sm flex-1">{opt.label}</span>
+                    <span className="text-xs text-muted-foreground">{opt.count} תשובות</span>
+                  </label>
+                ))}
+              </div>
+              <label className="block text-xs font-medium mb-1">סיסמת מנהל</label>
+              <input
+                type="password"
+                value={resetPassword}
+                onChange={(e) => { setResetPassword(e.target.value); setResetError(""); }}
+                className="w-full p-2 rounded-lg border border-input bg-background text-sm mb-2"
+                placeholder="הזן 9020"
+              />
+              {resetError && <p className="text-xs text-destructive mb-2">{resetError}</p>}
+              {resetDone && <p className="text-xs text-success mb-2">האיפוס בוצע ✓</p>}
+              <div className="flex gap-2 mt-3">
+                <button
+                  onClick={handleResetQuestionnaires}
+                  disabled={resetting || !resetPassword}
+                  className="btn-intake bg-amber-600 text-white text-sm flex-1 disabled:opacity-50"
+                >
+                  {resetting ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "אפס שאלונים"}
+                </button>
+                <button onClick={() => setShowResetDialog(false)} disabled={resetting} className="btn-intake bg-muted text-muted-foreground text-sm">
+                  ביטול
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {showDeleteDialog && (
           <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => !deleting && setShowDeleteDialog(false)}>
             <div className="bg-card rounded-2xl p-6 max-w-sm w-full shadow-xl" onClick={(e) => e.stopPropagation()}>
