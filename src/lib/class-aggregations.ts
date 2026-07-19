@@ -16,6 +16,7 @@ export interface StudentProfileForAI {
   topStrengths: string[]; // items scored high (>=4)
   topChallenges: string[]; // items scored low (<=2)
   openResponses: Record<string, string>;
+  narrativeSummary?: string;
 }
 
 export interface ClassAggregate {
