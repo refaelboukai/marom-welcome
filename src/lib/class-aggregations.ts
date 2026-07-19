@@ -86,6 +86,7 @@ export function buildStudentProfile(s: IntakeSession): StudentProfileForAI {
     topStrengths: strong.slice(0, 6).map((x) => x.text),
     topChallenges: weak.slice(0, 6).map((x) => x.text),
     openResponses: s.studentOpenResponses || {},
+    narrativeSummary: (s as any).narrativeSummary || "",
   };
 }
 

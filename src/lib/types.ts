@@ -63,6 +63,7 @@ export interface IntakeSession {
   reassessmentStudentResponses?: Record<string, number>;
   reassessmentParentResponses?: Record<string, number>;
   reassessmentDate?: string;
+  narrativeSummary?: string;
 }
 
 export interface DomainScore {
