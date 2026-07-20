@@ -417,6 +417,17 @@ const SmartPlacement = () => {
           </div>
         </div>
       )}
+
+      {detailsFor && (
+        <DetailsModal
+          assignment={detailsFor}
+          session={sessionsById[detailsFor.studentId]}
+          currentClassKey={overrides[detailsFor.studentId] ?? detailsFor.classKey}
+          classGroups={classGroups}
+          teachers={teachers}
+          onClose={() => setDetailsFor(null)}
+        />
+      )}
     </div>
   );
 };
