@@ -292,6 +292,7 @@ const PlacementEngine = () => {
     teacher: teachers[c.key]?.name || undefined,
     teacherBio: teachers[c.key]?.bio || undefined,
     teacherNotes: teachers[c.key]?.notes || undefined,
+    teacherGrades: teachers[c.key]?.grades || [],
     currentStudentCount: c.aggregate.studentCount,
     genderBreakdown: c.aggregate.genderBreakdown,
     gradeDistribution: c.aggregate.gradeDistribution,
