@@ -90,9 +90,18 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content || "{}";
+    const rawContent: string = data.choices?.[0]?.message?.content || "{}";
+    let cleaned = rawContent.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+    if (!cleaned.startsWith("{")) {
+      const m = cleaned.match(/\{[\s\S]*\}/);
+      if (m) cleaned = m[0];
+    }
     let result: any;
-    try { result = JSON.parse(content); } catch { result = { assignments: [], overallRationale: content, openQuestions: [], flags: [] }; }
+    try {
+      result = JSON.parse(cleaned);
+    } catch {
+      result = { assignments: [], overallRationale: "לא הצלחתי לפרסר את התשובה. נסה שוב.", openQuestions: [], flags: [] };
+    }
     return new Response(JSON.stringify(result), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     console.error("placement-batch error:", e);
