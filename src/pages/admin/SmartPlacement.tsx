@@ -346,6 +346,7 @@ const SmartPlacement = () => {
                 sessionsById={sessionsById}
                 onMove={moveStudent}
                 onDelete={deleteStudent}
+                onOpenDetails={(a) => setDetailsFor(a)}
                 draggingId={draggingId}
                 setDraggingId={setDraggingId}
                 dropTarget={dropTarget}
@@ -361,6 +362,7 @@ const SmartPlacement = () => {
                 overrides={overrides}
                 setOverrides={setOverrides}
                 onDelete={deleteStudent}
+                onOpenDetails={(a) => setDetailsFor(a)}
               />
             )}
 
