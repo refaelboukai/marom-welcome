@@ -30,6 +30,8 @@ import {
   GripVertical,
   HelpCircle,
   Trash2,
+  Move,
+  X,
 } from "lucide-react";
 
 interface BatchAssignment {
@@ -104,6 +106,9 @@ const SmartPlacement = () => {
   const [batchConfirming, setBatchConfirming] = useState(false);
   const [overrides, setOverrides] = useState<Record<string, string>>({});
   const [view, setView] = useState<"board" | "table">("board");
+
+  // Details modal for viewing an assignment's rationale
+  const [detailsFor, setDetailsFor] = useState<BatchAssignment | null>(null);
 
   // Drag state (HTML5 dnd + touch tap-to-move fallback)
   const [draggingId, setDraggingId] = useState<string | null>(null);
