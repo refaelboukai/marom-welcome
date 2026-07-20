@@ -27,8 +27,6 @@ import {
   LayoutGrid,
   Table as TableIcon,
   GripVertical,
-  Mars,
-  Venus,
   HelpCircle,
 } from "lucide-react";
 
@@ -62,15 +60,15 @@ function resolveGender(s?: IntakeSession | null): Gender {
 const GenderBadge = ({ gender }: { gender: Gender }) => {
   if (gender === "female") {
     return (
-      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-pink-100 text-pink-600" title="נקבה">
-        <Venus className="w-3 h-3" />
+      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-pink-100 text-pink-600 text-[11px] font-bold leading-none" title="נקבה">
+        ♀
       </span>
     );
   }
   if (gender === "male") {
     return (
-      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-sky-100 text-sky-600" title="זכר">
-        <Mars className="w-3 h-3" />
+      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-sky-100 text-sky-600 text-[11px] font-bold leading-none" title="זכר">
+        ♂
       </span>
     );
   }
@@ -399,9 +397,9 @@ const BoardView = ({
   draggingId: string | null;
   setDraggingId: (v: string | null) => void;
   dropTarget: string | null;
-  setDropTarget: (v: string | null) => void;
+  setDropTarget: React.Dispatch<React.SetStateAction<string | null>>;
   selectedId: string | null;
-  setSelectedId: (v: string | null) => void;
+  setSelectedId: React.Dispatch<React.SetStateAction<string | null>>;
 }) => {
   const classKeys = Object.keys(classGroups);
   const orderedCols: Array<{ key: string; label: string }> = [
@@ -465,11 +463,11 @@ const BoardView = ({
               </div>
               {(genderCount.m + genderCount.f + genderCount.u) > 0 && (
                 <div className="flex items-center gap-1.5 mb-2 text-[10px]">
-                  {genderCount.m > 0 && (
-                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-sky-100 text-sky-700"><Mars className="w-2.5 h-2.5" />{genderCount.m}</span>
+                    {genderCount.m > 0 && (
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-sky-100 text-sky-700 font-bold">♂ {genderCount.m}</span>
                   )}
                   {genderCount.f > 0 && (
-                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-pink-100 text-pink-700"><Venus className="w-2.5 h-2.5" />{genderCount.f}</span>
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-pink-100 text-pink-700 font-bold">♀ {genderCount.f}</span>
                   )}
                   {genderCount.u > 0 && (
                     <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-muted text-muted-foreground"><HelpCircle className="w-2.5 h-2.5" />{genderCount.u}</span>
