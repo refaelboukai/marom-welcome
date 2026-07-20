@@ -396,7 +396,7 @@ const PlacementEngine = () => {
             <div>
               <h3 className="font-heading font-bold text-sm flex items-center gap-2">
                 <Wand2 className="w-4 h-4 text-primary" />
-                שיבוץ אצווה חכם — כל התלמידים בבת אחת
+                שיבוץ חכם — כל התלמידים בבת אחת
               </h3>
               <p className="text-[11px] text-muted-foreground mt-0.5">
                 המערכת תחלק את כל התלמידים הלא-משוייכים בין הכיתות, תסביר את הרציונל, ותשאל אותך שאלות אם חסר לה מידע.
@@ -404,7 +404,7 @@ const PlacementEngine = () => {
             </div>
             <button onClick={openBatch}
               className="btn-intake bg-primary text-primary-foreground text-xs flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5" /> הפעל שיבוץ אצווה
+              <Sparkles className="w-3.5 h-3.5" /> הפעל שיבוץ חכם
             </button>
           </div>
         </div>
@@ -754,7 +754,7 @@ const PlacementEngine = () => {
           <div className="bg-card rounded-2xl shadow-2xl w-full max-w-3xl max-h-[92vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()} dir="rtl">
             <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-border">
               <h2 className="font-heading font-bold text-base flex items-center gap-2">
-                <Wand2 className="w-4 h-4 text-primary" /> שיבוץ אצווה חכם
+                <Wand2 className="w-4 h-4 text-primary" /> שיבוץ חכם
               </h2>
               <button onClick={() => setBatchOpen(false)} disabled={batchLoading || batchConfirming} className="p-1.5 rounded-lg hover:bg-muted disabled:opacity-50">
                 <X className="w-4 h-4" />
