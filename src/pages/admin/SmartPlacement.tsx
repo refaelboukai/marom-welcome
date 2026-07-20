@@ -424,7 +424,7 @@ const SmartPlacement = () => {
 // ----- Board view -----
 const BoardView = ({
   columns, classGroups, teachers, sessionsById,
-  onMove, onDelete, draggingId, setDraggingId, dropTarget, setDropTarget,
+  onMove, onDelete, onOpenDetails, draggingId, setDraggingId, dropTarget, setDropTarget,
   selectedId, setSelectedId,
 }: {
   columns: Record<string, BatchAssignment[]>;
@@ -433,6 +433,7 @@ const BoardView = ({
   sessionsById: Record<string, IntakeSession>;
   onMove: (studentId: string, toClass: string) => void;
   onDelete: (studentId: string, studentName: string) => void;
+  onOpenDetails: (a: BatchAssignment) => void;
   draggingId: string | null;
   setDraggingId: (v: string | null) => void;
   dropTarget: string | null;
