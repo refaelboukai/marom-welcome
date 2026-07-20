@@ -321,8 +321,15 @@ const PlacementEngine = () => {
       setBatchResult(res);
       setBatchOverrides({});
       // Add assistant summary to chat
+      const cleanRationale = (() => {
+        const r = (res.overallRationale || "").trim();
+        if (!r) return "";
+        // Hide raw JSON / code fences from the chat message
+        if (r.startsWith("{") || r.startsWith("[") || r.startsWith("```") || /"assignments"\s*:/.test(r)) return "";
+        return r;
+      })();
       const assistantMsg = [
-        res.overallRationale ? `**רציונל כולל:** ${res.overallRationale}` : "",
+        cleanRationale ? `**רציונל כולל:** ${cleanRationale}` : "",
         res.openQuestions && res.openQuestions.length > 0
           ? "\n\n**חסר לי מידע כדי לשבץ בביטחון:**\n" + res.openQuestions.map((q) => `• ${q.studentName ? q.studentName + " — " : ""}${q.question}`).join("\n")
           : "\n\nיש לי מספיק מידע להצעת השיבוץ. תוכל/י לאשר או לשנות פרטנית.",
