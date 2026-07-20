@@ -344,11 +344,7 @@ const PlacementEngine = () => {
   };
 
   const openBatch = () => {
-    setBatchOpen(true);
-    setBatchResult(null);
-    setBatchError("");
-    setBatchChat([]);
-    setBatchOverrides({});
+    navigate("/admin/placement/smart");
   };
 
   const sendBatchMessage = async () => {
