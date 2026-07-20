@@ -524,6 +524,15 @@ const PlacementEngine = () => {
                   <p className="text-sm font-bold">{label}</p>
                   <span className="text-[10px] text-muted-foreground">{aggregate.studentCount} תלמידים</span>
                 </div>
+                <div className="flex flex-wrap gap-1 text-[10px] mb-1.5">
+                  {(teachers[key]?.grades?.length ?? 0) > 0 ? (
+                    teachers[key]!.grades!.map((g) => (
+                      <span key={g} className="px-1.5 py-0.5 rounded bg-success/10 text-success font-bold">שכבה {g}</span>
+                    ))
+                  ) : (
+                    <span className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground">לא הוגדרה שכבה</span>
+                  )}
+                </div>
                 <div className="flex flex-wrap gap-1 text-[10px] mb-2">
                   <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary">לכידות {snapshot.cohesion}%</span>
                   <span className="px-1.5 py-0.5 rounded bg-info/10 text-info">מגוון {snapshot.diversity}%</span>
