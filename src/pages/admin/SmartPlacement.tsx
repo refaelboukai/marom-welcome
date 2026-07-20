@@ -680,3 +680,85 @@ const TableView = ({
 };
 
 export default SmartPlacement;
+
+// ----- Details modal -----
+const DetailsModal = ({
+  assignment, session, currentClassKey, classGroups, teachers, onClose,
+}: {
+  assignment: BatchAssignment;
+  session?: IntakeSession;
+  currentClassKey: string;
+  classGroups: ClassGroupsMap;
+  teachers: TeacherProfilesMap;
+  onClose: () => void;
+}) => {
+  const gender = resolveGender(session);
+  const classLabel = currentClassKey === UNASSIGNED_KEY ? "ללא שיוך" : (classGroups[currentClassKey] || currentClassKey);
+  const teacher = currentClassKey !== UNASSIGNED_KEY ? teachers[currentClassKey] : undefined;
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-3"
+      onClick={onClose}
+    >
+      <div
+        className="bg-card border border-border rounded-2xl shadow-xl w-full max-w-lg max-h-[85vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+        dir="rtl"
+      >
+        <div className="flex items-start justify-between p-4 border-b border-border sticky top-0 bg-card">
+          <div className="min-w-0 flex items-center gap-2">
+            <GenderBadge gender={gender} />
+            <div className="min-w-0">
+              <h2 className="font-heading font-bold text-base truncate">{assignment.studentName}</h2>
+              <p className="text-[11px] text-muted-foreground">
+                {session?.grade ? `שכבה ${session.grade} · ` : ""}שובץ ל<span className="font-bold text-foreground">{classLabel}</span>
+              </p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-md text-muted-foreground hover:bg-muted flex-shrink-0" title="סגור">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="p-4 space-y-3">
+          {assignment.confidence && (
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-muted-foreground">רמת ביטחון:</span>
+              <span className={`font-bold px-2 py-0.5 rounded-full ${confidenceStyle(assignment.confidence)}`}>
+                {confidenceLabel(assignment.confidence)}
+              </span>
+            </div>
+          )}
+
+          <div>
+            <p className="text-xs font-bold text-muted-foreground mb-1">רציונל השיבוץ</p>
+            <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">
+              {assignment.rationale?.trim() || "לא סופק רציונל מפורט לשיבוץ זה."}
+            </p>
+          </div>
+
+          {teacher && (teacher.name || teacher.bio) && (
+            <div className="rounded-xl bg-muted/30 border border-border p-3">
+              <p className="text-xs font-bold text-primary mb-1">על המחנכת</p>
+              {teacher.name && <p className="text-sm font-medium">{teacher.name}</p>}
+              {teacher.bio && <p className="text-[12.5px] text-foreground/80 leading-relaxed whitespace-pre-wrap mt-1">{teacher.bio}</p>}
+            </div>
+          )}
+
+          {session?.narrativeSummary && (
+            <div className="rounded-xl bg-primary/5 border border-primary/10 p-3">
+              <p className="text-xs font-bold text-primary mb-1">סיכום מילולי על התלמיד/ה</p>
+              <p className="text-[12.5px] text-foreground/85 leading-relaxed whitespace-pre-wrap">{session.narrativeSummary}</p>
+            </div>
+          )}
+        </div>
+
+        <div className="p-3 border-t border-border sticky bottom-0 bg-card">
+          <button onClick={onClose} className="btn-intake bg-primary text-primary-foreground text-sm w-full">
+            סגור
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
