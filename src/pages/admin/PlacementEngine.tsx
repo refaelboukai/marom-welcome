@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getSessionsDB, getClassGroups, DEFAULT_CLASS_GROUPS, ClassGroupsMap, updateSessionDB } from "@/lib/supabase-storage";
 import { IntakeSession } from "@/lib/types";
 import { aggregateClass, buildStudentProfile, computeClassSnapshot } from "@/lib/class-aggregations";
-import { ArrowRight, Loader2, Sparkles, CheckCircle, AlertTriangle, User, Target, GitCompare, Users, TrendingUp, TrendingDown, FileText, Upload, FileUp, X } from "lucide-react";
+import { ArrowRight, Loader2, Sparkles, CheckCircle, AlertTriangle, User, Target, GitCompare, Users, TrendingUp, TrendingDown, FileText, Upload, FileUp, X, Wand2, MessageCircle, Send } from "lucide-react";
 import { getTeacherProfiles, TeacherProfilesMap } from "@/lib/supabase-storage";
 
 interface Suggestion {
@@ -16,6 +16,24 @@ interface Suggestion {
   flags?: string[];
   error?: string;
 }
+
+interface BatchAssignment {
+  studentId: string;
+  studentName: string;
+  classKey: string;
+  confidence?: "high" | "medium" | "low";
+  rationale?: string;
+}
+interface BatchQuestion { studentId?: string; studentName?: string; question: string; }
+interface BatchResult {
+  assignments: BatchAssignment[];
+  overallRationale?: string;
+  classSummaries?: Array<{ classKey: string; newStudents: string[]; note: string }>;
+  openQuestions?: BatchQuestion[];
+  flags?: string[];
+  error?: string;
+}
+interface ChatMsg { role: "user" | "assistant"; content: string; }
 
 const PlacementEngine = () => {
   const navigate = useNavigate();
@@ -47,6 +65,16 @@ const PlacementEngine = () => {
   const [bulkResults, setBulkResults] = useState<Array<{ studentId: string; studentName: string; found: boolean; summary: string; selected: boolean }> | null>(null);
   const [bulkSaving, setBulkSaving] = useState(false);
   const [bulkSavedCount, setBulkSavedCount] = useState(0);
+
+  // Batch (all-at-once) placement + chat
+  const [batchOpen, setBatchOpen] = useState(false);
+  const [batchLoading, setBatchLoading] = useState(false);
+  const [batchResult, setBatchResult] = useState<BatchResult | null>(null);
+  const [batchError, setBatchError] = useState("");
+  const [batchChat, setBatchChat] = useState<ChatMsg[]>([]);
+  const [batchInput, setBatchInput] = useState("");
+  const [batchConfirming, setBatchConfirming] = useState(false);
+  const [batchOverrides, setBatchOverrides] = useState<Record<string, string>>({});
 
   useEffect(() => {
     Promise.all([getSessionsDB(), getClassGroups(), getTeacherProfiles()]).then(([s, g, t]) => {
@@ -258,6 +286,91 @@ const PlacementEngine = () => {
     setSuggestion(null);
   };
 
+  const buildClassesPayload = () => classAggregates.map((c) => ({
+    key: c.key,
+    label: c.label,
+    teacher: teachers[c.key]?.name || undefined,
+    teacherBio: teachers[c.key]?.bio || undefined,
+    teacherNotes: teachers[c.key]?.notes || undefined,
+    currentStudentCount: c.aggregate.studentCount,
+    genderBreakdown: c.aggregate.genderBreakdown,
+    gradeDistribution: c.aggregate.gradeDistribution,
+    avgScores: c.aggregate.avgScores,
+    studentsAtRiskCount: c.aggregate.studentsAtRisk.length,
+    students: c.aggregate.studentProfiles.map((p) => ({
+      name: p.name, grade: p.grade, gender: p.gender,
+      scores: p.scores,
+      topStrengths: p.topStrengths.slice(0, 3),
+      topChallenges: p.topChallenges.slice(0, 3),
+    })),
+  }));
+
+  const runBatch = async (extraChat: ChatMsg[] = batchChat) => {
+    setBatchLoading(true);
+    setBatchError("");
+    try {
+      const unassigned = sessions.filter((s) => s.status !== "archived" && !s.classGroup);
+      if (unassigned.length === 0) throw new Error("אין תלמידים ללא שיוך");
+      const studentsPayload = unassigned.map((s) => buildStudentProfile(s));
+      const { data, error } = await supabase.functions.invoke("placement-batch", {
+        body: { students: studentsPayload, classes: buildClassesPayload(), chatMessages: extraChat },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      const res = data as BatchResult;
+      setBatchResult(res);
+      setBatchOverrides({});
+      // Add assistant summary to chat
+      const assistantMsg = [
+        res.overallRationale ? `**רציונל כולל:** ${res.overallRationale}` : "",
+        res.openQuestions && res.openQuestions.length > 0
+          ? "\n\n**חסר לי מידע כדי לשבץ בביטחון:**\n" + res.openQuestions.map((q) => `• ${q.studentName ? q.studentName + " — " : ""}${q.question}`).join("\n")
+          : "\n\nיש לי מספיק מידע להצעת השיבוץ. תוכל/י לאשר או לשנות פרטנית.",
+      ].filter(Boolean).join("");
+      setBatchChat((prev) => [...prev, { role: "assistant", content: assistantMsg }]);
+    } catch (e: any) {
+      setBatchError(e?.message || "שגיאה בהפקת השיבוץ");
+    } finally {
+      setBatchLoading(false);
+    }
+  };
+
+  const openBatch = () => {
+    setBatchOpen(true);
+    setBatchResult(null);
+    setBatchError("");
+    setBatchChat([]);
+    setBatchOverrides({});
+  };
+
+  const sendBatchMessage = async () => {
+    const text = batchInput.trim();
+    if (!text) return;
+    const nextChat: ChatMsg[] = [...batchChat, { role: "user", content: text }];
+    setBatchChat(nextChat);
+    setBatchInput("");
+    await runBatch(nextChat);
+  };
+
+  const confirmBatch = async () => {
+    if (!batchResult?.assignments) return;
+    setBatchConfirming(true);
+    try {
+      for (const a of batchResult.assignments) {
+        const classKey = batchOverrides[a.studentId] || a.classKey;
+        if (!classKey) continue;
+        try { await updateSessionDB(a.studentId, { classGroup: classKey } as any); } catch (e) { console.error(e); }
+      }
+      const fresh = await getSessionsDB();
+      setSessions(fresh);
+      setBatchOpen(false);
+      setBatchResult(null);
+      setBatchChat([]);
+    } finally {
+      setBatchConfirming(false);
+    }
+  };
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
   }
@@ -277,6 +390,25 @@ const PlacementEngine = () => {
       </div>
 
       <div className="max-w-6xl mx-auto p-4 space-y-4">
+        {/* Smart batch placement CTA */}
+        <div className="intake-card bg-gradient-to-l from-primary/10 to-primary/5 border-primary/20">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div>
+              <h3 className="font-heading font-bold text-sm flex items-center gap-2">
+                <Wand2 className="w-4 h-4 text-primary" />
+                שיבוץ אצווה חכם — כל התלמידים בבת אחת
+              </h3>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                המערכת תחלק את כל התלמידים הלא-משוייכים בין הכיתות, תסביר את הרציונל, ותשאל אותך שאלות אם חסר לה מידע.
+              </p>
+            </div>
+            <button onClick={openBatch}
+              className="btn-intake bg-primary text-primary-foreground text-xs flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5" /> הפעל שיבוץ אצווה
+            </button>
+          </div>
+        </div>
+
         {/* Bulk narrative upload */}
         <div className="intake-card border-primary/20">
           <div className="flex items-center justify-between gap-2 mb-2">
@@ -616,6 +748,149 @@ const PlacementEngine = () => {
         </div>
       </div>
       </div>
+
+      {batchOpen && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-3" onClick={() => !batchLoading && !batchConfirming && setBatchOpen(false)}>
+          <div className="bg-card rounded-2xl shadow-2xl w-full max-w-3xl max-h-[92vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()} dir="rtl">
+            <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-border">
+              <h2 className="font-heading font-bold text-base flex items-center gap-2">
+                <Wand2 className="w-4 h-4 text-primary" /> שיבוץ אצווה חכם
+              </h2>
+              <button onClick={() => setBatchOpen(false)} disabled={batchLoading || batchConfirming} className="p-1.5 rounded-lg hover:bg-muted disabled:opacity-50">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {!batchResult && !batchLoading && !batchError && (
+                <div className="text-center py-8">
+                  <p className="text-sm text-muted-foreground mb-3">
+                    יש {sessions.filter((s) => s.status !== "archived" && !s.classGroup).length} תלמידים ללא שיוך.
+                    <br />לחץ/י על "התחל" כדי לקבל הצעת חלוקה לכל הכיתות בבת אחת.
+                  </p>
+                  <button onClick={() => runBatch([])} className="btn-intake bg-primary text-primary-foreground text-sm inline-flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4" /> התחל שיבוץ
+                  </button>
+                </div>
+              )}
+
+              {batchLoading && (
+                <div className="text-center py-10">
+                  <Loader2 className="w-8 h-8 mx-auto animate-spin text-primary mb-3" />
+                  <p className="text-sm text-muted-foreground">מנתח פרופילים ומחלק בין הכיתות...</p>
+                </div>
+              )}
+
+              {batchError && (
+                <div className="rounded-xl bg-destructive/5 border border-destructive/20 p-3 text-sm text-destructive">{batchError}</div>
+              )}
+
+              {batchResult && !batchLoading && (
+                <>
+                  {/* Class summaries */}
+                  {batchResult.classSummaries && batchResult.classSummaries.length > 0 && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {batchResult.classSummaries.map((c) => (
+                        <div key={c.classKey} className="rounded-xl border border-border p-2.5 bg-muted/10">
+                          <p className="text-sm font-bold text-primary">{classGroups[c.classKey] || c.classKey}</p>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">מצטרפים: {c.newStudents?.join(" · ") || "—"}</p>
+                          {c.note && <p className="text-[11.5px] text-foreground/80 mt-1">{c.note}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Per-student assignments */}
+                  <div className="space-y-2">
+                    <h3 className="text-xs font-bold text-muted-foreground">שיבוצים מוצעים</h3>
+                    {batchResult.assignments.map((a) => (
+                      <div key={a.studentId} className="rounded-xl border border-border p-2.5">
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <User className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                            <p className="text-sm font-medium truncate">{a.studentName}</p>
+                          </div>
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            {a.confidence && (
+                              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                                a.confidence === "high" ? "bg-success/15 text-success" :
+                                a.confidence === "medium" ? "bg-warning/15 text-warning" :
+                                "bg-muted text-muted-foreground"
+                              }`}>
+                                {a.confidence === "high" ? "גבוה" : a.confidence === "medium" ? "בינוני" : "נמוך"}
+                              </span>
+                            )}
+                            <select
+                              value={batchOverrides[a.studentId] || a.classKey}
+                              onChange={(e) => setBatchOverrides((prev) => ({ ...prev, [a.studentId]: e.target.value }))}
+                              className="bg-card border border-input rounded-lg px-2 py-1 text-xs"
+                            >
+                              {Object.entries(classGroups).map(([k, l]) => (
+                                <option key={k} value={k}>{l}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                        {a.rationale && <p className="text-[11.5px] text-foreground/75 leading-relaxed">{a.rationale}</p>}
+                      </div>
+                    ))}
+                  </div>
+
+                  {batchResult.flags && batchResult.flags.length > 0 && (
+                    <div className="rounded-xl bg-warning/5 border border-warning/20 p-2.5">
+                      <p className="text-xs font-bold text-warning flex items-center gap-1.5 mb-1"><AlertTriangle className="w-3.5 h-3.5" /> דגלי אזהרה</p>
+                      <ul className="list-disc pr-5 space-y-0.5 text-[11.5px] text-foreground/85">
+                        {batchResult.flags.map((f, i) => <li key={i}>{f}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Chat */}
+              {batchChat.length > 0 && (
+                <div className="rounded-xl border border-border bg-muted/10 p-3 space-y-2">
+                  <p className="text-xs font-bold text-muted-foreground flex items-center gap-1.5"><MessageCircle className="w-3.5 h-3.5" /> שיחה עם המנוע</p>
+                  {batchChat.map((m, i) => (
+                    <div key={i} className={`text-[12px] whitespace-pre-wrap leading-relaxed rounded-lg p-2 ${m.role === "assistant" ? "bg-primary/5 border border-primary/10" : "bg-background border border-border"}`}>
+                      <span className="text-[10px] font-bold text-muted-foreground block mb-0.5">{m.role === "assistant" ? "מנוע השיבוץ" : "אתה"}</span>
+                      {m.content}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {batchResult && !batchLoading && (
+              <div className="border-t border-border p-3 space-y-2">
+                <div className="flex items-end gap-2">
+                  <textarea
+                    value={batchInput}
+                    onChange={(e) => setBatchInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) sendBatchMessage(); }}
+                    rows={2}
+                    dir="rtl"
+                    placeholder="ענה/י על שאלות המנוע או הוסף/י מידע — לדוגמה: 'נעם מתקשה בוויסות כשיש רעש', 'שיבוץ עדן לכיתה אחרת'..."
+                    className="flex-1 bg-background border border-input rounded-xl p-2 text-xs resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                  <button onClick={sendBatchMessage} disabled={!batchInput.trim() || batchLoading}
+                    className="btn-intake bg-secondary text-secondary-foreground text-xs flex items-center gap-1 disabled:opacity-50">
+                    <Send className="w-3.5 h-3.5" /> שלח
+                  </button>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[10.5px] text-muted-foreground">לאחר מענה — המנוע יעדכן את השיבוצים אוטומטית.</p>
+                  <button onClick={confirmBatch} disabled={batchConfirming || batchLoading}
+                    className="btn-intake bg-primary text-primary-foreground text-sm flex items-center gap-1.5 disabled:opacity-50">
+                    {batchConfirming ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                    אשר את כל השיבוצים
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

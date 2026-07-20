@@ -1,0 +1,101 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  try {
+    const { students, classes, chatMessages = [] } = await req.json();
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    if (!Array.isArray(students) || students.length === 0) {
+      return new Response(JSON.stringify({ error: "אין תלמידים לשיבוץ" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    const systemPrompt = `אתה יועץ פדגוגי-טיפולי בבית ספר מרום בית אקשטיין (חינוך מיוחד).
+תפקידך: לחלק אצווה של תלמידים בין הכיתות הקיימות בצורה שקולה — כך שהכיתות יהיו מאוזנות, ההתאמה למחנכת אופטימלית, ותתקבל דינמיקה קבוצתית טובה.
+
+שיקולים:
+(0) סיכום מילולי (narrativeSummary) — מקור מידע איכותני ראשי.
+(1) התאמת מחנכת — קרא teacherBio לכל כיתה, זהה סגנון (מבנה מול גמישות, חום מול אסרטיביות, פוקוס לימודי מול טיפולי וכו').
+(2) גיל/כיתה קרובים בין תלמידי הכיתה.
+(3) איזון מגדרי.
+(4) איזון עומס: אל תערום ילדים בסיכון גבוה, ילדים דומיננטיים, או ילדים עם קשיים דומים בכיתה אחת.
+(5) חפיפה חיובית — חבר תלמידים עם חוזקות/אתגרים משלימים; ציין שמות.
+(6) גודל כיתה — שאף לחלוקה מאוזנת יחסית בגודל הכיתות הסופי (קיים + חדשים).
+
+חשוב מאוד — אם חסר לך מידע קריטי כדי לשבץ תלמיד בביטחון, אל תנחש. הוסף שאלה ל-openQuestions עם שם התלמיד ומה בדיוק חסר לך (למשל: "האם לתלמיד יש היסטוריית התפרצויות?", "מה יחסי הגומלין עם דמויות סמכות?"). המשתמש יענה בצ'אט ונחזור להחליט.
+
+אם המשתמש כבר ענה על שאלות קודמות (chatMessages), שלב את התשובות בשיקול הדעת ועדכן את השיבוצים בהתאם.
+
+החזר JSON תקין בלבד במבנה:
+{
+  "assignments": [
+    {
+      "studentId": "id",
+      "studentName": "שם",
+      "classKey": "key של הכיתה",
+      "confidence": "high" | "medium" | "low",
+      "rationale": "משפט או שניים ספציפיים — מדוע דווקא כיתה זו, מי המחנכת ולמה מתאימה, ומי מהתלמידים ישמש עוגן/חבר טוב"
+    }
+  ],
+  "overallRationale": "פסקה קצרה (3-5 משפטים) המסבירה את ההיגיון הכולל של החלוקה: איזה איזון הושג בכל כיתה, אילו קבוצות תמיכה נוצרו, ואילו סיכונים נמנעו",
+  "classSummaries": [
+    { "classKey": "key", "newStudents": ["שם1", "שם2"], "note": "משפט קצר על מה הכיתה הזו מקבלת מהאצווה" }
+  ],
+  "openQuestions": [
+    { "studentId": "id", "studentName": "שם", "question": "שאלה ספציפית שתשפר את הביטחון בשיבוץ" }
+  ],
+  "flags": ["דגל אזהרה כללי אם יש"]
+}
+
+כללים:
+- עברית מקצועית וברורה, ללא סלנג.
+- אל תזכיר "בינה מלאכותית". אל תשתמש בביטוי "לא מוותרים על אף ילד".
+- classKey חייב להיות אחד מהמפתחות שסופקו.
+- שבץ את כל התלמידים שסופקו. אל תשמיט.
+- openQuestions נדרשות רק כשבאמת חסר מידע — לא סתם.`;
+
+    const userContent = `רשימת תלמידים לשיבוץ:\n${JSON.stringify(students, null, 2)}\n\nהכיתות הזמינות (כולל מחנכת ותלמידים קיימים):\n${JSON.stringify(classes, null, 2)}`;
+
+    const messages: Array<{ role: string; content: string }> = [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userContent },
+    ];
+    // Append conversation turns (user answers, assistant follow-ups)
+    for (const m of chatMessages) {
+      if (!m?.role || !m?.content) continue;
+      messages.push({ role: m.role === "assistant" ? "assistant" : "user", content: String(m.content) });
+    }
+
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-pro",
+        messages,
+        response_format: { type: "json_object" },
+      }),
+    });
+
+    if (!response.ok) {
+      const t = await response.text();
+      console.error("placement-batch gateway error:", response.status, t);
+      if (response.status === 429) return new Response(JSON.stringify({ error: "השירות עמוס, נסה שוב" }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      if (response.status === 402) return new Response(JSON.stringify({ error: "אזלו הקרדיטים לשירות" }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ error: "שגיאה בשירות השיבוץ" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content || "{}";
+    let result: any;
+    try { result = JSON.parse(content); } catch { result = { assignments: [], overallRationale: content, openQuestions: [], flags: [] }; }
+    return new Response(JSON.stringify(result), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  } catch (e) {
+    console.error("placement-batch error:", e);
+    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  }
+});
