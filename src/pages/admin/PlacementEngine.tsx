@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getSessionsDB, getClassGroups, DEFAULT_CLASS_GROUPS, ClassGroupsMap, updateSessionDB } from "@/lib/supabase-storage";
 import { IntakeSession } from "@/lib/types";
 import { aggregateClass, buildStudentProfile, computeClassSnapshot } from "@/lib/class-aggregations";
-import { ArrowRight, Loader2, Sparkles, CheckCircle, AlertTriangle, User, Target, GitCompare, Users, TrendingUp, TrendingDown, FileText, Upload, FileUp, X } from "lucide-react";
+import { ArrowRight, Loader2, Sparkles, CheckCircle, AlertTriangle, User, Target, GitCompare, Users, TrendingUp, TrendingDown, FileText, Upload, FileUp, X, Wand2, MessageCircle, Send } from "lucide-react";
 import { getTeacherProfiles, TeacherProfilesMap } from "@/lib/supabase-storage";
 
 interface Suggestion {
@@ -16,6 +16,24 @@ interface Suggestion {
   flags?: string[];
   error?: string;
 }
+
+interface BatchAssignment {
+  studentId: string;
+  studentName: string;
+  classKey: string;
+  confidence?: "high" | "medium" | "low";
+  rationale?: string;
+}
+interface BatchQuestion { studentId?: string; studentName?: string; question: string; }
+interface BatchResult {
+  assignments: BatchAssignment[];
+  overallRationale?: string;
+  classSummaries?: Array<{ classKey: string; newStudents: string[]; note: string }>;
+  openQuestions?: BatchQuestion[];
+  flags?: string[];
+  error?: string;
+}
+interface ChatMsg { role: "user" | "assistant"; content: string; }
 
 const PlacementEngine = () => {
   const navigate = useNavigate();
@@ -47,6 +65,16 @@ const PlacementEngine = () => {
   const [bulkResults, setBulkResults] = useState<Array<{ studentId: string; studentName: string; found: boolean; summary: string; selected: boolean }> | null>(null);
   const [bulkSaving, setBulkSaving] = useState(false);
   const [bulkSavedCount, setBulkSavedCount] = useState(0);
+
+  // Batch (all-at-once) placement + chat
+  const [batchOpen, setBatchOpen] = useState(false);
+  const [batchLoading, setBatchLoading] = useState(false);
+  const [batchResult, setBatchResult] = useState<BatchResult | null>(null);
+  const [batchError, setBatchError] = useState("");
+  const [batchChat, setBatchChat] = useState<ChatMsg[]>([]);
+  const [batchInput, setBatchInput] = useState("");
+  const [batchConfirming, setBatchConfirming] = useState(false);
+  const [batchOverrides, setBatchOverrides] = useState<Record<string, string>>({});
 
   useEffect(() => {
     Promise.all([getSessionsDB(), getClassGroups(), getTeacherProfiles()]).then(([s, g, t]) => {
@@ -258,6 +286,91 @@ const PlacementEngine = () => {
     setSuggestion(null);
   };
 
+  const buildClassesPayload = () => classAggregates.map((c) => ({
+    key: c.key,
+    label: c.label,
+    teacher: teachers[c.key]?.name || undefined,
+    teacherBio: teachers[c.key]?.bio || undefined,
+    teacherNotes: teachers[c.key]?.notes || undefined,
+    currentStudentCount: c.aggregate.studentCount,
+    genderBreakdown: c.aggregate.genderBreakdown,
+    gradeDistribution: c.aggregate.gradeDistribution,
+    avgScores: c.aggregate.avgScores,
+    studentsAtRiskCount: c.aggregate.studentsAtRisk.length,
+    students: c.aggregate.studentProfiles.map((p) => ({
+      name: p.name, grade: p.grade, gender: p.gender,
+      scores: p.scores,
+      topStrengths: p.topStrengths.slice(0, 3),
+      topChallenges: p.topChallenges.slice(0, 3),
+    })),
+  }));
+
+  const runBatch = async (extraChat: ChatMsg[] = batchChat) => {
+    setBatchLoading(true);
+    setBatchError("");
+    try {
+      const unassigned = sessions.filter((s) => s.status !== "archived" && !s.classGroup);
+      if (unassigned.length === 0) throw new Error("אין תלמידים ללא שיוך");
+      const studentsPayload = unassigned.map((s) => buildStudentProfile(s));
+      const { data, error } = await supabase.functions.invoke("placement-batch", {
+        body: { students: studentsPayload, classes: buildClassesPayload(), chatMessages: extraChat },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      const res = data as BatchResult;
+      setBatchResult(res);
+      setBatchOverrides({});
+      // Add assistant summary to chat
+      const assistantMsg = [
+        res.overallRationale ? `**רציונל כולל:** ${res.overallRationale}` : "",
+        res.openQuestions && res.openQuestions.length > 0
+          ? "\n\n**חסר לי מידע כדי לשבץ בביטחון:**\n" + res.openQuestions.map((q) => `• ${q.studentName ? q.studentName + " — " : ""}${q.question}`).join("\n")
+          : "\n\nיש לי מספיק מידע להצעת השיבוץ. תוכל/י לאשר או לשנות פרטנית.",
+      ].filter(Boolean).join("");
+      setBatchChat((prev) => [...prev, { role: "assistant", content: assistantMsg }]);
+    } catch (e: any) {
+      setBatchError(e?.message || "שגיאה בהפקת השיבוץ");
+    } finally {
+      setBatchLoading(false);
+    }
+  };
+
+  const openBatch = () => {
+    setBatchOpen(true);
+    setBatchResult(null);
+    setBatchError("");
+    setBatchChat([]);
+    setBatchOverrides({});
+  };
+
+  const sendBatchMessage = async () => {
+    const text = batchInput.trim();
+    if (!text) return;
+    const nextChat: ChatMsg[] = [...batchChat, { role: "user", content: text }];
+    setBatchChat(nextChat);
+    setBatchInput("");
+    await runBatch(nextChat);
+  };
+
+  const confirmBatch = async () => {
+    if (!batchResult?.assignments) return;
+    setBatchConfirming(true);
+    try {
+      for (const a of batchResult.assignments) {
+        const classKey = batchOverrides[a.studentId] || a.classKey;
+        if (!classKey) continue;
+        try { await updateSessionDB(a.studentId, { classGroup: classKey } as any); } catch (e) { console.error(e); }
+      }
+      const fresh = await getSessionsDB();
+      setSessions(fresh);
+      setBatchOpen(false);
+      setBatchResult(null);
+      setBatchChat([]);
+    } finally {
+      setBatchConfirming(false);
+    }
+  };
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
   }
@@ -277,6 +390,25 @@ const PlacementEngine = () => {
       </div>
 
       <div className="max-w-6xl mx-auto p-4 space-y-4">
+        {/* Smart batch placement CTA */}
+        <div className="intake-card bg-gradient-to-l from-primary/10 to-primary/5 border-primary/20">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div>
+              <h3 className="font-heading font-bold text-sm flex items-center gap-2">
+                <Wand2 className="w-4 h-4 text-primary" />
+                שיבוץ אצווה חכם — כל התלמידים בבת אחת
+              </h3>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                המערכת תחלק את כל התלמידים הלא-משוייכים בין הכיתות, תסביר את הרציונל, ותשאל אותך שאלות אם חסר לה מידע.
+              </p>
+            </div>
+            <button onClick={openBatch}
+              className="btn-intake bg-primary text-primary-foreground text-xs flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5" /> הפעל שיבוץ אצווה
+            </button>
+          </div>
+        </div>
+
         {/* Bulk narrative upload */}
         <div className="intake-card border-primary/20">
           <div className="flex items-center justify-between gap-2 mb-2">
