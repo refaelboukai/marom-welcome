@@ -11,6 +11,8 @@ import {
   TeacherProfile,
 } from "@/lib/supabase-storage";
 
+const GRADE_OPTIONS = ["ז", "ח", "ט", "י"];
+
 const TeacherProfiles = () => {
   const navigate = useNavigate();
   const [classGroups, setClassGroups] = useState<ClassGroupsMap>(DEFAULT_CLASS_GROUPS);
@@ -106,6 +108,29 @@ const TeacherProfiles = () => {
               {isEditing ? (
                 <div className="space-y-3">
                   <div>
+                    <label className="text-[11px] font-bold text-muted-foreground">שכבות גיל שהמחנכת מלמדת</label>
+                    <div className="mt-1 flex flex-wrap gap-2">
+                      {GRADE_OPTIONS.map((g) => {
+                        const selected = (draft.grades || []).includes(g);
+                        return (
+                          <button
+                            key={g}
+                            type="button"
+                            onClick={() => {
+                              const cur = new Set(draft.grades || []);
+                              if (selected) cur.delete(g); else cur.add(g);
+                              setDraft({ ...draft, grades: Array.from(cur) });
+                            }}
+                            className={`px-3 py-1.5 rounded-lg text-sm border transition ${selected ? "bg-primary text-primary-foreground border-primary" : "bg-card text-foreground border-input hover:bg-muted"}`}
+                          >
+                            כיתה {g}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="text-[10.5px] text-muted-foreground mt-1">מנוע השיבוץ ישבץ אליה רק תלמידים משכבות אלו.</p>
+                  </div>
+                  <div>
                     <label className="text-[11px] font-bold text-muted-foreground">פרופיל מורחב (bio)</label>
                     <textarea
                       value={draft.bio || ""}
@@ -127,6 +152,13 @@ const TeacherProfiles = () => {
                 </div>
               ) : (
                 <>
+                  {t?.grades && t.grades.length > 0 && (
+                    <div className="mb-2 flex flex-wrap gap-1.5">
+                      {t.grades.map((g) => (
+                        <span key={g} className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">כיתה {g}</span>
+                      ))}
+                    </div>
+                  )}
                   {t?.bio ? (
                     <div className="text-sm text-foreground/85 leading-relaxed whitespace-pre-line">{t.bio}</div>
                   ) : (
