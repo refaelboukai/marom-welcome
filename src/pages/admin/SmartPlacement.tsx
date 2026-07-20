@@ -535,7 +535,9 @@ const BoardView = ({
                         onDragEnd={() => { setDraggingId(null); setDropTarget(null); }}
                         onClick={(e) => {
                           e.stopPropagation();
-                          setSelectedId(isSelected ? null : a.studentId);
+                          // If a move is in progress on this card, ignore card click
+                          if (isSelected) { setSelectedId(null); return; }
+                          onOpenDetails(a);
                         }}
                         className={`group rounded-xl border px-2.5 py-2 bg-card cursor-grab active:cursor-grabbing transition-all touch-manipulation select-none ${
                           isSelected ? "border-primary ring-2 ring-primary/30 shadow-sm" :
@@ -561,6 +563,13 @@ const BoardView = ({
                             className="flex-shrink-0 p-1 rounded-md text-muted-foreground/60 hover:text-destructive hover:bg-destructive/10 transition-colors"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setSelectedId(isSelected ? null : a.studentId); }}
+                            title={isSelected ? "בטל בחירה" : "העבר לכיתה אחרת"}
+                            className={`flex-shrink-0 p-1 rounded-md transition-colors ${isSelected ? "text-primary bg-primary/10" : "text-muted-foreground/60 hover:text-primary hover:bg-primary/10"}`}
+                          >
+                            <Move className="w-3.5 h-3.5" />
                           </button>
                         </div>
                         {a.rationale && (
