@@ -590,7 +590,7 @@ const BoardView = ({
 
 // ----- Table view -----
 const TableView = ({
-  assignments, classGroups, sessionsById, overrides, setOverrides, onDelete,
+  assignments, classGroups, sessionsById, overrides, setOverrides, onDelete, onOpenDetails,
 }: {
   assignments: BatchAssignment[];
   classGroups: ClassGroupsMap;
@@ -598,6 +598,7 @@ const TableView = ({
   overrides: Record<string, string>;
   setOverrides: (fn: (prev: Record<string, string>) => Record<string, string>) => void;
   onDelete: (studentId: string, studentName: string) => void;
+  onOpenDetails: (a: BatchAssignment) => void;
 }) => {
   return (
     <div className="intake-card p-0 overflow-hidden">
@@ -620,11 +621,15 @@ const TableView = ({
               const gender = resolveGender(s);
               const current = overrides[a.studentId] ?? a.classKey;
               return (
-                <tr key={a.studentId} className={i % 2 === 0 ? "bg-card" : "bg-muted/10"}>
-                  <td className="px-3 py-2"><GenderBadge gender={gender} /></td>
+                <tr
+                  key={a.studentId}
+                  className={`${i % 2 === 0 ? "bg-card" : "bg-muted/10"} cursor-pointer hover:bg-primary/5`}
+                  onClick={() => onOpenDetails(a)}
+                >
+                  <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}><GenderBadge gender={gender} /></td>
                   <td className="px-3 py-2 font-medium">{a.studentName}</td>
                   <td className="px-3 py-2 text-xs text-muted-foreground">{s?.grade || "—"}</td>
-                  <td className="px-3 py-2">
+                  <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
                     <select
                       value={current}
                       onChange={(e) => setOverrides((prev) => ({ ...prev, [a.studentId]: e.target.value }))}
@@ -644,7 +649,7 @@ const TableView = ({
                     )}
                   </td>
                   <td className="px-3 py-2 text-[11.5px] text-foreground/75 leading-snug max-w-md">{a.rationale}</td>
-                  <td className="px-3 py-2">
+                  <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
                     <button
                       onClick={() => onDelete(a.studentId, a.studentName)}
                       title="מחק תלמיד"
