@@ -574,6 +574,7 @@ export interface TeacherProfile {
   photoDataUrl?: string;
   notes?: string;
   bio?: string;
+  grades?: string[]; // שכבות הגיל שהמחנכת מלמדת: "ז" | "ח" | "ט" | "י"
 }
 
 export type TeacherProfilesMap = Record<string, TeacherProfile>; // classKey -> profile
