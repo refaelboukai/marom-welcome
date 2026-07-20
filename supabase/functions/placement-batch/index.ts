@@ -58,6 +58,7 @@ serve(async (req) => {
 - classKey חייב להיות אחד מהמפתחות שסופקו.
 - שבץ את כל התלמידים שסופקו. אל תשמיט.
 - openQuestions נדרשות רק כשבאמת חסר מידע — לא סתם.`;
+- שמור על רציונלים קצרים (עד 2 משפטים), overallRationale עד 4 משפטים, כדי לא לחרוג באורך התשובה.`;
 
     const userContent = `רשימת תלמידים לשיבוץ:\n${JSON.stringify(students, null, 2)}\n\nהכיתות הזמינות (כולל מחנכת ותלמידים קיימים):\n${JSON.stringify(classes, null, 2)}`;
 
@@ -78,6 +79,7 @@ serve(async (req) => {
         model: "google/gemini-2.5-flash",
         messages,
         response_format: { type: "json_object" },
+        max_tokens: 8000,
       }),
     });
 
@@ -91,6 +93,8 @@ serve(async (req) => {
 
     const data = await response.json();
     const rawContent: string = data.choices?.[0]?.message?.content || "{}";
+    const finishReason: string | undefined = data.choices?.[0]?.finish_reason;
+    console.log("placement-batch finish_reason:", finishReason, "content_len:", rawContent.length);
     let cleaned = rawContent.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
     if (!cleaned.startsWith("{")) {
       const m = cleaned.match(/\{[\s\S]*\}/);
@@ -100,11 +104,58 @@ serve(async (req) => {
     try {
       result = JSON.parse(cleaned);
     } catch {
-      result = { assignments: [], overallRationale: "לא הצלחתי לפרסר את התשובה. נסה שוב.", openQuestions: [], flags: [] };
+      console.error("placement-batch JSON parse failed. finish_reason:", finishReason, "raw sample:", cleaned.slice(0, 500), "…", cleaned.slice(-300));
+      // Try to salvage a truncated JSON by trimming to last complete assignment
+      const salvaged = trySalvageJson(cleaned);
+      result = salvaged ?? {
+        assignments: [],
+        overallRationale: finishReason === "length"
+          ? "התשובה נחתכה באורך. נסה/י שוב — הרציונלים יקוצרו."
+          : "לא הצלחתי לפרסר את התשובה. נסה/י שוב.",
+        openQuestions: [],
+        flags: [finishReason === "length" ? "התשובה נחתכה (finish_reason=length)" : "שגיאת פרסינג"],
+      };
     }
+    if (!Array.isArray(result?.assignments)) result.assignments = [];
     return new Response(JSON.stringify(result), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     console.error("placement-batch error:", e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
+
+// Attempt to salvage a truncated JSON object by closing at the last complete assignment entry.
+function trySalvageJson(text: string): any | null {
+  try {
+    // find "assignments": [ ... ] portion and close after last complete }
+    const startIdx = text.indexOf('"assignments"');
+    if (startIdx === -1) return null;
+    const arrStart = text.indexOf("[", startIdx);
+    if (arrStart === -1) return null;
+    // Walk forward tracking braces to collect complete objects.
+    const items: string[] = [];
+    let i = arrStart + 1;
+    while (i < text.length) {
+      // skip whitespace/commas
+      while (i < text.length && /[\s,]/.test(text[i])) i++;
+      if (text[i] !== "{") break;
+      let depth = 0, inStr = false, esc = false, objStart = i;
+      for (; i < text.length; i++) {
+        const ch = text[i];
+        if (inStr) { if (esc) { esc = false; } else if (ch === "\\") esc = true; else if (ch === '"') inStr = false; continue; }
+        if (ch === '"') inStr = true;
+        else if (ch === "{") depth++;
+        else if (ch === "}") { depth--; if (depth === 0) { items.push(text.slice(objStart, i + 1)); i++; break; } }
+      }
+      if (depth !== 0) break;
+    }
+    if (items.length === 0) return null;
+    const rebuilt = `{"assignments":[${items.join(",")}]}`;
+    const parsed = JSON.parse(rebuilt);
+    parsed.overallRationale = "התשובה שוחזרה חלקית מפלט חתוך.";
+    parsed.flags = ["התשובה נחתכה — שוחזרו רק שיבוצים מלאים"];
+    return parsed;
+  } catch {
+    return null;
+  }
+}
