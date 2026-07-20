@@ -311,6 +311,9 @@ const Dashboard = () => {
             <button onClick={() => navigate("/admin/placement")} className="btn-intake bg-primary/10 text-primary text-xs sm:text-sm px-2.5 sm:px-4 py-2 hover:bg-primary/20 flex items-center gap-1" title="מנוע שיבוץ חכם">
               <Sparkles className="w-4 h-4" /> מנוע שיבוץ
             </button>
+            <button onClick={() => navigate("/admin/teachers")} className="btn-intake bg-primary/10 text-primary text-xs sm:text-sm px-2.5 sm:px-4 py-2 hover:bg-primary/20 flex items-center gap-1" title="פרופילי מחנכות ושכבות גיל">
+              <User className="w-4 h-4" /> פרופילי מחנכות
+            </button>
             <button onClick={() => navigate("/")} className="p-2 rounded-xl hover:bg-muted transition-colors" title="יציאה">
               <LogOut className="w-5 h-5 text-muted-foreground" />
             </button>
