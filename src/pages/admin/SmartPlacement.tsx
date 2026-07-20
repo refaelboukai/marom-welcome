@@ -6,6 +6,7 @@ import {
   getClassGroups,
   getTeacherProfiles,
   updateSessionDB,
+  deleteSessionDB,
   DEFAULT_CLASS_GROUPS,
   ClassGroupsMap,
   TeacherProfilesMap,
@@ -28,6 +29,7 @@ import {
   Table as TableIcon,
   GripVertical,
   HelpCircle,
+  Trash2,
 } from "lucide-react";
 
 interface BatchAssignment {
@@ -221,6 +223,26 @@ const SmartPlacement = () => {
     setDropTarget(null);
   };
 
+  const deleteStudent = async (studentId: string, studentName: string) => {
+    if (!confirm(`למחוק לצמיתות את ${studentName}? פעולה זו אינה הפיכה.`)) return;
+    try {
+      await deleteSessionDB(studentId);
+      setSessions((prev) => prev.filter((s) => s.id !== studentId));
+      setBatchResult((prev) =>
+        prev ? { ...prev, assignments: prev.assignments.filter((a) => a.studentId !== studentId) } : prev
+      );
+      setOverrides((prev) => {
+        const next = { ...prev };
+        delete next[studentId];
+        return next;
+      });
+      if (selectedId === studentId) setSelectedId(null);
+    } catch (e) {
+      console.error(e);
+      alert("שגיאה במחיקת התלמיד");
+    }
+  };
+
   // Group assignments by column
   const columns = useMemo(() => {
     const cols: Record<string, BatchAssignment[]> = { [UNASSIGNED_KEY]: [] };
@@ -311,6 +333,7 @@ const SmartPlacement = () => {
                 teachers={teachers}
                 sessionsById={sessionsById}
                 onMove={moveStudent}
+                onDelete={deleteStudent}
                 draggingId={draggingId}
                 setDraggingId={setDraggingId}
                 dropTarget={dropTarget}
@@ -325,6 +348,7 @@ const SmartPlacement = () => {
                 sessionsById={sessionsById}
                 overrides={overrides}
                 setOverrides={setOverrides}
+                onDelete={deleteStudent}
               />
             )}
 
@@ -386,7 +410,7 @@ const SmartPlacement = () => {
 // ----- Board view -----
 const BoardView = ({
   columns, classGroups, teachers, sessionsById,
-  onMove, draggingId, setDraggingId, dropTarget, setDropTarget,
+  onMove, onDelete, draggingId, setDraggingId, dropTarget, setDropTarget,
   selectedId, setSelectedId,
 }: {
   columns: Record<string, BatchAssignment[]>;
@@ -394,6 +418,7 @@ const BoardView = ({
   teachers: TeacherProfilesMap;
   sessionsById: Record<string, IntakeSession>;
   onMove: (studentId: string, toClass: string) => void;
+  onDelete: (studentId: string, studentName: string) => void;
   draggingId: string | null;
   setDraggingId: (v: string | null) => void;
   dropTarget: string | null;
@@ -416,7 +441,7 @@ const BoardView = ({
         {orderedCols.map(({ key, label }) => {
           const items = columns[key] || [];
           const isDropTarget = dropTarget === key;
-          const isPending = !!selectedId && key !== UNASSIGNED_KEY;
+          const isPending = !!selectedId;
           const genderCount = items.reduce((acc, a) => {
             const g = resolveGender(sessionsById[a.studentId]);
             if (g === "male") acc.m++; else if (g === "female") acc.f++; else acc.u++;
@@ -515,6 +540,13 @@ const BoardView = ({
                               {confidenceLabel(a.confidence)}
                             </span>
                           )}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); onDelete(a.studentId, a.studentName); }}
+                            title="מחק תלמיד"
+                            className="flex-shrink-0 p-1 rounded-md text-muted-foreground/60 hover:text-destructive hover:bg-destructive/10 transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                         {a.rationale && (
                           <p className="text-[10.5px] text-foreground/70 leading-snug mt-1 line-clamp-2">{a.rationale}</p>
@@ -534,13 +566,14 @@ const BoardView = ({
 
 // ----- Table view -----
 const TableView = ({
-  assignments, classGroups, sessionsById, overrides, setOverrides,
+  assignments, classGroups, sessionsById, overrides, setOverrides, onDelete,
 }: {
   assignments: BatchAssignment[];
   classGroups: ClassGroupsMap;
   sessionsById: Record<string, IntakeSession>;
   overrides: Record<string, string>;
   setOverrides: (fn: (prev: Record<string, string>) => Record<string, string>) => void;
+  onDelete: (studentId: string, studentName: string) => void;
 }) => {
   return (
     <div className="intake-card p-0 overflow-hidden">
@@ -554,6 +587,7 @@ const TableView = ({
               <th className="text-right px-3 py-2 font-bold">כיתה משובצת</th>
               <th className="text-right px-3 py-2 font-bold">ביטחון</th>
               <th className="text-right px-3 py-2 font-bold">רציונל</th>
+              <th className="text-right px-3 py-2 font-bold">פעולות</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -586,6 +620,15 @@ const TableView = ({
                     )}
                   </td>
                   <td className="px-3 py-2 text-[11.5px] text-foreground/75 leading-snug max-w-md">{a.rationale}</td>
+                  <td className="px-3 py-2">
+                    <button
+                      onClick={() => onDelete(a.studentId, a.studentName)}
+                      title="מחק תלמיד"
+                      className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </td>
                 </tr>
               );
             })}
