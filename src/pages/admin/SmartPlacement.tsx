@@ -247,8 +247,15 @@ const SmartPlacement = () => {
   const columns = useMemo(() => {
     const cols: Record<string, BatchAssignment[]> = { [UNASSIGNED_KEY]: [] };
     Object.keys(classGroups).forEach((k) => { cols[k] = []; });
+    // Build label→key map so we can rescue AI outputs that returned a label instead of a key
+    const labelToKey: Record<string, string> = {};
+    Object.entries(classGroups).forEach(([k, label]) => { labelToKey[String(label).trim()] = k; });
     (batchResult?.assignments || []).forEach((a) => {
-      const key = currentClassFor(a);
+      let key = currentClassFor(a);
+      if (!cols[key]) {
+        const rescued = labelToKey[String(key || "").trim()];
+        if (rescued && cols[rescued]) key = rescued;
+      }
       if (cols[key]) cols[key].push(a);
       else cols[UNASSIGNED_KEY].push(a);
     });
