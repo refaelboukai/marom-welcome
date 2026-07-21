@@ -504,6 +504,7 @@ const SmartPlacement = () => {
           classGroups={classGroups}
           teachers={teachers}
           onSetGender={updateStudentGender}
+          onSetClass={(studentId, classKey) => moveStudent(studentId, classKey)}
           onClose={() => setDetailsFor(null)}
         />
       )}
@@ -762,7 +763,7 @@ export default SmartPlacement;
 
 // ----- Details modal -----
 const DetailsModal = ({
-  assignment, session, currentClassKey, classGroups, teachers, onSetGender, onClose,
+  assignment, session, currentClassKey, classGroups, teachers, onSetGender, onSetClass, onClose,
 }: {
   assignment: BatchAssignment;
   session?: IntakeSession;
@@ -770,6 +771,7 @@ const DetailsModal = ({
   classGroups: ClassGroupsMap;
   teachers: TeacherProfilesMap;
   onSetGender: (studentId: string, gender: "male" | "female") => void | Promise<void>;
+  onSetClass: (studentId: string, classKey: string) => void;
   onClose: () => void;
 }) => {
   const gender = resolveGender(session);
@@ -813,6 +815,33 @@ const DetailsModal = ({
                 className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${gender === "female" ? "bg-pink-100 border-pink-300 text-pink-700" : "bg-card border-border hover:border-pink-300"}`}
               >♀ נקבה</button>
             </div>
+          </div>
+
+          <div className="rounded-xl border border-border p-3">
+            <p className="text-xs font-bold text-muted-foreground mb-2">שיוך כיתה</p>
+            <div className="flex flex-wrap gap-1.5">
+              {Object.entries(classGroups).map(([k, label]) => {
+                const active = currentClassKey === k;
+                const teacherName = teachers[k]?.name;
+                return (
+                  <button
+                    key={k}
+                    onClick={() => onSetClass(assignment.studentId, k)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${active ? "bg-primary/10 border-primary text-primary" : "bg-card border-border hover:border-primary/40"}`}
+                    title={teacherName ? `מחנכת: ${teacherName}` : undefined}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+              <button
+                onClick={() => onSetClass(assignment.studentId, UNASSIGNED_KEY)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${currentClassKey === UNASSIGNED_KEY ? "bg-muted border-muted-foreground/40 text-foreground" : "bg-card border-dashed border-muted-foreground/40 hover:border-muted-foreground/70 text-muted-foreground"}`}
+              >
+                ללא שיוך
+              </button>
+            </div>
+            <p className="text-[10.5px] text-muted-foreground mt-2">השינוי נשמר בטיוטה. אישור סופי מתבצע דרך "אשר את כל השיבוצים".</p>
           </div>
 
           {assignment.confidence && (
