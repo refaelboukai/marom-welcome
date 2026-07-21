@@ -223,10 +223,12 @@ const TeacherProfiles = () => {
                       ))}
                     </div>
                   )}
-                  {t?.bio ? (
-                    <div className="text-sm text-foreground/85 leading-relaxed whitespace-pre-line">{t.bio}</div>
-                  ) : (
-                    <p className="text-xs text-muted-foreground italic">טרם הוזן פרופיל מורחב — לחץ "ערוך" להוספה.</p>
+                  {!t?.metrics && (
+                    t?.bio ? (
+                      <div className="text-sm text-foreground/85 leading-relaxed whitespace-pre-line">{t.bio}</div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground italic">טרם הוזן פרופיל מורחב — לחץ "ערוך" להוספה.</p>
+                    )
                   )}
                   {t?.metrics && (
                     <div className="mt-3 pt-3 border-t border-border">
