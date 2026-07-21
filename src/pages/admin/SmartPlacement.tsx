@@ -504,6 +504,7 @@ const SmartPlacement = () => {
           classGroups={classGroups}
           teachers={teachers}
           onSetGender={updateStudentGender}
+          onSetClass={(studentId, classKey) => moveStudent(studentId, classKey)}
           onClose={() => setDetailsFor(null)}
         />
       )}
