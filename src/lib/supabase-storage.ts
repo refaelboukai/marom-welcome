@@ -575,7 +575,34 @@ export interface TeacherProfile {
   notes?: string;
   bio?: string;
   grades?: string[]; // שכבות הגיל שהמחנכת מלמדת: "ז" | "ח" | "ט" | "י"
+  metrics?: TeacherMetrics; // ציונים מספריים 1-5 שחולצו מה-bio
+  metricsUpdatedAt?: string;
 }
+
+export type TeacherMetricKey =
+  | "flexibility"
+  | "structure"
+  | "organization"
+  | "warmth"
+  | "authority"
+  | "creativity"
+  | "patience"
+  | "academicFocus";
+
+export type TeacherMetrics = Partial<Record<TeacherMetricKey, number>>;
+
+export const TEACHER_METRIC_LABELS: Record<TeacherMetricKey, string> = {
+  flexibility: "גמישות",
+  structure: "שליטה ומסגרת",
+  organization: "ארגון וסדר",
+  warmth: "קשר וחום",
+  authority: "סמכותיות",
+  creativity: "יצירתיות",
+  patience: "סבלנות",
+  academicFocus: "התמקדות לימודית",
+};
+
+export const TEACHER_METRIC_KEYS: TeacherMetricKey[] = Object.keys(TEACHER_METRIC_LABELS) as TeacherMetricKey[];
 
 export type TeacherProfilesMap = Record<string, TeacherProfile>; // classKey -> profile
 

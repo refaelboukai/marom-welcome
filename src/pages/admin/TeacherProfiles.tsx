@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Loader2, User, Save, Edit3, Check, X } from "lucide-react";
+import { ArrowRight, Loader2, User, Save, Edit3, Check, X, Sparkles } from "lucide-react";
 import {
   getTeacherProfiles,
   saveTeacherProfile,
@@ -9,7 +9,12 @@ import {
   ClassGroupsMap,
   TeacherProfilesMap,
   TeacherProfile,
+  TEACHER_METRIC_LABELS,
+  TEACHER_METRIC_KEYS,
+  TeacherMetricKey,
 } from "@/lib/supabase-storage";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 const GRADE_OPTIONS = ["ז", "ח", "ט", "י"];
 
@@ -21,6 +26,7 @@ const TeacherProfiles = () => {
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [draft, setDraft] = useState<TeacherProfile>({ name: "" });
   const [saving, setSaving] = useState(false);
+  const [extractingKey, setExtractingKey] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([getClassGroups(), getTeacherProfiles()]).then(([g, t]) => {
@@ -49,6 +55,34 @@ const TeacherProfiles = () => {
       setEditingKey(null);
     }
     setSaving(false);
+  };
+
+  const extractMetrics = async (key: string, source: TeacherProfile, inEdit: boolean) => {
+    if (!source.bio && !source.notes) {
+      toast({ title: "אין טקסט לניתוח", description: "כתוב פרופיל מורחב ואז הפק ציונים.", variant: "destructive" });
+      return;
+    }
+    setExtractingKey(key);
+    try {
+      const { data, error } = await supabase.functions.invoke("extract-teacher-metrics", {
+        body: { name: source.name, bio: source.bio, notes: source.notes },
+      });
+      if (error) throw error;
+      const metrics = (data as any)?.metrics;
+      if (!metrics) throw new Error("לא התקבלו ציונים");
+      const updated: TeacherProfile = { ...source, metrics, metricsUpdatedAt: new Date().toISOString() };
+      if (inEdit) {
+        setDraft(updated);
+      } else {
+        await saveTeacherProfile(key, updated);
+        setTeachers((prev) => ({ ...prev, [key]: updated }));
+      }
+      toast({ title: "הציונים חולצו בהצלחה", description: "8 מדדים עודכנו על סמך הפרופיל." });
+    } catch (e: any) {
+      toast({ title: "שגיאה בהפקת ציונים", description: e?.message || "נסה שוב", variant: "destructive" });
+    } finally {
+      setExtractingKey(null);
+    }
   };
 
   if (loading) {
@@ -98,9 +132,20 @@ const TeacherProfiles = () => {
                       </button>
                     </>
                   ) : (
-                    <button onClick={() => startEdit(key)} className="btn-intake bg-muted text-foreground text-xs px-3 py-1.5 gap-1">
-                      <Edit3 className="w-3.5 h-3.5" /> ערוך
-                    </button>
+                    <>
+                      <button
+                        onClick={() => extractMetrics(key, t || { name: "" }, false)}
+                        disabled={extractingKey === key || (!t?.bio && !t?.notes)}
+                        className="btn-intake bg-primary/10 text-primary text-xs px-3 py-1.5 gap-1 disabled:opacity-50"
+                        title="חלץ ציונים מספריים מהפרופיל המילולי באמצעות בינה מלאכותית"
+                      >
+                        {extractingKey === key ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                        {t?.metrics ? "רענן ציונים" : "הפק ציונים"}
+                      </button>
+                      <button onClick={() => startEdit(key)} className="btn-intake bg-muted text-foreground text-xs px-3 py-1.5 gap-1">
+                        <Edit3 className="w-3.5 h-3.5" /> ערוך
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
@@ -149,6 +194,25 @@ const TeacherProfiles = () => {
                       className="mt-1 w-full bg-card border border-input rounded-lg px-3 py-2 text-sm"
                     />
                   </div>
+                  <div className="pt-2 border-t border-border">
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-[11px] font-bold text-muted-foreground">מדדים מספריים (1–5)</label>
+                      <button
+                        type="button"
+                        onClick={() => extractMetrics(editingKey!, draft, true)}
+                        disabled={extractingKey === editingKey || (!draft.bio && !draft.notes)}
+                        className="btn-intake bg-primary/10 text-primary text-[11px] px-2 py-1 gap-1 disabled:opacity-50"
+                      >
+                        {extractingKey === editingKey ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                        {draft.metrics ? "רענן מהטקסט" : "הפק מהטקסט"}
+                      </button>
+                    </div>
+                    <MetricsGrid
+                      metrics={draft.metrics}
+                      editable
+                      onChange={(k, v) => setDraft({ ...draft, metrics: { ...(draft.metrics || {}), [k]: v } })}
+                    />
+                  </div>
                 </div>
               ) : (
                 <>
@@ -163,6 +227,12 @@ const TeacherProfiles = () => {
                     <div className="text-sm text-foreground/85 leading-relaxed whitespace-pre-line">{t.bio}</div>
                   ) : (
                     <p className="text-xs text-muted-foreground italic">טרם הוזן פרופיל מורחב — לחץ "ערוך" להוספה.</p>
+                  )}
+                  {t?.metrics && (
+                    <div className="mt-3 pt-3 border-t border-border">
+                      <p className="text-[11px] font-bold text-muted-foreground mb-2">מדדים מספריים (1–5) — חולצו מהפרופיל</p>
+                      <MetricsGrid metrics={t.metrics} />
+                    </div>
                   )}
                   {t?.notes && (
                     <div className="mt-3 pt-3 border-t border-border">
@@ -181,3 +251,44 @@ const TeacherProfiles = () => {
 };
 
 export default TeacherProfiles;
+
+function MetricsGrid({
+  metrics,
+  editable,
+  onChange,
+}: {
+  metrics?: Partial<Record<TeacherMetricKey, number>>;
+  editable?: boolean;
+  onChange?: (k: TeacherMetricKey, v: number) => void;
+}) {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      {TEACHER_METRIC_KEYS.map((k) => {
+        const val = metrics?.[k] ?? 3;
+        const pct = ((val - 1) / 4) * 100;
+        return (
+          <div key={k} className="bg-muted/40 rounded-lg px-3 py-2">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[11.5px] font-bold text-foreground/80">{TEACHER_METRIC_LABELS[k]}</span>
+              <span className="text-[11px] font-bold text-primary tabular-nums">{val}/5</span>
+            </div>
+            <div className="h-1.5 rounded-full bg-border overflow-hidden">
+              <div className="h-full bg-primary transition-all" style={{ width: `${pct}%` }} />
+            </div>
+            {editable && (
+              <input
+                type="range"
+                min={1}
+                max={5}
+                step={1}
+                value={val}
+                onChange={(e) => onChange?.(k, Number(e.target.value))}
+                className="w-full mt-1 accent-primary"
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
