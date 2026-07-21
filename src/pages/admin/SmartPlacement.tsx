@@ -280,6 +280,16 @@ const SmartPlacement = () => {
     }
   };
 
+  const updateStudentGrade = async (studentId: string, grade: string) => {
+    try {
+      await updateSessionDB(studentId, { grade } as any);
+      setSessions((prev) => prev.map((s) => s.id === studentId ? { ...s, grade } : s));
+    } catch (e) {
+      console.error(e);
+      alert("שגיאה בעדכון שכבת הגיל");
+    }
+  };
+
   const currentClassFor = (a: BatchAssignment) => overrides[a.studentId] ?? a.classKey;
 
   const moveStudent = (studentId: string, toClass: string) => {
@@ -505,6 +515,7 @@ const SmartPlacement = () => {
           teachers={teachers}
           onSetGender={updateStudentGender}
           onSetClass={(studentId, classKey) => moveStudent(studentId, classKey)}
+          onSetGrade={updateStudentGrade}
           onClose={() => setDetailsFor(null)}
         />
       )}
