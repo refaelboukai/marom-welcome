@@ -32,6 +32,8 @@ import {
   Trash2,
   Move,
   X,
+  Save,
+  RotateCcw,
 } from "lucide-react";
 
 interface BatchAssignment {
@@ -53,6 +55,14 @@ interface BatchResult {
 interface ChatMsg { role: "user" | "assistant"; content: string; }
 
 const UNASSIGNED_KEY = "__unassigned__";
+const DRAFT_KEY = "smart_placement_draft_v1";
+
+interface DraftPayload {
+  batchResult: BatchResult;
+  overrides: Record<string, string>;
+  batchChat: ChatMsg[];
+  savedAt: string;
+}
 
 function resolveGender(s?: IntakeSession | null): Gender {
   if (!s) return "unknown";
@@ -109,6 +119,8 @@ const SmartPlacement = () => {
 
   // Details modal for viewing an assignment's rationale
   const [detailsFor, setDetailsFor] = useState<BatchAssignment | null>(null);
+  const [draftSavedAt, setDraftSavedAt] = useState<string | null>(null);
+  const [draftJustSaved, setDraftJustSaved] = useState(false);
 
   // Drag state (HTML5 dnd + touch tap-to-move fallback)
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -121,6 +133,19 @@ const SmartPlacement = () => {
       setClassGroups(g);
       setTeachers(t);
       setLoading(false);
+      // Auto-load draft if present
+      try {
+        const raw = localStorage.getItem(DRAFT_KEY);
+        if (raw) {
+          const draft = JSON.parse(raw) as DraftPayload;
+          if (draft?.batchResult?.assignments) {
+            setBatchResult(draft.batchResult);
+            setOverrides(draft.overrides || {});
+            setBatchChat(draft.batchChat || []);
+            setDraftSavedAt(draft.savedAt || null);
+          }
+        }
+      } catch (e) { console.error("draft load failed", e); }
     });
   }, []);
 
@@ -214,9 +239,44 @@ const SmartPlacement = () => {
       }
       const fresh = await getSessionsDB();
       setSessions(fresh);
+      try { localStorage.removeItem(DRAFT_KEY); } catch {}
       navigate("/admin/placement");
     } finally {
       setBatchConfirming(false);
+    }
+  };
+
+  const saveDraft = () => {
+    if (!batchResult) return;
+    const savedAt = new Date().toISOString();
+    const payload: DraftPayload = { batchResult, overrides, batchChat, savedAt };
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(payload));
+      setDraftSavedAt(savedAt);
+      setDraftJustSaved(true);
+      setTimeout(() => setDraftJustSaved(false), 2000);
+    } catch (e) {
+      console.error(e);
+      alert("שגיאה בשמירת הטיוטה");
+    }
+  };
+
+  const clearDraftAndRestart = () => {
+    if (!confirm("למחוק את הטיוטה השמורה ולהתחיל שיבוץ מחדש?")) return;
+    try { localStorage.removeItem(DRAFT_KEY); } catch {}
+    setBatchResult(null);
+    setOverrides({});
+    setBatchChat([]);
+    setDraftSavedAt(null);
+  };
+
+  const updateStudentGender = async (studentId: string, gender: "male" | "female") => {
+    try {
+      await updateSessionDB(studentId, { gender } as any);
+      setSessions((prev) => prev.map((s) => s.id === studentId ? { ...s, gender } : s));
+    } catch (e) {
+      console.error(e);
+      alert("שגיאה בעדכון המגדר");
     }
   };
 
@@ -296,6 +356,18 @@ const SmartPlacement = () => {
       </div>
 
       <div className="max-w-7xl mx-auto p-4 space-y-4 pb-40">
+        {batchResult && draftSavedAt && (
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-2.5 text-[11.5px] text-foreground/80 flex items-center justify-between gap-2">
+            <span className="flex items-center gap-1.5">
+              <Save className="w-3.5 h-3.5 text-primary" />
+              נטענה טיוטה שמורה מ-{new Date(draftSavedAt).toLocaleString("he-IL")}
+            </span>
+            <button onClick={clearDraftAndRestart} className="inline-flex items-center gap-1 text-primary hover:underline">
+              <RotateCcw className="w-3 h-3" /> התחל מחדש
+            </button>
+          </div>
+        )}
+
         {!batchResult && !batchLoading && !batchError && (
           <div className="intake-card text-center py-16">
             <Wand2 className="w-12 h-12 mx-auto text-primary/40 mb-3" />
@@ -408,6 +480,12 @@ const SmartPlacement = () => {
                 className="btn-intake bg-secondary text-secondary-foreground text-xs flex items-center gap-1 disabled:opacity-50">
                 <Send className="w-3.5 h-3.5" /> שלח
               </button>
+              <button onClick={saveDraft} disabled={batchLoading}
+                title="שמור טיוטה — נשמרת במכשיר זה ותיטען אוטומטית בכניסה הבאה"
+                className={`btn-intake text-sm flex items-center gap-1.5 disabled:opacity-50 ${draftJustSaved ? "bg-success text-success-foreground" : "bg-muted text-foreground"}`}>
+                {draftJustSaved ? <CheckCircle className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+                {draftJustSaved ? "נשמר" : "שמור טיוטה"}
+              </button>
               <button onClick={confirmBatch} disabled={batchConfirming || batchLoading}
                 className="btn-intake bg-primary text-primary-foreground text-sm flex items-center gap-1.5 disabled:opacity-50">
                 {batchConfirming ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
@@ -425,6 +503,7 @@ const SmartPlacement = () => {
           currentClassKey={overrides[detailsFor.studentId] ?? detailsFor.classKey}
           classGroups={classGroups}
           teachers={teachers}
+          onSetGender={updateStudentGender}
           onClose={() => setDetailsFor(null)}
         />
       )}
@@ -683,13 +762,14 @@ export default SmartPlacement;
 
 // ----- Details modal -----
 const DetailsModal = ({
-  assignment, session, currentClassKey, classGroups, teachers, onClose,
+  assignment, session, currentClassKey, classGroups, teachers, onSetGender, onClose,
 }: {
   assignment: BatchAssignment;
   session?: IntakeSession;
   currentClassKey: string;
   classGroups: ClassGroupsMap;
   teachers: TeacherProfilesMap;
+  onSetGender: (studentId: string, gender: "male" | "female") => void | Promise<void>;
   onClose: () => void;
 }) => {
   const gender = resolveGender(session);
@@ -721,6 +801,20 @@ const DetailsModal = ({
         </div>
 
         <div className="p-4 space-y-3">
+          <div className="rounded-xl border border-border p-3">
+            <p className="text-xs font-bold text-muted-foreground mb-2">מגדר {gender === "unknown" && <span className="text-destructive font-normal">— חסר, יש לבחור</span>}</p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => onSetGender(assignment.studentId, "male")}
+                className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${gender === "male" ? "bg-sky-100 border-sky-300 text-sky-700" : "bg-card border-border hover:border-sky-300"}`}
+              >♂ זכר</button>
+              <button
+                onClick={() => onSetGender(assignment.studentId, "female")}
+                className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${gender === "female" ? "bg-pink-100 border-pink-300 text-pink-700" : "bg-card border-border hover:border-pink-300"}`}
+              >♀ נקבה</button>
+            </div>
+          </div>
+
           {assignment.confidence && (
             <div className="flex items-center gap-2 text-xs">
               <span className="text-muted-foreground">רמת ביטחון:</span>
