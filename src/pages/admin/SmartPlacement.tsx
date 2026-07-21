@@ -280,6 +280,16 @@ const SmartPlacement = () => {
     }
   };
 
+  const updateStudentGrade = async (studentId: string, grade: string) => {
+    try {
+      await updateSessionDB(studentId, { grade } as any);
+      setSessions((prev) => prev.map((s) => s.id === studentId ? { ...s, grade } : s));
+    } catch (e) {
+      console.error(e);
+      alert("שגיאה בעדכון שכבת הגיל");
+    }
+  };
+
   const currentClassFor = (a: BatchAssignment) => overrides[a.studentId] ?? a.classKey;
 
   const moveStudent = (studentId: string, toClass: string) => {
@@ -505,6 +515,7 @@ const SmartPlacement = () => {
           teachers={teachers}
           onSetGender={updateStudentGender}
           onSetClass={(studentId, classKey) => moveStudent(studentId, classKey)}
+          onSetGrade={updateStudentGrade}
           onClose={() => setDetailsFor(null)}
         />
       )}
@@ -763,7 +774,7 @@ export default SmartPlacement;
 
 // ----- Details modal -----
 const DetailsModal = ({
-  assignment, session, currentClassKey, classGroups, teachers, onSetGender, onSetClass, onClose,
+  assignment, session, currentClassKey, classGroups, teachers, onSetGender, onSetClass, onSetGrade, onClose,
 }: {
   assignment: BatchAssignment;
   session?: IntakeSession;
@@ -772,11 +783,14 @@ const DetailsModal = ({
   teachers: TeacherProfilesMap;
   onSetGender: (studentId: string, gender: "male" | "female") => void | Promise<void>;
   onSetClass: (studentId: string, classKey: string) => void;
+  onSetGrade: (studentId: string, grade: string) => void | Promise<void>;
   onClose: () => void;
 }) => {
   const gender = resolveGender(session);
   const classLabel = currentClassKey === UNASSIGNED_KEY ? "ללא שיוך" : (classGroups[currentClassKey] || currentClassKey);
   const teacher = currentClassKey !== UNASSIGNED_KEY ? teachers[currentClassKey] : undefined;
+  const GRADES = ["ז", "ח", "ט", "י", "יא", "יב"];
+  const currentGrade = session?.grade || "";
   return (
     <div
       className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-3"
@@ -814,6 +828,24 @@ const DetailsModal = ({
                 onClick={() => onSetGender(assignment.studentId, "female")}
                 className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${gender === "female" ? "bg-pink-100 border-pink-300 text-pink-700" : "bg-card border-border hover:border-pink-300"}`}
               >♀ נקבה</button>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border p-3">
+            <p className="text-xs font-bold text-muted-foreground mb-2">שכבת גיל {!currentGrade && <span className="text-destructive font-normal">— חסר, יש לבחור</span>}</p>
+            <div className="flex flex-wrap gap-1.5">
+              {GRADES.map((g) => {
+                const active = currentGrade === g;
+                return (
+                  <button
+                    key={g}
+                    onClick={() => onSetGrade(assignment.studentId, g)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${active ? "bg-success/10 border-success text-success" : "bg-card border-border hover:border-success/40"}`}
+                  >
+                    שכבה {g}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
