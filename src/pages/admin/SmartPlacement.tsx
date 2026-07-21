@@ -737,11 +737,10 @@ const DetailsModal = ({
             </p>
           </div>
 
-          {teacher && (teacher.name || teacher.bio) && (
+          {teacher?.name && (
             <div className="rounded-xl bg-muted/30 border border-border p-3">
-              <p className="text-xs font-bold text-primary mb-1">על המחנכת</p>
-              {teacher.name && <p className="text-sm font-medium">{teacher.name}</p>}
-              {teacher.bio && <p className="text-[12.5px] text-foreground/80 leading-relaxed whitespace-pre-wrap mt-1">{teacher.bio}</p>}
+              <p className="text-xs font-bold text-primary mb-1">מחנכת הכיתה</p>
+              <p className="text-sm font-medium">{teacher.name}</p>
             </div>
           )}
 

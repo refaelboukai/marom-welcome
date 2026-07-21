@@ -579,16 +579,36 @@ export interface TeacherProfile {
 
 export type TeacherProfilesMap = Record<string, TeacherProfile>; // classKey -> profile
 
+// Default grade assignment per class (used when a profile has no explicit grades set).
+export const DEFAULT_TEACHER_GRADES: Record<string, string[]> = {
+  eden: ["ז"],
+  tali: ["ח"],
+  chava: ["ט"],
+  ilana: ["י"],
+};
+
 export async function getTeacherProfiles(): Promise<TeacherProfilesMap> {
   const { data, error } = await (supabase as any)
     .from("school_settings")
     .select("value")
     .eq("key", "teacher_profiles")
     .maybeSingle();
-  if (error || !data) return {};
-  const value = data.value;
-  if (value && typeof value === "object" && !Array.isArray(value)) return value as TeacherProfilesMap;
-  return {};
+  let map: TeacherProfilesMap = {};
+  if (!error && data) {
+    const value = data.value;
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      map = value as TeacherProfilesMap;
+    }
+  }
+  // Merge in default grades for known teacher keys when none are set.
+  const merged: TeacherProfilesMap = { ...map };
+  for (const [key, grades] of Object.entries(DEFAULT_TEACHER_GRADES)) {
+    const cur = merged[key] || { name: "" };
+    if (!cur.grades || cur.grades.length === 0) {
+      merged[key] = { ...cur, grades };
+    }
+  }
+  return merged;
 }
 
 export async function saveTeacherProfile(classKey: string, profile: TeacherProfile): Promise<boolean> {
