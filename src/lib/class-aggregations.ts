@@ -90,6 +90,8 @@ export function buildStudentProfile(s: IntakeSession): StudentProfileForAI {
     topChallenges: weak.slice(0, 6).map((x) => x.text),
     openResponses: s.studentOpenResponses || {},
     narrativeSummary: (s as any).narrativeSummary || "",
+    staffConduct: (s.staffOpenResponses || {})["staff_conduct"] || "",
+    staffBehavioral: (s.staffOpenResponses || {})["staff_behavioral"] || "",
   };
 }
 
