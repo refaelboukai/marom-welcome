@@ -640,6 +640,50 @@ const SmartPlacement = () => {
           onClose={() => setDetailsFor(null)}
         />
       )}
+
+      <AlertDialog open={!!pendingMove} onOpenChange={(o) => { if (!o) cancelPendingMove(); }}>
+        <AlertDialogContent dir="rtl" className="max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-right">
+              <div className="w-9 h-9 rounded-full bg-warning/15 text-warning flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <span>אישור העברת תלמיד/ה</span>
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-right pt-1">
+              {pendingMove && (
+                <>
+                  העברת <span className="font-semibold text-foreground">{pendingMove.studentName}</span>
+                  {" → "}
+                  <span className="font-semibold text-foreground">{pendingMove.destLabel}</span>
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          {pendingMove && pendingMove.warnings.length > 0 && (
+            <div className="rounded-xl border border-warning/30 bg-warning/5 p-4 space-y-2">
+              <p className="text-xs font-bold text-warning flex items-center gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5" />
+                שים/י לב
+              </p>
+              <ul className="space-y-1.5 text-sm text-foreground/85 leading-relaxed">
+                {pendingMove.warnings.map((w, i) => (
+                  <li key={i} className="flex gap-2">
+                    <span className="text-warning mt-0.5">•</span>
+                    <span>{w}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel onClick={cancelPendingMove}>ביטול</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmPendingMove}>אישור והעברה</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
