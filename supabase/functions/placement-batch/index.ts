@@ -63,7 +63,7 @@ serve(async (req) => {
 - classKey חייב להיות אחד מהמפתחות שסופקו.
 - שבץ את כל התלמידים שסופקו. אל תשמיט.
 - openQuestions נדרשות רק כשבאמת חסר מידע — לא סתם.`;
-- שמור על רציונלים קצרים (עד 2 משפטים), overallRationale עד 4 משפטים, כדי לא לחרוג באורך התשובה.`;
+// prompt continues via userContent below
 
     const userContent = `רשימת תלמידים לשיבוץ:\n${JSON.stringify(students, null, 2)}\n\nהכיתות הזמינות (כולל מחנכת ותלמידים קיימים):\n${JSON.stringify(classes, null, 2)}`;
 
