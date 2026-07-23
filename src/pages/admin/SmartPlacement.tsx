@@ -15,6 +15,16 @@ import { IntakeSession } from "@/lib/types";
 import { aggregateClass, buildStudentProfile } from "@/lib/class-aggregations";
 import { getStudentGender, Gender } from "@/lib/gender-utils";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   ArrowRight,
   Loader2,
   Sparkles,
@@ -126,6 +136,15 @@ const SmartPlacement = () => {
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<string | null>(null);
+
+  // Move confirmation dialog
+  const [pendingMove, setPendingMove] = useState<{
+    studentId: string;
+    toClass: string;
+    studentName: string;
+    destLabel: string;
+    warnings: string[];
+  } | null>(null);
 
   useEffect(() => {
     Promise.all([getSessionsDB(), getClassGroups(), getTeacherProfiles()]).then(([s, g, t]) => {
@@ -376,14 +395,26 @@ const SmartPlacement = () => {
     if (warnings.length > 0) {
       const name = sessionsById[studentId]?.studentName || "התלמיד/ה";
       const destLabel = toClass === UNASSIGNED_KEY ? "ללא שיוך" : (classGroups[toClass] || toClass);
-      const msg = `העברת ${name} → ${destLabel}\n\nשים/י לב:\n• ${warnings.join("\n• ")}\n\nלהמשיך בהעברה?`;
-      if (!confirm(msg)) {
-        setSelectedId(null);
-        setDropTarget(null);
-        return;
-      }
+      setPendingMove({ studentId, toClass, studentName: name, destLabel, warnings });
+      setDropTarget(null);
+      return;
     }
     setOverrides((prev) => ({ ...prev, [studentId]: toClass }));
+    setSelectedId(null);
+    setDropTarget(null);
+  };
+
+  const confirmPendingMove = () => {
+    if (!pendingMove) return;
+    const { studentId, toClass } = pendingMove;
+    setOverrides((prev) => ({ ...prev, [studentId]: toClass }));
+    setPendingMove(null);
+    setSelectedId(null);
+    setDropTarget(null);
+  };
+
+  const cancelPendingMove = () => {
+    setPendingMove(null);
     setSelectedId(null);
     setDropTarget(null);
   };
@@ -609,6 +640,50 @@ const SmartPlacement = () => {
           onClose={() => setDetailsFor(null)}
         />
       )}
+
+      <AlertDialog open={!!pendingMove} onOpenChange={(o) => { if (!o) cancelPendingMove(); }}>
+        <AlertDialogContent dir="rtl" className="max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-right">
+              <div className="w-9 h-9 rounded-full bg-warning/15 text-warning flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <span>אישור העברת תלמיד/ה</span>
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-right pt-1">
+              {pendingMove && (
+                <>
+                  העברת <span className="font-semibold text-foreground">{pendingMove.studentName}</span>
+                  {" → "}
+                  <span className="font-semibold text-foreground">{pendingMove.destLabel}</span>
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          {pendingMove && pendingMove.warnings.length > 0 && (
+            <div className="rounded-xl border border-warning/30 bg-warning/5 p-4 space-y-2">
+              <p className="text-xs font-bold text-warning flex items-center gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5" />
+                שים/י לב
+              </p>
+              <ul className="space-y-1.5 text-sm text-foreground/85 leading-relaxed">
+                {pendingMove.warnings.map((w, i) => (
+                  <li key={i} className="flex gap-2">
+                    <span className="text-warning mt-0.5">•</span>
+                    <span>{w}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel onClick={cancelPendingMove}>ביטול</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmPendingMove}>אישור והעברה</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
