@@ -169,6 +169,7 @@ const SmartPlacement = () => {
     teacherBio: teachers[c.key]?.bio || undefined,
     teacherNotes: teachers[c.key]?.notes || undefined,
     teacherGrades: teachers[c.key]?.grades || [],
+    teacherMetrics: teachers[c.key]?.metrics || undefined,
     currentStudentCount: c.aggregate.studentCount,
     genderBreakdown: c.aggregate.genderBreakdown,
     gradeDistribution: c.aggregate.gradeDistribution,

@@ -164,6 +164,7 @@ export const STAFF_QUESTION_KEYS = [
   "staff_social",
   "staff_academic",
   "staff_emotional",
+  "staff_conduct",
   "staff_recommendations",
 ] as const;
 
@@ -172,5 +173,6 @@ export const STAFF_QUESTION_LABELS: Record<string, string> = {
   staff_social: "תפקוד חברתי",
   staff_academic: "תפקוד לימודי",
   staff_emotional: "תפקוד רגשי",
+  staff_conduct: "התנהגות, קבלת סמכות וטמפרמנט",
   staff_recommendations: "המלצות הצוות",
 };
