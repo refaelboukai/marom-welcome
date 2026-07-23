@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getSessionDB, updateSessionDB, getSessionsDB } from "@/lib/supabase-storage";
 import { IntakeSession, STAFF_QUESTION_LABELS, STAFF_QUESTION_KEYS } from "@/lib/types";
-import { questionnaireItems } from "@/data/questionnaires";
+import { allQuestionnaireItems as questionnaireItems } from "@/data/questionnaires";
 import LikertScale from "@/components/LikertScale";
 import ProgressHeader from "@/components/ProgressHeader";
 import logo from "@/assets/logo.jpeg";
