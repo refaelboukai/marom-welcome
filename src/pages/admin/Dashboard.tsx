@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { getSessionsDB, resetAllSessionsDB, createSessionDB, getReminderMessage, updateSessionDB, getClassGroups, saveClassGroups, DEFAULT_CLASS_GROUPS, ClassGroupsMap } from "@/lib/supabase-storage";
 import { IntakeSession, IntakeStatus } from "@/lib/types";
-import { questionnaireItems } from "@/data/questionnaires";
+import { studentParentItems } from "@/data/questionnaires";
 import { CLASS_GROUPS, ADMIN_CODE } from "@/data/students";
 import StatusBadge from "@/components/StatusBadge";
 import CodeManagement from "@/components/CodeManagement";
@@ -121,8 +121,8 @@ const Dashboard = () => {
     return sessionsForYear.map((s) => {
       const scores = calculateScores(s.studentResponses, s.parentResponses);
       const riskFlags = generateRiskFlags(scores);
-      const studentCompletion = getCompletionPercentage(s.studentResponses, questionnaireItems.length);
-      const parentCompletion = getCompletionPercentage(s.parentResponses, questionnaireItems.length);
+      const studentCompletion = getCompletionPercentage(s.studentResponses, studentParentItems.length);
+      const parentCompletion = getCompletionPercentage(s.parentResponses, studentParentItems.length);
       return { ...s, scores, riskFlags, studentCompletion, parentCompletion };
     });
   }, [sessionsForYear]);
