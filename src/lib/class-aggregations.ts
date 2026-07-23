@@ -19,6 +19,15 @@ export interface StudentProfileForAI {
   narrativeSummary?: string;
   staffConduct?: string;
   staffBehavioral?: string;
+  conductMetrics?: {
+    authority: number;
+    rules: number;
+    frustration: number;
+    impulsivity: number;
+    temperament: number;
+    cooperation: number;
+    average: number;
+  };
 }
 
 export interface ClassAggregate {
@@ -57,6 +66,28 @@ export function buildStudentProfile(s: IntakeSession): StudentProfileForAI {
   const lc = calculateLearningSubdomains(s.studentResponses || {}, s.parentResponses || {});
   const flags = generateRiskFlags(scores);
 
+  // Conduct/behavioral metrics from staff (ca_01..ca_06)
+  const staffResp: Record<string, number> = (s as any).staffResponses || {};
+  const caKeys = ["ca_01", "ca_02", "ca_03", "ca_04", "ca_05", "ca_06"];
+  const caVals = caKeys.map((k) => (typeof staffResp[k] === "number" ? staffResp[k] : null));
+  const hasCa = caVals.some((v) => v != null);
+  const conductMetrics = hasCa
+    ? (() => {
+        const nums = caVals.map((v) => (v == null ? 0 : v));
+        const present = caVals.filter((v) => v != null) as number[];
+        const avg = present.length ? present.reduce((a, b) => a + b, 0) / present.length : 0;
+        return {
+          authority: nums[0],
+          rules: nums[1],
+          frustration: nums[2],
+          impulsivity: nums[3],
+          temperament: nums[4],
+          cooperation: nums[5],
+          average: Math.round(avg * 100) / 100,
+        };
+      })()
+    : undefined;
+
   // find strong / weak items
   const strong: { id: string; text: string; val: number }[] = [];
   const weak: { id: string; text: string; val: number }[] = [];
@@ -92,6 +123,7 @@ export function buildStudentProfile(s: IntakeSession): StudentProfileForAI {
     narrativeSummary: (s as any).narrativeSummary || "",
     staffConduct: (s.staffOpenResponses || {})["staff_conduct"] || "",
     staffBehavioral: (s.staffOpenResponses || {})["staff_behavioral"] || "",
+    conductMetrics,
   };
 }
 
