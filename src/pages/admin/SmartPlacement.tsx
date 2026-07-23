@@ -293,7 +293,96 @@ const SmartPlacement = () => {
 
   const currentClassFor = (a: BatchAssignment) => overrides[a.studentId] ?? a.classKey;
 
+  const computeMoveWarnings = (studentId: string, toClass: string): string[] => {
+    const warnings: string[] = [];
+    const session = sessionsById[studentId];
+    if (!session) return warnings;
+    const profile = buildStudentProfile(session);
+    const fromClass = (batchResult?.assignments || []).find((a) => a.studentId === studentId);
+    const fromKey = fromClass ? (overrides[studentId] ?? fromClass.classKey) : UNASSIGNED_KEY;
+    if (fromKey === toClass) return warnings;
+
+    // Grade mismatch
+    if (toClass !== UNASSIGNED_KEY) {
+      const teacher = teachers[toClass];
+      const grades = teacher?.grades || [];
+      if (grades.length > 0 && profile.grade && !grades.includes(profile.grade)) {
+        warnings.push(`שכבת התלמיד/ה (${profile.grade}) אינה נכללת בשכבות של ${teacher?.name || "המחנכת"} (${grades.join(", ")}).`);
+      }
+    }
+
+    // Gender balance after move
+    if (toClass !== UNASSIGNED_KEY) {
+      const destItems = (columns[toClass] || []).filter((a) => a.studentId !== studentId);
+      let m = 0, f = 0;
+      destItems.forEach((a) => {
+        const g = resolveGender(sessionsById[a.studentId]);
+        if (g === "male") m++; else if (g === "female") f++;
+      });
+      const studentG = resolveGender(session);
+      if (studentG === "male") m++; else if (studentG === "female") f++;
+      const total = m + f;
+      if (total >= 4) {
+        const ratio = m / total;
+        if (ratio >= 0.75) warnings.push(`לאחר ההעברה יהיו ${m} בנים ו-${f} בנות בכיתה (${Math.round(ratio*100)}% בנים) — חוסר איזון מגדרי.`);
+        else if (ratio <= 0.25) warnings.push(`לאחר ההעברה יהיו ${m} בנים ו-${f} בנות בכיתה (${Math.round((1-ratio)*100)}% בנות) — חוסר איזון מגדרי.`);
+      }
+
+      // Behavioral: student needs high authority/structure but teacher weak there
+      const cm = profile.conductMetrics;
+      const tm = teachers[toClass]?.metrics as any;
+      if (cm && tm) {
+        const authWeak = (cm.authority <= 2.5) || (cm.rules <= 2.5);
+        if (authWeak && ((tm.authority ?? 5) < 3.5 || (tm.structure ?? 5) < 3.5)) {
+          warnings.push(`התלמיד/ה מתקשה בקבלת סמכות/כללים (סמכות ${cm.authority}, כללים ${cm.rules}) — המחנכת חלשה יחסית בסמכות/מסגור.`);
+        }
+        const sensitive = (cm.temperament <= 2.5) || (cm.frustration <= 2.5) || (cm.impulsivity <= 2.5);
+        if (sensitive && ((tm.warmth ?? 5) < 3.5 || (tm.patience ?? 5) < 3.5)) {
+          warnings.push(`טמפרמנט רגיש/פגיע (טמפ' ${cm.temperament}, תסכול ${cm.frustration}) — המחנכת חלשה יחסית בחום/סבלנות.`);
+        }
+        if (cm.average <= 2.8) {
+          // How many at-risk behavioral students already in dest?
+          const destItemsRaw = (columns[toClass] || []).filter((a) => a.studentId !== studentId);
+          let atRisk = 0;
+          destItemsRaw.forEach((a) => {
+            const s = sessionsById[a.studentId];
+            if (!s) return;
+            const p = buildStudentProfile(s);
+            if (p.conductMetrics && p.conductMetrics.average <= 2.8) atRisk++;
+          });
+          if (atRisk >= 2) {
+            warnings.push(`בכיתה כבר ${atRisk} תלמידים עם פרופיל התנהגותי מאתגר (ממוצע ≤2.8) — הוספה תיצור עומס.`);
+          }
+        }
+      }
+    }
+
+    // Domain scores comparison to class average
+    if (toClass !== UNASSIGNED_KEY) {
+      const agg = classAggregates.find((c) => c.key === toClass)?.aggregate;
+      if (agg && profile.riskFlags.length >= 2) {
+        const existingAtRisk = agg.studentsAtRisk.length;
+        if (existingAtRisk >= 3) {
+          warnings.push(`התלמיד/ה עם ${profile.riskFlags.length} דגלי סיכון בשאלונים, והכיתה כבר כוללת ${existingAtRisk} תלמידים בסיכון.`);
+        }
+      }
+    }
+
+    return warnings;
+  };
+
   const moveStudent = (studentId: string, toClass: string) => {
+    const warnings = computeMoveWarnings(studentId, toClass);
+    if (warnings.length > 0) {
+      const name = sessionsById[studentId]?.studentName || "התלמיד/ה";
+      const destLabel = toClass === UNASSIGNED_KEY ? "ללא שיוך" : (classGroups[toClass] || toClass);
+      const msg = `העברת ${name} → ${destLabel}\n\nשים/י לב:\n• ${warnings.join("\n• ")}\n\nלהמשיך בהעברה?`;
+      if (!confirm(msg)) {
+        setSelectedId(null);
+        setDropTarget(null);
+        return;
+      }
+    }
     setOverrides((prev) => ({ ...prev, [studentId]: toClass }));
     setSelectedId(null);
     setDropTarget(null);
