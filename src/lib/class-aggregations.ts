@@ -1,6 +1,6 @@
 import { IntakeSession, SECTION_LABELS, OPEN_QUESTION_LABELS } from "./types";
 import { calculateScores, calculateQoLSubdomains, calculateLearningSubdomains, generateRiskFlags } from "./scoring";
-import { questionnaireItems } from "@/data/questionnaires";
+import { questionnaireItems, studentParentItems } from "@/data/questionnaires";
 
 export interface StudentProfileForAI {
   id: string;
@@ -38,7 +38,7 @@ export interface ClassAggregate {
 }
 
 function completionOf(s: IntakeSession): number {
-  const total = questionnaireItems.length * 2;
+  const total = studentParentItems.length * 2;
   const answered = Object.keys(s.studentResponses || {}).length + Object.keys(s.parentResponses || {}).length;
   return Math.round((answered / total) * 100);
 }

@@ -170,6 +170,39 @@ export const questionnaireItems: QuestionnaireItem[] = [
     parentText: "בנך/בתך לומד/ת הכי טוב דרך עשייה פעילה (בנייה, משחק, תנועה) ולא רק הקשבה.", isReverse: true },
 ];
 
+// ====== STAFF-ONLY: CONDUCT, AUTHORITY & TEMPERAMENT (6 items) ======
+// High score = strong positive functioning (accepts authority, keeps rules, stable temperament).
+// isReverse: false -> higher raw = higher normalized (better).
+export const staffConductItems: QuestionnaireItem[] = [
+  { id: "ca_01", section: "conduct_authority", subdomain: "authority", scaleType: "characterizes", staffOnly: true,
+    studentText: "מקבל/ת סמכות ממבוגר ומגיב/ה בכבוד להנחיות של הצוות.",
+    parentText: "התלמיד/ה מקבל/ת סמכות ממבוגר ומגיב/ה בכבוד להנחיות הצוות.", isReverse: false },
+  { id: "ca_02", section: "conduct_authority", subdomain: "rules", scaleType: "characterizes", staffOnly: true,
+    studentText: "מכבד/ת גבולות וכללי כיתה ובית ספר.",
+    parentText: "התלמיד/ה מכבד/ת גבולות וכללי כיתה ובית ספר.", isReverse: false },
+  { id: "ca_03", section: "conduct_authority", subdomain: "frustration", scaleType: "characterizes", staffOnly: true,
+    studentText: "מתמודד/ת עם תסכול מבלי לפרוץ (צעקות, יציאה מהכיתה, פגיעה).",
+    parentText: "התלמיד/ה מתמודד/ת עם תסכול מבלי לפרוץ (צעקות, יציאה מהכיתה, פגיעה).", isReverse: false },
+  { id: "ca_04", section: "conduct_authority", subdomain: "impulsivity", scaleType: "characterizes", staffOnly: true,
+    studentText: "פועל/ת בשיקול דעת ולא באימפולסיביות במצבי כיתה.",
+    parentText: "התלמיד/ה פועל/ת בשיקול דעת ולא באימפולסיביות במצבי כיתה.", isReverse: false },
+  { id: "ca_05", section: "conduct_authority", subdomain: "temperament", scaleType: "characterizes", staffOnly: true,
+    studentText: "יציב/ה במצבי רוח לאורך היום הלימודי (טמפרמנט מאוזן).",
+    parentText: "התלמיד/ה יציב/ה במצבי רוח לאורך היום הלימודי (טמפרמנט מאוזן).", isReverse: false },
+  { id: "ca_06", section: "conduct_authority", subdomain: "cooperation", scaleType: "characterizes", staffOnly: true,
+    studentText: "משתף/ת פעולה בעבודה קבוצתית ומכבד/ת את חבריו/ה.",
+    parentText: "התלמיד/ה משתף/ת פעולה בעבודה קבוצתית ומכבד/ת את חבריו/ה.", isReverse: false },
+];
+
+// Convenience: full item set (student/parent + staff-only extras).
+export const allQuestionnaireItems: QuestionnaireItem[] = [
+  ...questionnaireItems,
+  ...staffConductItems,
+];
+
+// Items shown to students & parents (excludes staff-only conduct items).
+export const studentParentItems = questionnaireItems.filter((i) => !i.staffOnly);
+
 export const ITEMS_PER_PAGE = 3;
 
 export const sectionOrder: Array<{ section: string; label: string }> = [
@@ -178,6 +211,7 @@ export const sectionOrder: Array<{ section: string; label: string }> = [
   { section: "locus_of_control", label: "מיקוד שליטה" },
   { section: "cognitive_flexibility", label: "גמישות קוגניטיבית" },
   { section: "learning_characteristics", label: "מאפייני למידה" },
+  { section: "conduct_authority", label: "התנהגות, קבלת סמכות וטמפרמנט" },
 ];
 
 export const likertLabels = [

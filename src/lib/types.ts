@@ -13,7 +13,8 @@ export type QuestionnaireSection =
   | "self_efficacy"
   | "locus_of_control"
   | "cognitive_flexibility"
-  | "learning_characteristics";
+  | "learning_characteristics"
+  | "conduct_authority";
 
 export interface QuestionnaireItem {
   id: string;
@@ -25,6 +26,8 @@ export interface QuestionnaireItem {
   subdomain?: string;
   /** Optional Likert scale variant: "agreement" (default — "מסכים/לא מסכים") or "characterizes" ("מאפיין אותי") */
   scaleType?: "agreement" | "characterizes";
+  /** If true, this item is only presented in the staff questionnaire (not student/parent). */
+  staffOnly?: boolean;
 }
 
 export interface IntakeSession {
@@ -123,6 +126,7 @@ export const SECTION_LABELS: Record<QuestionnaireSection, string> = {
   locus_of_control: "מיקוד שליטה",
   cognitive_flexibility: "גמישות קוגניטיבית",
   learning_characteristics: "מאפייני למידה",
+  conduct_authority: "התנהגות, קבלת סמכות וטמפרמנט",
 };
 
 export const QOL_SUBDOMAIN_LABELS: Record<string, string> = {

@@ -1,6 +1,6 @@
 import { IntakeSession, SECTION_LABELS } from "@/lib/types";
 import { calculateScores, getScoreLabel } from "@/lib/scoring";
-import { questionnaireItems } from "@/data/questionnaires";
+import { studentParentItems } from "@/data/questionnaires";
 import * as XLSX from "xlsx";
 
 export function exportToExcel(sessions: IntakeSession[], filename: string) {
@@ -27,8 +27,8 @@ export function exportToExcel(sessions: IntakeSession[], filename: string) {
       "מאפייני למידה - תלמיד": scores.learningCharacteristics.studentNormalized >= 0 ? scores.learningCharacteristics.studentNormalized : "",
       "מאפייני למידה - הורה": scores.learningCharacteristics.parentNormalized >= 0 ? scores.learningCharacteristics.parentNormalized : "",
       "מאפייני למידה - כללי": scores.learningCharacteristics.normalized >= 0 ? scores.learningCharacteristics.normalized : "",
-      "השלמת תלמיד %": Math.round((Object.keys(s.studentResponses).length / questionnaireItems.length) * 100),
-      "השלמת הורה %": Math.round((Object.keys(s.parentResponses).length / questionnaireItems.length) * 100),
+      "השלמת תלמיד %": Math.round((Object.keys(s.studentResponses).length / studentParentItems.length) * 100),
+      "השלמת הורה %": Math.round((Object.keys(s.parentResponses).length / studentParentItems.length) * 100),
       "הערות צוות": s.adminNotes || "",
       "תאריך יצירה": new Date(s.createdAt).toLocaleDateString("he-IL"),
     };
