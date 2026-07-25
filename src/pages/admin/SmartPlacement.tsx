@@ -210,6 +210,23 @@ const SmartPlacement = () => {
 
   const unassignedCount = sessions.filter((s) => s.status !== "archived" && !s.classGroup).length;
 
+  // Class-level flags (anchors, sensory overload, impulsive triad, load)
+  const classFlagsByKey = useMemo(() => {
+    const out: Record<string, ReturnType<typeof computeClassDiversity> & { load: ReturnType<typeof computeClassLoad> }> = {};
+    Object.keys(classGroups).forEach((key) => {
+      const pendingIds = (batchResult?.assignments || [])
+        .filter((a) => (overrides[a.studentId] ?? a.classKey) === key)
+        .map((a) => a.studentId);
+      const existingIds = sessions.filter((s) => s.classGroup === key && s.status !== "archived").map((s) => s.id);
+      const allIds = Array.from(new Set([...existingIds, ...pendingIds]));
+      const profiles = allIds.map((id) => sessionsById[id]).filter(Boolean).map((s) => buildStudentProfile(s!));
+      const diversity = computeClassDiversity(profiles);
+      const load = computeClassLoad(profiles, (teachers[key]?.metrics as any) || null);
+      out[key] = { ...diversity, load };
+    });
+    return out;
+  }, [classGroups, batchResult, overrides, sessions, sessionsById, teachers]);
+
   const runBatch = async (extraChat: ChatMsg[] = batchChat) => {
     setBatchLoading(true);
     setBatchError("");
@@ -390,6 +407,43 @@ const SmartPlacement = () => {
         if (existingAtRisk >= 3) {
           warnings.push(`התלמיד/ה עם ${profile.riskFlags.length} דגלי סיכון בשאלונים, והכיתה כבר כוללת ${existingAtRisk} תלמידים בסיכון.`);
         }
+      }
+    }
+
+    // Relationship: avoid conflict (hard-flag)
+    if (toClass !== UNASSIGNED_KEY) {
+      const rel = profile.relationships;
+      const destIds = Array.from(new Set([
+        ...((columns[toClass] || []).map((a) => a.studentId)),
+        ...sessions.filter((s) => s.classGroup === toClass).map((s) => s.id),
+      ])).filter((id) => id !== studentId);
+      const conflicts: string[] = [];
+      if (rel?.avoid?.length) {
+        for (const id of rel.avoid) {
+          if (destIds.includes(id)) conflicts.push(sessionsById[id]?.studentName || id);
+        }
+      }
+      for (const id of destIds) {
+        const other = sessionsById[id];
+        const otherRel = (other as any)?.relationships as { avoid?: string[] } | undefined;
+        if (otherRel?.avoid?.includes(studentId)) {
+          const nm = other?.studentName || id;
+          if (!conflicts.includes(nm)) conflicts.push(nm);
+        }
+      }
+      if (conflicts.length > 0) {
+        warnings.push(`אילוץ 'להימנע יחד' — לא מומלץ לשבץ עם: ${conflicts.join(", ")}.`);
+      }
+    }
+
+    // Sensory/load class flags
+    if (toClass !== UNASSIGNED_KEY) {
+      const cf = classFlagsByKey[toClass];
+      if (cf?.sensitiveOverload && typeof profile.sensorySensitivity === "number" && profile.sensorySensitivity > 0 && profile.sensorySensitivity <= 2.5) {
+        warnings.push(`בכיתה כבר ריכוז גבוה של תלמידים עם רגישות חושית — הוספת עוד עלולה להעמיס.`);
+      }
+      if (cf?.load?.status === "overload") {
+        warnings.push(`הכיתה מסומנת כעמוסה (יחס עומס ${cf.load.ratio}) — עדיף לפזר.`);
       }
     }
 
