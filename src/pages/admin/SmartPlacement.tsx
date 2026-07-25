@@ -271,6 +271,27 @@ const SmartPlacement = () => {
     await runBatch(nextChat);
   };
 
+  const runSecondOpinion = async () => {
+    setSecondOpinionLoading(true);
+    setSecondOpinionError("");
+    setSecondOpinion(null);
+    try {
+      const unassigned = sessions.filter((s) => s.status !== "archived" && !s.classGroup);
+      if (unassigned.length === 0) throw new Error("אין תלמידים לשיבוץ נוסף");
+      const studentsPayload = unassigned.map((s) => buildStudentProfile(s));
+      const { data, error } = await supabase.functions.invoke("placement-batch", {
+        body: { students: studentsPayload, classes: buildClassesPayload(), chatMessages: [], model: "openai/gpt-5-mini" },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      setSecondOpinion(data as BatchResult);
+    } catch (e: any) {
+      setSecondOpinionError(e?.message || "שגיאה בהפקת דעה שנייה");
+    } finally {
+      setSecondOpinionLoading(false);
+    }
+  };
+
   const confirmBatch = async () => {
     if (!batchResult?.assignments) return;
     setBatchConfirming(true);
@@ -637,6 +658,62 @@ const SmartPlacement = () => {
                 </ul>
               </div>
             )}
+
+            {/* Second opinion */}
+            <div className="rounded-xl border border-border bg-muted/10 p-3 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-primary" /> דעה שנייה — הצלבה של שני מודלים
+                </p>
+                <button onClick={runSecondOpinion} disabled={secondOpinionLoading}
+                  className="btn-intake bg-secondary text-secondary-foreground text-[11px] flex items-center gap-1 disabled:opacity-50">
+                  {secondOpinionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                  {secondOpinion ? "הפק שוב" : "הפק דעה שנייה"}
+                </button>
+              </div>
+              {secondOpinionError && (
+                <p className="text-[11px] text-destructive">{secondOpinionError}</p>
+              )}
+              {secondOpinion && (
+                <div className="rounded-lg border border-border bg-card p-2">
+                  {(() => {
+                    const agree: string[] = [];
+                    const disagree: Array<{ id: string; name: string; a: string; b: string }> = [];
+                    for (const so of secondOpinion.assignments || []) {
+                      const base = (batchResult.assignments || []).find((x) => x.studentId === so.studentId);
+                      if (!base) continue;
+                      const baseKey = overrides[so.studentId] ?? base.classKey;
+                      if (baseKey === so.classKey) agree.push(so.studentName);
+                      else disagree.push({
+                        id: so.studentId,
+                        name: so.studentName,
+                        a: classGroups[baseKey] || baseKey,
+                        b: classGroups[so.classKey] || so.classKey,
+                      });
+                    }
+                    const total = (secondOpinion.assignments || []).length;
+                    const pct = total > 0 ? Math.round((agree.length / total) * 100) : 0;
+                    return (
+                      <div className="space-y-1.5">
+                        <p className="text-[11.5px] text-foreground/80">
+                          התאמה בין המודלים: <span className="font-bold text-primary">{pct}%</span> ({agree.length}/{total}).
+                        </p>
+                        {disagree.length > 0 && (
+                          <div>
+                            <p className="text-[11px] font-bold text-warning mb-0.5">שיבוצים שדורשים תשומת לב:</p>
+                            <ul className="text-[11px] text-foreground/85 space-y-0.5 list-disc pr-5">
+                              {disagree.slice(0, 8).map((d) => (
+                                <li key={d.id}>{d.name}: מודל ראשי → {d.a} · דעה שנייה → {d.b}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+            </div>
 
             {/* Chat */}
             {batchChat.length > 0 && (
