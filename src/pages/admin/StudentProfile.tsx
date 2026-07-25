@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getSessionDB, updateSessionDB, getAssessmentRounds, createAssessmentRound, AssessmentRound } from "@/lib/supabase-storage";
+import { getSessionDB, updateSessionDB, getAssessmentRounds, createAssessmentRound, AssessmentRound, getSessionsDB } from "@/lib/supabase-storage";
 import { deleteSessionDB } from "@/lib/supabase-storage";
 import { ADMIN_CODE } from "@/data/students";
 import { IntakeSession, SECTION_LABELS, OPEN_QUESTION_LABELS, QOL_SUBDOMAIN_LABELS, LC_SUBDOMAIN_LABELS, GASGoal } from "@/lib/types";
@@ -49,6 +49,15 @@ const StudentProfile = () => {
   const [deleting, setDeleting] = useState(false);
   const [archiving, setArchiving] = useState(false);
   const [showResponses, setShowResponses] = useState(false);
+
+  // Peer chemistry (relationships)
+  const [allSessions, setAllSessions] = useState<IntakeSession[]>([]);
+  const [avoidIds, setAvoidIds] = useState<string[]>([]);
+  const [preferIds, setPreferIds] = useState<string[]>([]);
+  const [relNotes, setRelNotes] = useState("");
+  const [relSaving, setRelSaving] = useState(false);
+  const [relSaved, setRelSaved] = useState(false);
+  const [relSearch, setRelSearch] = useState("");
 
   // Reset questionnaires dialog
   const [showResetDialog, setShowResetDialog] = useState(false);
