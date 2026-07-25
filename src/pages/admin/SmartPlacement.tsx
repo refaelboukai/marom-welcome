@@ -1231,6 +1231,26 @@ const DetailsModal = ({
             </p>
           </div>
 
+          {assignment.factors && assignment.factors.length > 0 && (
+            <div>
+              <p className="text-xs font-bold text-muted-foreground mb-2">גורמי החלטה — פירוט משקלי השיבוץ</p>
+              <div className="space-y-2">
+                {assignment.factors.map((f, i) => (
+                  <div key={i} className="rounded-lg border border-border bg-muted/10 p-2">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-bold">{f.name}</span>
+                      <span className="text-[11px] font-bold text-primary">{Math.round(f.weight)}%</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                      <div className="h-full bg-primary" style={{ width: `${Math.min(100, Math.max(0, f.weight))}%` }} />
+                    </div>
+                    {f.note && <p className="text-[11px] text-foreground/70 mt-1 leading-snug">{f.note}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {teacher?.name && (
             <div className="rounded-xl bg-muted/30 border border-border p-3">
               <p className="text-xs font-bold text-primary mb-1">מחנכת הכיתה</p>
