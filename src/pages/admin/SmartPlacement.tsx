@@ -52,6 +52,7 @@ interface BatchAssignment {
   classKey: string;
   confidence?: "high" | "medium" | "low";
   rationale?: string;
+  factors?: PlacementFactor[];
 }
 interface BatchQuestion { studentId?: string; studentName?: string; question: string; }
 interface BatchResult {
@@ -126,6 +127,9 @@ const SmartPlacement = () => {
   const [batchConfirming, setBatchConfirming] = useState(false);
   const [overrides, setOverrides] = useState<Record<string, string>>({});
   const [view, setView] = useState<"board" | "table">("board");
+  const [secondOpinionLoading, setSecondOpinionLoading] = useState(false);
+  const [secondOpinion, setSecondOpinion] = useState<BatchResult | null>(null);
+  const [secondOpinionError, setSecondOpinionError] = useState("");
 
   // Details modal for viewing an assignment's rationale
   const [detailsFor, setDetailsFor] = useState<BatchAssignment | null>(null);
