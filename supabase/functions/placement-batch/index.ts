@@ -9,7 +9,6 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
     const { students, classes, chatMessages = [] } = await req.json();
-    const bodyModel = (await Promise.resolve((globalThis as any).__modelOverride)) || undefined;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
     if (!Array.isArray(students) || students.length === 0) {
@@ -74,10 +73,9 @@ serve(async (req) => {
 - אל תזכיר "בינה מלאכותית". אל תשתמש בביטוי "לא מוותרים על אף ילד".
 - classKey חייב להיות אחד מהמפתחות שסופקו.
 - שבץ את כל התלמידים שסופקו. אל תשמיט.
-- openQuestions נדרשות רק כשבאמת חסר מידע — לא סתם.`;
-// factors: בדיוק 3 גורמים דומיננטיים לשיבוץ, סכום המשקלים = 100. שמות בעברית קצרים (למשל: "התאמה התנהגותית", "שכבת גיל", "איזון מגדרי", "כימיה חברתית", "פרופיל מחנכת", "פרופיל חושי", "עוגן חברתי"). המשקל מוצג למשתמש — היה כן וספציפי.
-// כבד את אילוץ avoid בקפדנות. אם avoid מכריח שני תלמידים לכיתות שונות, ציין זאת ב-rationale.
-// prompt continues via userContent below
+- openQuestions נדרשות רק כשבאמת חסר מידע — לא סתם.
+- factors: בדיוק 3 גורמים דומיננטיים לשיבוץ, סכום המשקלים = 100. שמות בעברית קצרים (למשל: "התאמה התנהגותית", "שכבת גיל", "איזון מגדרי", "כימיה חברתית", "פרופיל מחנכת", "פרופיל חושי", "עוגן חברתי"). המשקל מוצג למשתמש — היה כן וספציפי.
+- כבד את אילוץ avoid בקפדנות. אם avoid מכריח שני תלמידים לכיתות שונות, ציין זאת ב-rationale.`;
 
     const userContent = `רשימת תלמידים לשיבוץ:\n${JSON.stringify(students, null, 2)}\n\nהכיתות הזמינות (כולל מחנכת ותלמידים קיימים):\n${JSON.stringify(classes, null, 2)}`;
 
