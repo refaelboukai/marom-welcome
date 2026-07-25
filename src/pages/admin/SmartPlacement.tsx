@@ -637,6 +637,7 @@ const SmartPlacement = () => {
                 setDropTarget={setDropTarget}
                 selectedId={selectedId}
                 setSelectedId={setSelectedId}
+                classFlagsByKey={classFlagsByKey}
               />
             ) : (
               <TableView
@@ -829,7 +830,7 @@ const SmartPlacement = () => {
 const BoardView = ({
   columns, classGroups, teachers, sessionsById,
   onMove, onDelete, onOpenDetails, draggingId, setDraggingId, dropTarget, setDropTarget,
-  selectedId, setSelectedId,
+  selectedId, setSelectedId, classFlagsByKey,
 }: {
   columns: Record<string, BatchAssignment[]>;
   classGroups: ClassGroupsMap;
@@ -844,6 +845,7 @@ const BoardView = ({
   setDropTarget: React.Dispatch<React.SetStateAction<string | null>>;
   selectedId: string | null;
   setSelectedId: React.Dispatch<React.SetStateAction<string | null>>;
+  classFlagsByKey: Record<string, any>;
 }) => {
   const classKeys = Object.keys(classGroups);
   const orderedCols: Array<{ key: string; label: string }> = [
@@ -915,6 +917,41 @@ const BoardView = ({
                   )}
                   {genderCount.u > 0 && (
                     <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-muted text-muted-foreground"><HelpCircle className="w-2.5 h-2.5" />{genderCount.u}</span>
+                  )}
+                </div>
+              )}
+              {key !== UNASSIGNED_KEY && classFlagsByKey?.[key] && (
+                <div className="flex flex-wrap gap-1 mb-2 text-[9.5px]">
+                  {classFlagsByKey[key].anchorCount > 0 ? (
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-success/10 text-success font-bold" title={`עוגנים: ${(classFlagsByKey[key].anchorNames || []).join(", ")}`}>
+                      עוגנים {classFlagsByKey[key].anchorCount}
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-warning/10 text-warning font-bold" title="אין תלמיד עוגן — שקול להעביר עוגן לכיתה זו">
+                      חסר עוגן
+                    </span>
+                  )}
+                  {classFlagsByKey[key].sensitiveOverload && (
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-destructive/10 text-destructive font-bold" title="ריכוז גבוה של רגישות חושית">
+                      עומס חושי
+                    </span>
+                  )}
+                  {classFlagsByKey[key].impulsiveTriadAlert && (
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-warning/10 text-warning font-bold" title={`אימפולסיביות מוגברת: ${(classFlagsByKey[key].impulsiveNames || []).join(", ")}`}>
+                      אימפולס×{(classFlagsByKey[key].impulsiveNames || []).length}
+                    </span>
+                  )}
+                  {classFlagsByKey[key].load && (
+                    <span
+                      className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded font-bold ${
+                        classFlagsByKey[key].load.status === "overload" ? "bg-destructive/10 text-destructive" :
+                        classFlagsByKey[key].load.status === "high" ? "bg-warning/10 text-warning" :
+                        "bg-muted text-muted-foreground"
+                      }`}
+                      title={`עומס ${classFlagsByKey[key].load.load} · יכולת ${classFlagsByKey[key].load.capacity} · יחס ${classFlagsByKey[key].load.ratio}`}
+                    >
+                      עומס {classFlagsByKey[key].load.status === "overload" ? "מלא" : classFlagsByKey[key].load.status === "high" ? "גבוה" : "תקין"}
+                    </span>
                   )}
                 </div>
               )}
