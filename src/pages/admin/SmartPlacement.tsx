@@ -11,8 +11,8 @@ import {
   ClassGroupsMap,
   TeacherProfilesMap,
 } from "@/lib/supabase-storage";
-import { IntakeSession } from "@/lib/types";
-import { aggregateClass, buildStudentProfile } from "@/lib/class-aggregations";
+import { IntakeSession, PlacementFactor } from "@/lib/types";
+import { aggregateClass, buildStudentProfile, computeClassDiversity, computeClassLoad } from "@/lib/class-aggregations";
 import { getStudentGender, Gender } from "@/lib/gender-utils";
 import {
   AlertDialog,
@@ -195,10 +195,12 @@ const SmartPlacement = () => {
     avgScores: c.aggregate.avgScores,
     studentsAtRiskCount: c.aggregate.studentsAtRisk.length,
     students: c.aggregate.studentProfiles.map((p) => ({
-      name: p.name, grade: p.grade, gender: p.gender,
+      id: p.id, name: p.name, grade: p.grade, gender: p.gender,
       scores: p.scores,
       topStrengths: p.topStrengths.slice(0, 3),
       topChallenges: p.topChallenges.slice(0, 3),
+      relationships: p.relationships,
+      sensorySensitivity: p.sensorySensitivity,
     })),
   }));
 
