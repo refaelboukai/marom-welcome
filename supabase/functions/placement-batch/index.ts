@@ -8,7 +8,8 @@ const corsHeaders = {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
-    const { students, classes, chatMessages = [] } = await req.json();
+    const { students, classes, chatMessages = [], model } = await req.json();
+    const chosenModel = typeof model === "string" && model.length > 0 ? model : "google/gemini-2.5-flash";
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
     if (!Array.isArray(students) || students.length === 0) {
@@ -93,7 +94,7 @@ serve(async (req) => {
       method: "POST",
       headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: chosenModel,
         messages,
         response_format: { type: "json_object" },
         max_tokens: 8000,
