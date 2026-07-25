@@ -28,6 +28,10 @@ export interface StudentProfileForAI {
     cooperation: number;
     average: number;
   };
+  /** Average of arousal_sensory items (lc_19..lc_24). 1=very sensitive, 5=robust. -1 if no data. */
+  sensorySensitivity?: number;
+  /** Peer chemistry — ids to avoid / prefer together */
+  relationships?: { avoid: string[]; prefer: string[]; notes?: string };
 }
 
 export interface ClassAggregate {
@@ -124,6 +128,20 @@ export function buildStudentProfile(s: IntakeSession): StudentProfileForAI {
     staffConduct: (s.staffOpenResponses || {})["staff_conduct"] || "",
     staffBehavioral: (s.staffOpenResponses || {})["staff_behavioral"] || "",
     conductMetrics,
+    sensorySensitivity: (() => {
+      const ids = ["lc_19", "lc_20", "lc_21", "lc_22", "lc_23", "lc_24"];
+      const vals: number[] = [];
+      for (const id of ids) {
+        const v = itemAvg(s, id);
+        if (v < 0) continue;
+        const item = questionnaireItems.find((q) => q.id === id);
+        // arousal_sensory items are worded as difficulties; reverse so 5 = robust, 1 = very sensitive
+        vals.push(item?.isReverse ? v : 6 - v);
+      }
+      if (vals.length === 0) return -1;
+      return Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 100) / 100;
+    })(),
+    relationships: (s as any).relationships || { avoid: [], prefer: [], notes: "" },
   };
 }
 
@@ -270,4 +288,97 @@ export function computeClassSnapshot(aggregate: ClassAggregate): ClassSnapshot {
   const ageSpread = Object.keys(aggregate.gradeDistribution).filter((k) => k !== "—").length;
 
   return { cohesion, diversity, needsFocus, strengthsFocus, riskPercent, genderBalance, ageSpread };
+}
+
+// ---------- Class diversity, anchors, load ----------
+
+export interface ClassDiversity {
+  regulationSpread: number; // stddev of conductMetrics.average across the class (0..2)
+  anchorCount: number; // students with conduct avg >= 4 AND QoL >= 4
+  anchorNames: string[];
+  styleMix: number; // 0..1 — distribution across 4 learning subdomains (Shannon entropy normalized)
+  impulsiveTriadAlert: boolean; // 3+ students with ca_04 (impulsivity) <= 2.5
+  impulsiveNames: string[];
+  sensitiveOverload: boolean; // 4+ students with sensorySensitivity <= 2.5
+}
+
+export function computeClassDiversity(profiles: StudentProfileForAI[]): ClassDiversity {
+  const withCa = profiles.filter((p) => p.conductMetrics);
+  const avgs = withCa.map((p) => p.conductMetrics!.average);
+  const mean = avgs.length ? avgs.reduce((a, b) => a + b, 0) / avgs.length : 0;
+  const variance = avgs.length ? avgs.reduce((a, b) => a + (b - mean) ** 2, 0) / avgs.length : 0;
+  const regulationSpread = Math.round(Math.sqrt(variance) * 100) / 100;
+
+  const anchors = profiles.filter(
+    (p) => p.conductMetrics && p.conductMetrics.average >= 4 && (p.scores.qualityOfLife || 0) >= 4
+  );
+
+  // styleMix: Shannon entropy over the 4 LC subdomains, normalized 0..1
+  const lcKeys = ["working_memory", "executive_functions", "emotional_regulation", "arousal_sensory"];
+  const totals: Record<string, number> = {};
+  for (const k of lcKeys) totals[k] = 0;
+  for (const p of profiles) {
+    for (const k of lcKeys) totals[k] += p.learningSubdomains?.[k] || 0;
+  }
+  const sum = Object.values(totals).reduce((a, b) => a + b, 0);
+  let entropy = 0;
+  if (sum > 0) {
+    for (const k of lcKeys) {
+      const pk = totals[k] / sum;
+      if (pk > 0) entropy -= pk * Math.log2(pk);
+    }
+  }
+  const styleMix = Math.round((entropy / Math.log2(lcKeys.length)) * 100) / 100;
+
+  const impulsive = withCa.filter((p) => p.conductMetrics!.impulsivity <= 2.5);
+  const sensitiveCount = profiles.filter(
+    (p) => typeof p.sensorySensitivity === "number" && p.sensorySensitivity > 0 && p.sensorySensitivity <= 2.5
+  ).length;
+
+  return {
+    regulationSpread,
+    anchorCount: anchors.length,
+    anchorNames: anchors.map((p) => p.name),
+    styleMix,
+    impulsiveTriadAlert: impulsive.length >= 3,
+    impulsiveNames: impulsive.map((p) => p.name),
+    sensitiveOverload: sensitiveCount >= 4,
+  };
+}
+
+export interface ClassLoad {
+  load: number; // weighted sum of risk & behavioral difficulty
+  capacity: number; // teacher capacity 0..15 (patience + structure + warmth)
+  ratio: number; // load / capacity
+  status: "ok" | "high" | "overload";
+}
+
+export function computeClassLoad(
+  profiles: StudentProfileForAI[],
+  teacherMetrics?: { patience?: number; structure?: number; warmth?: number } | null
+): ClassLoad {
+  let load = 0;
+  for (const p of profiles) {
+    for (const f of p.riskFlags) {
+      if (/urgent|קריטי|דחוף/i.test(f)) load += 3;
+      else if (/concern|מדאיג/i.test(f)) load += 2;
+      else load += 1;
+    }
+    if (p.conductMetrics && p.conductMetrics.average > 0 && p.conductMetrics.average <= 2.5) load += 2;
+    if (typeof p.sensorySensitivity === "number" && p.sensorySensitivity > 0 && p.sensorySensitivity <= 2.5) load += 1;
+  }
+  const patience = teacherMetrics?.patience ?? 3;
+  const structure = teacherMetrics?.structure ?? 3;
+  const warmth = teacherMetrics?.warmth ?? 3;
+  const capacity = patience + structure + warmth; // 3..15
+  const ratio = capacity > 0 ? load / capacity : load;
+  let status: ClassLoad["status"] = "ok";
+  if (ratio >= 2.5) status = "overload";
+  else if (ratio >= 1.6) status = "high";
+  return {
+    load: Math.round(load * 10) / 10,
+    capacity,
+    ratio: Math.round(ratio * 100) / 100,
+    status,
+  };
 }
