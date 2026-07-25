@@ -1,0 +1,1 @@
+ALTER TABLE public.intake_sessions ADD COLUMN IF NOT EXISTS relationships jsonb NOT NULL DEFAULT '{"avoid":[],"prefer":[],"notes":""}'::jsonb;
