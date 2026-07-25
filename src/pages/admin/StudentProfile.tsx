@@ -195,6 +195,16 @@ const StudentProfile = () => {
     }
     setRounds(roundsData);
     setLoading(false);
+
+    // Load peer list for relationships
+    try {
+      const all = await getSessionsDB();
+      setAllSessions(all);
+    } catch (e) { console.error("peer list load failed", e); }
+    const rel = (s as any).relationships || { avoid: [], prefer: [], notes: "" };
+    setAvoidIds(Array.isArray(rel.avoid) ? rel.avoid : []);
+    setPreferIds(Array.isArray(rel.prefer) ? rel.prefer : []);
+    setRelNotes(rel.notes || "");
   }, [sessionId, navigate]);
 
   useEffect(() => { loadData(); }, [loadData]);
