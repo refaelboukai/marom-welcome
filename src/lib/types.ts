@@ -67,6 +67,19 @@ export interface IntakeSession {
   reassessmentParentResponses?: Record<string, number>;
   reassessmentDate?: string;
   narrativeSummary?: string;
+  relationships?: Relationships;
+}
+
+export interface Relationships {
+  avoid: string[]; // student session ids to keep in a different class
+  prefer: string[]; // student session ids preferable in the same class
+  notes?: string;
+}
+
+export interface PlacementFactor {
+  name: string; // short Hebrew label, e.g. "התאמה התנהגותית"
+  weight: number; // 0-100
+  note?: string;
 }
 
 export interface DomainScore {

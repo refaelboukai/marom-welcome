@@ -39,6 +39,7 @@ function rowToSession(row: any): IntakeSession {
     reassessmentParentResponses: (row.reassessment_parent_responses as Record<string, number>) || {},
     reassessmentDate: row.reassessment_date,
     narrativeSummary: row.narrative_summary || "",
+    relationships: row.relationships || { avoid: [], prefer: [], notes: "" },
   };
 }
 
@@ -170,6 +171,7 @@ export async function updateSessionDB(id: string, updates: Partial<IntakeSession
   if (updates.studentCodeActive !== undefined) dbUpdates.student_code_active = updates.studentCodeActive;
   if (updates.parentCodeActive !== undefined) dbUpdates.parent_code_active = updates.parentCodeActive;
   if ((updates as any).narrativeSummary !== undefined) dbUpdates.narrative_summary = (updates as any).narrativeSummary || null;
+  if ((updates as any).relationships !== undefined) dbUpdates.relationships = (updates as any).relationships;
 
   const { data, error } = await supabase
     .from("intake_sessions")

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getSessionDB, updateSessionDB, getAssessmentRounds, createAssessmentRound, AssessmentRound } from "@/lib/supabase-storage";
+import { getSessionDB, updateSessionDB, getAssessmentRounds, createAssessmentRound, AssessmentRound, getSessionsDB } from "@/lib/supabase-storage";
 import { deleteSessionDB } from "@/lib/supabase-storage";
 import { ADMIN_CODE } from "@/data/students";
 import { IntakeSession, SECTION_LABELS, OPEN_QUESTION_LABELS, QOL_SUBDOMAIN_LABELS, LC_SUBDOMAIN_LABELS, GASGoal } from "@/lib/types";
@@ -49,6 +49,15 @@ const StudentProfile = () => {
   const [deleting, setDeleting] = useState(false);
   const [archiving, setArchiving] = useState(false);
   const [showResponses, setShowResponses] = useState(false);
+
+  // Peer chemistry (relationships)
+  const [allSessions, setAllSessions] = useState<IntakeSession[]>([]);
+  const [avoidIds, setAvoidIds] = useState<string[]>([]);
+  const [preferIds, setPreferIds] = useState<string[]>([]);
+  const [relNotes, setRelNotes] = useState("");
+  const [relSaving, setRelSaving] = useState(false);
+  const [relSaved, setRelSaved] = useState(false);
+  const [relSearch, setRelSearch] = useState("");
 
   // Reset questionnaires dialog
   const [showResetDialog, setShowResetDialog] = useState(false);
@@ -186,6 +195,16 @@ const StudentProfile = () => {
     }
     setRounds(roundsData);
     setLoading(false);
+
+    // Load peer list for relationships
+    try {
+      const all = await getSessionsDB();
+      setAllSessions(all);
+    } catch (e) { console.error("peer list load failed", e); }
+    const rel = (s as any).relationships || { avoid: [], prefer: [], notes: "" };
+    setAvoidIds(Array.isArray(rel.avoid) ? rel.avoid : []);
+    setPreferIds(Array.isArray(rel.prefer) ? rel.prefer : []);
+    setRelNotes(rel.notes || "");
   }, [sessionId, navigate]);
 
   useEffect(() => { loadData(); }, [loadData]);
@@ -1337,6 +1356,90 @@ const StudentProfile = () => {
             </ResponsiveContainer>
           </div>
         )}
+
+        {/* Peer chemistry — relationships */}
+        <div className="intake-card">
+          <h3 className="font-heading font-semibold mb-1 flex items-center gap-2">
+            <Users className="w-5 h-5 text-primary" />
+            כימיה חברתית ושיבוץ עם עמיתים
+          </h3>
+          <p className="text-xs text-muted-foreground mb-3">
+            סמן/י תלמידים שכדאי <span className="font-bold">להימנע</span> משיבוץ יחד באותה כיתה, ותלמידים שרצוי לשבץ יחד. הנתונים ישולבו במנוע השיבוץ ובבדיקות ההעברה.
+          </p>
+          <input
+            value={relSearch}
+            onChange={(e) => setRelSearch(e.target.value)}
+            placeholder="חיפוש תלמיד/ה..."
+            dir="rtl"
+            className="w-full bg-background border border-input rounded-lg px-3 py-1.5 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+          <div className="max-h-64 overflow-y-auto border border-border rounded-xl divide-y divide-border mb-3">
+            {allSessions
+              .filter((p) => p.id !== session.id && p.status !== "archived")
+              .filter((p) => !relSearch.trim() || p.studentName.includes(relSearch.trim()))
+              .slice(0, 200)
+              .map((p) => {
+                const isAvoid = avoidIds.includes(p.id);
+                const isPrefer = preferIds.includes(p.id);
+                return (
+                  <div key={p.id} className="flex items-center gap-2 px-3 py-1.5">
+                    <span className="flex-1 text-sm truncate">{p.studentName} {p.classGroup && <span className="text-[10px] text-muted-foreground">· {p.classGroup}</span>}</span>
+                    <button
+                      onClick={() => {
+                        setPreferIds((prev) => prev.filter((x) => x !== p.id));
+                        setAvoidIds((prev) => isAvoid ? prev.filter((x) => x !== p.id) : [...prev, p.id]);
+                      }}
+                      className={`text-[11px] px-2 py-1 rounded-md border transition-colors ${isAvoid ? "bg-destructive/10 border-destructive text-destructive font-bold" : "bg-card border-border text-muted-foreground hover:border-destructive/40"}`}
+                    >
+                      הימנע
+                    </button>
+                    <button
+                      onClick={() => {
+                        setAvoidIds((prev) => prev.filter((x) => x !== p.id));
+                        setPreferIds((prev) => isPrefer ? prev.filter((x) => x !== p.id) : [...prev, p.id]);
+                      }}
+                      className={`text-[11px] px-2 py-1 rounded-md border transition-colors ${isPrefer ? "bg-success/10 border-success text-success font-bold" : "bg-card border-border text-muted-foreground hover:border-success/40"}`}
+                    >
+                      העדף
+                    </button>
+                  </div>
+                );
+              })}
+            {allSessions.length === 0 && (
+              <p className="text-xs text-muted-foreground text-center py-4">אין תלמידים נוספים במערכת</p>
+            )}
+          </div>
+          <textarea
+            value={relNotes}
+            onChange={(e) => setRelNotes(e.target.value)}
+            placeholder="הערות איכותניות — דינמיקות חברתיות, קונפליקטים ידועים, קשרים תומכים..."
+            dir="rtl"
+            rows={3}
+            className="w-full bg-background border border-input rounded-lg px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+          />
+          <div className="flex items-center gap-2">
+            <button
+              disabled={relSaving}
+              onClick={async () => {
+                setRelSaving(true);
+                const updated = await updateSessionDB(session.id, { relationships: { avoid: avoidIds, prefer: preferIds, notes: relNotes } } as any);
+                setRelSaving(false);
+                if (updated) {
+                  setSession(updated);
+                  setRelSaved(true);
+                  setTimeout(() => setRelSaved(false), 1500);
+                }
+              }}
+              className="btn-intake bg-primary text-primary-foreground text-sm flex items-center gap-1.5 disabled:opacity-50"
+            >
+              {relSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : relSaved ? <CheckCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
+              {relSaved ? "נשמר" : "שמור כימיה חברתית"}
+            </button>
+            <span className="text-[11px] text-muted-foreground">
+              {avoidIds.length} להימנע · {preferIds.length} להעדיף
+            </span>
+          </div>
+        </div>
 
         {/* Danger Zone */}
         <div className="intake-card border-destructive/30 bg-destructive/5">

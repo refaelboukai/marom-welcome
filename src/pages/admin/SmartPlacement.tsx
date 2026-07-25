@@ -11,8 +11,8 @@ import {
   ClassGroupsMap,
   TeacherProfilesMap,
 } from "@/lib/supabase-storage";
-import { IntakeSession } from "@/lib/types";
-import { aggregateClass, buildStudentProfile } from "@/lib/class-aggregations";
+import { IntakeSession, PlacementFactor } from "@/lib/types";
+import { aggregateClass, buildStudentProfile, computeClassDiversity, computeClassLoad } from "@/lib/class-aggregations";
 import { getStudentGender, Gender } from "@/lib/gender-utils";
 import {
   AlertDialog,
@@ -52,6 +52,7 @@ interface BatchAssignment {
   classKey: string;
   confidence?: "high" | "medium" | "low";
   rationale?: string;
+  factors?: PlacementFactor[];
 }
 interface BatchQuestion { studentId?: string; studentName?: string; question: string; }
 interface BatchResult {
@@ -126,6 +127,9 @@ const SmartPlacement = () => {
   const [batchConfirming, setBatchConfirming] = useState(false);
   const [overrides, setOverrides] = useState<Record<string, string>>({});
   const [view, setView] = useState<"board" | "table">("board");
+  const [secondOpinionLoading, setSecondOpinionLoading] = useState(false);
+  const [secondOpinion, setSecondOpinion] = useState<BatchResult | null>(null);
+  const [secondOpinionError, setSecondOpinionError] = useState("");
 
   // Details modal for viewing an assignment's rationale
   const [detailsFor, setDetailsFor] = useState<BatchAssignment | null>(null);
@@ -195,14 +199,33 @@ const SmartPlacement = () => {
     avgScores: c.aggregate.avgScores,
     studentsAtRiskCount: c.aggregate.studentsAtRisk.length,
     students: c.aggregate.studentProfiles.map((p) => ({
-      name: p.name, grade: p.grade, gender: p.gender,
+      id: p.id, name: p.name, grade: p.grade, gender: p.gender,
       scores: p.scores,
       topStrengths: p.topStrengths.slice(0, 3),
       topChallenges: p.topChallenges.slice(0, 3),
+      relationships: p.relationships,
+      sensorySensitivity: p.sensorySensitivity,
     })),
   }));
 
   const unassignedCount = sessions.filter((s) => s.status !== "archived" && !s.classGroup).length;
+
+  // Class-level flags (anchors, sensory overload, impulsive triad, load)
+  const classFlagsByKey = useMemo(() => {
+    const out: Record<string, ReturnType<typeof computeClassDiversity> & { load: ReturnType<typeof computeClassLoad> }> = {};
+    Object.keys(classGroups).forEach((key) => {
+      const pendingIds = (batchResult?.assignments || [])
+        .filter((a) => (overrides[a.studentId] ?? a.classKey) === key)
+        .map((a) => a.studentId);
+      const existingIds = sessions.filter((s) => s.classGroup === key && s.status !== "archived").map((s) => s.id);
+      const allIds = Array.from(new Set([...existingIds, ...pendingIds]));
+      const profiles = allIds.map((id) => sessionsById[id]).filter(Boolean).map((s) => buildStudentProfile(s!));
+      const diversity = computeClassDiversity(profiles);
+      const load = computeClassLoad(profiles, (teachers[key]?.metrics as any) || null);
+      out[key] = { ...diversity, load };
+    });
+    return out;
+  }, [classGroups, batchResult, overrides, sessions, sessionsById, teachers]);
 
   const runBatch = async (extraChat: ChatMsg[] = batchChat) => {
     setBatchLoading(true);
@@ -246,6 +269,27 @@ const SmartPlacement = () => {
     setBatchChat(nextChat);
     setBatchInput("");
     await runBatch(nextChat);
+  };
+
+  const runSecondOpinion = async () => {
+    setSecondOpinionLoading(true);
+    setSecondOpinionError("");
+    setSecondOpinion(null);
+    try {
+      const unassigned = sessions.filter((s) => s.status !== "archived" && !s.classGroup);
+      if (unassigned.length === 0) throw new Error("אין תלמידים לשיבוץ נוסף");
+      const studentsPayload = unassigned.map((s) => buildStudentProfile(s));
+      const { data, error } = await supabase.functions.invoke("placement-batch", {
+        body: { students: studentsPayload, classes: buildClassesPayload(), chatMessages: [], model: "openai/gpt-5-mini" },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      setSecondOpinion(data as BatchResult);
+    } catch (e: any) {
+      setSecondOpinionError(e?.message || "שגיאה בהפקת דעה שנייה");
+    } finally {
+      setSecondOpinionLoading(false);
+    }
   };
 
   const confirmBatch = async () => {
@@ -384,6 +428,43 @@ const SmartPlacement = () => {
         if (existingAtRisk >= 3) {
           warnings.push(`התלמיד/ה עם ${profile.riskFlags.length} דגלי סיכון בשאלונים, והכיתה כבר כוללת ${existingAtRisk} תלמידים בסיכון.`);
         }
+      }
+    }
+
+    // Relationship: avoid conflict (hard-flag)
+    if (toClass !== UNASSIGNED_KEY) {
+      const rel = profile.relationships;
+      const destIds = Array.from(new Set([
+        ...((columns[toClass] || []).map((a) => a.studentId)),
+        ...sessions.filter((s) => s.classGroup === toClass).map((s) => s.id),
+      ])).filter((id) => id !== studentId);
+      const conflicts: string[] = [];
+      if (rel?.avoid?.length) {
+        for (const id of rel.avoid) {
+          if (destIds.includes(id)) conflicts.push(sessionsById[id]?.studentName || id);
+        }
+      }
+      for (const id of destIds) {
+        const other = sessionsById[id];
+        const otherRel = (other as any)?.relationships as { avoid?: string[] } | undefined;
+        if (otherRel?.avoid?.includes(studentId)) {
+          const nm = other?.studentName || id;
+          if (!conflicts.includes(nm)) conflicts.push(nm);
+        }
+      }
+      if (conflicts.length > 0) {
+        warnings.push(`אילוץ 'להימנע יחד' — לא מומלץ לשבץ עם: ${conflicts.join(", ")}.`);
+      }
+    }
+
+    // Sensory/load class flags
+    if (toClass !== UNASSIGNED_KEY) {
+      const cf = classFlagsByKey[toClass];
+      if (cf?.sensitiveOverload && typeof profile.sensorySensitivity === "number" && profile.sensorySensitivity > 0 && profile.sensorySensitivity <= 2.5) {
+        warnings.push(`בכיתה כבר ריכוז גבוה של תלמידים עם רגישות חושית — הוספת עוד עלולה להעמיס.`);
+      }
+      if (cf?.load?.status === "overload") {
+        warnings.push(`הכיתה מסומנת כעמוסה (יחס עומס ${cf.load.ratio}) — עדיף לפזר.`);
       }
     }
 
@@ -556,6 +637,7 @@ const SmartPlacement = () => {
                 setDropTarget={setDropTarget}
                 selectedId={selectedId}
                 setSelectedId={setSelectedId}
+                classFlagsByKey={classFlagsByKey}
               />
             ) : (
               <TableView
@@ -577,6 +659,62 @@ const SmartPlacement = () => {
                 </ul>
               </div>
             )}
+
+            {/* Second opinion */}
+            <div className="rounded-xl border border-border bg-muted/10 p-3 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-primary" /> דעה שנייה — הצלבה של שני מודלים
+                </p>
+                <button onClick={runSecondOpinion} disabled={secondOpinionLoading}
+                  className="btn-intake bg-secondary text-secondary-foreground text-[11px] flex items-center gap-1 disabled:opacity-50">
+                  {secondOpinionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                  {secondOpinion ? "הפק שוב" : "הפק דעה שנייה"}
+                </button>
+              </div>
+              {secondOpinionError && (
+                <p className="text-[11px] text-destructive">{secondOpinionError}</p>
+              )}
+              {secondOpinion && (
+                <div className="rounded-lg border border-border bg-card p-2">
+                  {(() => {
+                    const agree: string[] = [];
+                    const disagree: Array<{ id: string; name: string; a: string; b: string }> = [];
+                    for (const so of secondOpinion.assignments || []) {
+                      const base = (batchResult.assignments || []).find((x) => x.studentId === so.studentId);
+                      if (!base) continue;
+                      const baseKey = overrides[so.studentId] ?? base.classKey;
+                      if (baseKey === so.classKey) agree.push(so.studentName);
+                      else disagree.push({
+                        id: so.studentId,
+                        name: so.studentName,
+                        a: classGroups[baseKey] || baseKey,
+                        b: classGroups[so.classKey] || so.classKey,
+                      });
+                    }
+                    const total = (secondOpinion.assignments || []).length;
+                    const pct = total > 0 ? Math.round((agree.length / total) * 100) : 0;
+                    return (
+                      <div className="space-y-1.5">
+                        <p className="text-[11.5px] text-foreground/80">
+                          התאמה בין המודלים: <span className="font-bold text-primary">{pct}%</span> ({agree.length}/{total}).
+                        </p>
+                        {disagree.length > 0 && (
+                          <div>
+                            <p className="text-[11px] font-bold text-warning mb-0.5">שיבוצים שדורשים תשומת לב:</p>
+                            <ul className="text-[11px] text-foreground/85 space-y-0.5 list-disc pr-5">
+                              {disagree.slice(0, 8).map((d) => (
+                                <li key={d.id}>{d.name}: מודל ראשי → {d.a} · דעה שנייה → {d.b}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+            </div>
 
             {/* Chat */}
             {batchChat.length > 0 && (
@@ -692,7 +830,7 @@ const SmartPlacement = () => {
 const BoardView = ({
   columns, classGroups, teachers, sessionsById,
   onMove, onDelete, onOpenDetails, draggingId, setDraggingId, dropTarget, setDropTarget,
-  selectedId, setSelectedId,
+  selectedId, setSelectedId, classFlagsByKey,
 }: {
   columns: Record<string, BatchAssignment[]>;
   classGroups: ClassGroupsMap;
@@ -707,6 +845,7 @@ const BoardView = ({
   setDropTarget: React.Dispatch<React.SetStateAction<string | null>>;
   selectedId: string | null;
   setSelectedId: React.Dispatch<React.SetStateAction<string | null>>;
+  classFlagsByKey: Record<string, any>;
 }) => {
   const classKeys = Object.keys(classGroups);
   const orderedCols: Array<{ key: string; label: string }> = [
@@ -778,6 +917,41 @@ const BoardView = ({
                   )}
                   {genderCount.u > 0 && (
                     <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-muted text-muted-foreground"><HelpCircle className="w-2.5 h-2.5" />{genderCount.u}</span>
+                  )}
+                </div>
+              )}
+              {key !== UNASSIGNED_KEY && classFlagsByKey?.[key] && (
+                <div className="flex flex-wrap gap-1 mb-2 text-[9.5px]">
+                  {classFlagsByKey[key].anchorCount > 0 ? (
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-success/10 text-success font-bold" title={`עוגנים: ${(classFlagsByKey[key].anchorNames || []).join(", ")}`}>
+                      עוגנים {classFlagsByKey[key].anchorCount}
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-warning/10 text-warning font-bold" title="אין תלמיד עוגן — שקול להעביר עוגן לכיתה זו">
+                      חסר עוגן
+                    </span>
+                  )}
+                  {classFlagsByKey[key].sensitiveOverload && (
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-destructive/10 text-destructive font-bold" title="ריכוז גבוה של רגישות חושית">
+                      עומס חושי
+                    </span>
+                  )}
+                  {classFlagsByKey[key].impulsiveTriadAlert && (
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-warning/10 text-warning font-bold" title={`אימפולסיביות מוגברת: ${(classFlagsByKey[key].impulsiveNames || []).join(", ")}`}>
+                      אימפולס×{(classFlagsByKey[key].impulsiveNames || []).length}
+                    </span>
+                  )}
+                  {classFlagsByKey[key].load && (
+                    <span
+                      className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded font-bold ${
+                        classFlagsByKey[key].load.status === "overload" ? "bg-destructive/10 text-destructive" :
+                        classFlagsByKey[key].load.status === "high" ? "bg-warning/10 text-warning" :
+                        "bg-muted text-muted-foreground"
+                      }`}
+                      title={`עומס ${classFlagsByKey[key].load.load} · יכולת ${classFlagsByKey[key].load.capacity} · יחס ${classFlagsByKey[key].load.ratio}`}
+                    >
+                      עומס {classFlagsByKey[key].load.status === "overload" ? "מלא" : classFlagsByKey[key].load.status === "high" ? "גבוה" : "תקין"}
+                    </span>
                   )}
                 </div>
               )}
@@ -1056,6 +1230,26 @@ const DetailsModal = ({
               {assignment.rationale?.trim() || "לא סופק רציונל מפורט לשיבוץ זה."}
             </p>
           </div>
+
+          {assignment.factors && assignment.factors.length > 0 && (
+            <div>
+              <p className="text-xs font-bold text-muted-foreground mb-2">גורמי החלטה — פירוט משקלי השיבוץ</p>
+              <div className="space-y-2">
+                {assignment.factors.map((f, i) => (
+                  <div key={i} className="rounded-lg border border-border bg-muted/10 p-2">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-bold">{f.name}</span>
+                      <span className="text-[11px] font-bold text-primary">{Math.round(f.weight)}%</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                      <div className="h-full bg-primary" style={{ width: `${Math.min(100, Math.max(0, f.weight))}%` }} />
+                    </div>
+                    {f.note && <p className="text-[11px] text-foreground/70 mt-1 leading-snug">{f.note}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {teacher?.name && (
             <div className="rounded-xl bg-muted/30 border border-border p-3">

@@ -151,6 +151,7 @@ export type Database = {
           reassessment_parent_responses: Json | null
           reassessment_status: string | null
           reassessment_student_responses: Json | null
+          relationships: Json
           second_parent_name: string | null
           staff_code: string | null
           staff_open_responses: Json
@@ -189,6 +190,7 @@ export type Database = {
           reassessment_parent_responses?: Json | null
           reassessment_status?: string | null
           reassessment_student_responses?: Json | null
+          relationships?: Json
           second_parent_name?: string | null
           staff_code?: string | null
           staff_open_responses?: Json
@@ -227,6 +229,7 @@ export type Database = {
           reassessment_parent_responses?: Json | null
           reassessment_status?: string | null
           reassessment_student_responses?: Json | null
+          relationships?: Json
           second_parent_name?: string | null
           staff_code?: string | null
           staff_open_responses?: Json

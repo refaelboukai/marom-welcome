@@ -8,7 +8,8 @@ const corsHeaders = {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
-    const { students, classes, chatMessages = [] } = await req.json();
+    const { students, classes, chatMessages = [], model } = await req.json();
+    const chosenModel = typeof model === "string" && model.length > 0 ? model : "google/gemini-2.5-flash";
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
     if (!Array.isArray(students) || students.length === 0) {
@@ -27,11 +28,16 @@ serve(async (req) => {
     • תלמיד עם טמפרמנט רגיש/פגיע → העדף מחנכת עם teacherMetrics.warmth ו-teacherMetrics.patience גבוהים (4-5).
     • תלמיד גמיש ורגוע → מתאים כמעט לכל כיתה, השתמש בו לאיזון.
     • אל תערום 3+ תלמידים עם קושי חמור בסמכות באותה כיתה — פזר בין הכיתות.
-(4) **מגדר** — איזון מגדרי סביר בכיתה.
-(5) **פרופיל המחנכת (teacherBio + teacherMetrics)** — סגנון עבודה, ערכים, ומדדים מספריים (1-5). התאם בין צורכי התלמיד למחנכת.
-(6) איזון עומס בכיתה: אל תערום מספר רב של תלמידים בסיכון גבוה או עם קשיים דומים בכיתה אחת.
-(7) סיכום מילולי (narrativeSummary) כמידע איכותני משלים כשקיים.
-(8) גודל כיתה סופי מאוזן יחסית (קיים + חדשים).
+(4) **פרופיל חושי (sensorySensitivity, סולם 1-5, גבוה = יציב חושית)**: ציון ≤2.5 = רגישות חושית גבוהה (רעש/אור/צפיפות/מעברים). תלמיד כזה → העדף מחנכת עם structure ו-patience גבוהים. אל תערום 4+ רגישים באותה כיתה.
+(5) **כימיה בין-אישית (relationships)**:
+    • **avoid** — מזהי תלמידים שאסור לשבץ יחד. אילוץ קשיח: אין לשבץ שני תלמידים באותה כיתה אם אחד מופיע ב-avoid של השני.
+    • **prefer** — מזהי תלמידים שרצוי לשבץ יחד. אילוץ רך: כשאפשר.
+    • notes — הערות איכותניות של הצוות.
+(6) **מגדר** — איזון מגדרי סביר בכיתה.
+(7) **פרופיל המחנכת (teacherBio + teacherMetrics)** — סגנון עבודה, ערכים, ומדדים מספריים (1-5). התאם בין צורכי התלמיד למחנכת.
+(8) איזון עומס בכיתה: אל תערום מספר רב של תלמידים בסיכון גבוה או עם קשיים דומים בכיתה אחת. וודא שיש בכל כיתה לפחות תלמיד "עוגן" (פרופיל התנהגותי טוב + QoL גבוה) — אם אין מועמד, ציין ב-flags.
+(9) סיכום מילולי (narrativeSummary) כמידע איכותני משלים כשקיים.
+(10) גודל כיתה סופי מאוזן יחסית (קיים + חדשים).
 
 חשוב מאוד — אם חסר לך מידע קריטי כדי לשבץ תלמיד בביטחון, אל תנחש. הוסף שאלה ל-openQuestions עם שם התלמיד ומה בדיוק חסר לך (למשל: "האם לתלמיד יש היסטוריית התפרצויות?", "מה יחסי הגומלין עם דמויות סמכות?"). המשתמש יענה בצ'אט ונחזור להחליט.
 
@@ -45,7 +51,12 @@ serve(async (req) => {
       "studentName": "שם",
       "classKey": "key של הכיתה",
       "confidence": "high" | "medium" | "low",
-      "rationale": "משפט או שניים ספציפיים — מדוע דווקא כיתה זו, מי המחנכת ולמה מתאימה, ומי מהתלמידים ישמש עוגן/חבר טוב"
+      "rationale": "משפט או שניים ספציפיים — מדוע דווקא כיתה זו, מי המחנכת ולמה מתאימה, ומי מהתלמידים ישמש עוגן/חבר טוב",
+      "factors": [
+        { "name": "שם גורם קצר", "weight": 45, "note": "משפט קצר" },
+        { "name": "שם גורם", "weight": 35, "note": "..." },
+        { "name": "שם גורם", "weight": 20, "note": "..." }
+      ]
     }
   ],
   "overallRationale": "פסקה קצרה (3-5 משפטים) המסבירה את ההיגיון הכולל של החלוקה: איזה איזון הושג בכל כיתה, אילו קבוצות תמיכה נוצרו, ואילו סיכונים נמנעו",
@@ -63,8 +74,9 @@ serve(async (req) => {
 - אל תזכיר "בינה מלאכותית". אל תשתמש בביטוי "לא מוותרים על אף ילד".
 - classKey חייב להיות אחד מהמפתחות שסופקו.
 - שבץ את כל התלמידים שסופקו. אל תשמיט.
-- openQuestions נדרשות רק כשבאמת חסר מידע — לא סתם.`;
-// prompt continues via userContent below
+- openQuestions נדרשות רק כשבאמת חסר מידע — לא סתם.
+- factors: בדיוק 3 גורמים דומיננטיים לשיבוץ, סכום המשקלים = 100. שמות בעברית קצרים (למשל: "התאמה התנהגותית", "שכבת גיל", "איזון מגדרי", "כימיה חברתית", "פרופיל מחנכת", "פרופיל חושי", "עוגן חברתי"). המשקל מוצג למשתמש — היה כן וספציפי.
+- כבד את אילוץ avoid בקפדנות. אם avoid מכריח שני תלמידים לכיתות שונות, ציין זאת ב-rationale.`;
 
     const userContent = `רשימת תלמידים לשיבוץ:\n${JSON.stringify(students, null, 2)}\n\nהכיתות הזמינות (כולל מחנכת ותלמידים קיימים):\n${JSON.stringify(classes, null, 2)}`;
 
@@ -82,7 +94,7 @@ serve(async (req) => {
       method: "POST",
       headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: chosenModel,
         messages,
         response_format: { type: "json_object" },
         max_tokens: 8000,
