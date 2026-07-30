@@ -106,6 +106,13 @@ const ClassBoard = () => {
   const [renameValue, setRenameValue] = useState("");
   const [pendingMove, setPendingMove] = useState<PendingMove | null>(null);
   const [confirmDeleteClass, setConfirmDeleteClass] = useState<string | null>(null);
+  const [filterGrade, setFilterGrade] = useState("");
+  const [filterGender, setFilterGender] = useState("");
+  const [filterFlagged, setFilterFlagged] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [showBalance, setShowBalance] = useState(false);
+  const [newClassOpen, setNewClassOpen] = useState(false);
+  const [newClassName, setNewClassName] = useState("");
 
   useEffect(() => {
     Promise.all([getSessionsDB(), getClassGroups(), getTeacherProfiles()]).then(([s, g, t]) => {
