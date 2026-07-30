@@ -806,7 +806,7 @@ const ClassBoard = () => {
       <div className="max-w-[1700px] mx-auto p-6">
         <div className="flex items-center gap-2 mb-4 flex-wrap">
           <p className="text-sm text-muted-foreground">
-            גררו תלמיד לכיתה אחרת, או סמנו כמה תלמידים (לחיצה על כרטיס) ואז לחצו על הכיתה היעד. סידור הכיתות נשמר עם השמירה.
+            גררו תלמיד לכיתה אחרת, או סמנו כמה תלמידים (לחיצה על כרטיס) ואז לחצו על הכיתה היעד. לחיצה כפולה על כרטיס פותחת עריכה והוספת מידע. סימון תלמיד יחיד מציג בכל כיתה את השפעת ההעברה על ציון האיזון.
           </p>
           {selectedIds.length > 0 && (
             <span className="text-xs px-3 py-1.5 rounded-full bg-primary/10 text-primary flex items-center gap-2">
@@ -1170,6 +1170,34 @@ const ClassBoard = () => {
       </div>
 
       {/* Auto-balance preview */}
+      <StudentEditor
+        session={editingId ? sessionsById[editingId] || null : null}
+        allSessions={sessions}
+        pinned={!!editingId && pinnedIds.includes(editingId)}
+        onTogglePin={() => editingId && togglePin(editingId)}
+        onClose={() => setEditingId(null)}
+        onSaved={(updated) => setSessions((prev) => prev.map((s) => (s.id === updated.id ? updated : s)))}
+      />
+
+      <AlertDialog open={showShortcuts} onOpenChange={setShowShortcuts}>
+        <AlertDialogContent dir="rtl" className="text-right max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2"><Keyboard className="w-5 h-5 text-primary" /> קיצורי מקלדת</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <ul className="space-y-1.5 text-sm text-right">
+                <li>· <strong>/</strong> — מעבר לשדה החיפוש</li>
+                <li>· <strong>Ctrl/⌘ + Z</strong> — ביטול פעולה</li>
+                <li>· <strong>Ctrl/⌘ + Shift + Z</strong> — ביצוע מחדש</li>
+                <li>· <strong>Ctrl/⌘ + S</strong> — שמירת השיבוצים</li>
+                <li>· <strong>Esc</strong> — ניקוי הסימון</li>
+                <li>· <strong>לחיצה כפולה</strong> על כרטיס — עריכת מידע התלמיד</li>
+              </ul>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel>סגירה</AlertDialogCancel></AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <AlertDialog open={!!balance} onOpenChange={(o) => { if (!o) setBalance(null); }}>
         <AlertDialogContent dir="rtl" className="text-right max-w-2xl">
           <AlertDialogHeader>
