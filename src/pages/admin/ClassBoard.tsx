@@ -51,6 +51,8 @@ import {
   Filter,
   BarChart3,
   PieChart,
+  HeartHandshake,
+  Target,
 } from "lucide-react";
 import BoardAnalytics from "@/components/placement/BoardAnalytics";
 import PairSuggestions, { RelationType } from "@/components/placement/PairSuggestions";
@@ -117,6 +119,26 @@ const ClassBoard = () => {
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [showPairs, setShowPairs] = useState(false);
   const [showFocus, setShowFocus] = useState(false);
+
+  const setRelation = async (aId: string, bId: string, type: RelationType) => {
+    const apply = (s: IntakeSession, otherId: string): IntakeSession => {
+      const rel = s.relationships || { avoid: [], prefer: [], notes: "" };
+      const prefer = (rel.prefer || []).filter((x) => x !== otherId);
+      const avoid = (rel.avoid || []).filter((x) => x !== otherId);
+      if (type === "prefer") prefer.push(otherId);
+      if (type === "avoid") avoid.push(otherId);
+      return { ...s, relationships: { prefer, avoid, notes: rel.notes || "" } };
+    };
+    const updated: Record<string, IntakeSession> = {};
+    for (const [id, otherId] of [[aId, bId], [bId, aId]] as const) {
+      const s = sessions.find((x) => x.id === id);
+      if (!s) continue;
+      const next = apply(s, otherId);
+      updated[id] = next;
+      await updateSessionDB(id, { relationships: next.relationships } as any);
+    }
+    setSessions((prev) => prev.map((s) => updated[s.id] || s));
+  };
   const [newClassOpen, setNewClassOpen] = useState(false);
   const [newClassName, setNewClassName] = useState("");
 
