@@ -437,6 +437,7 @@ const ClassBoard = () => {
       setAssign(map);
       setBaseline(map);
       setHistory([]);
+      setFuture([]);
       setSavedFlash(true);
       setTimeout(() => setSavedFlash(false), 2200);
     } finally {
