@@ -884,7 +884,22 @@ const ClassBoard = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-row-reverse gap-2">
-            <AlertDialogAction onClick={() => { if (pendingMove) applyMove(pendingMove.studentId, pendingMove.toKey); setPendingMove(null); }}>
+            <AlertDialogAction onClick={() => {
+              if (pendingMove) {
+                const ids = pendingMove.studentId.split(",");
+                if (ids.length === 1) applyMove(ids[0], pendingMove.toKey);
+                else {
+                  setHistory((h) => [...h.slice(-19), assign]);
+                  setAssign((prev) => {
+                    const next = { ...prev };
+                    ids.forEach((id) => { next[id] = pendingMove.toKey === UNASSIGNED ? "" : pendingMove.toKey; });
+                    return next;
+                  });
+                  setSelectedIds([]);
+                }
+              }
+              setPendingMove(null);
+            }}>
               העבר בכל זאת
             </AlertDialogAction>
             <AlertDialogCancel>ביטול</AlertDialogCancel>
