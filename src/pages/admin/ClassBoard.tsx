@@ -61,6 +61,8 @@ import {
   Lock,
   Rows3,
   Keyboard,
+  Layers,
+  EyeOff as HideIcon,
 } from "lucide-react";
 import BoardAnalytics from "@/components/placement/BoardAnalytics";
 import ChartStudio from "@/components/placement/ChartStudio";
@@ -69,6 +71,7 @@ import { autoBalance, classHealth, toOptStudent, OptClass, BalanceResult } from 
 import PairSuggestions, { RelationType } from "@/components/placement/PairSuggestions";
 import ClassFocus from "@/components/placement/ClassFocus";
 import StudentEditor from "@/components/placement/StudentEditor";
+import ScenarioPanel from "@/components/placement/ScenarioPanel";
 
 const UNASSIGNED = "__unassigned__";
 
@@ -138,6 +141,8 @@ const ClassBoard = () => {
   const [showFocus, setShowFocus] = useState(false);
   const [showStudio, setShowStudio] = useState(false);
   const [showBestFit, setShowBestFit] = useState(false);
+  const [showScenarios, setShowScenarios] = useState(false);
+  const [hideFiltered, setHideFiltered] = useState(false);
   const [showChanges, setShowChanges] = useState(false);
   const [capacities, setCapacities] = useState<Record<string, number>>({});
   const [balance, setBalance] = useState<BalanceResult | null>(null);
