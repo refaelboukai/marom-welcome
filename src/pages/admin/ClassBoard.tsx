@@ -736,10 +736,13 @@ const ClassBoard = () => {
                 onDrop={(e) => {
                   e.preventDefault();
                   setDropTarget(null);
-                  if (draggingId) requestMove(draggingId, key);
+                  if (draggingId) {
+                    const ids = selectedIds.includes(draggingId) ? selectedIds : [draggingId];
+                    requestMoveMany(ids, key);
+                  }
                   setDraggingId(null);
                 }}
-                onClick={() => { if (selectedId) requestMove(selectedId, key); }}
+                onClick={() => { if (selectedIds.length) requestMoveMany(selectedIds, key); }}
                 className={`min-w-[300px] w-[300px] rounded-2xl border p-3.5 shadow-sm transition-all ${
                   dropTarget === key ? "border-primary ring-2 ring-primary/25 bg-primary/5" : "border-border bg-card"
                 } ${isUn ? "bg-muted/40 border-dashed" : ""}`}
@@ -831,9 +834,18 @@ const ClassBoard = () => {
                         draggable
                         onDragStart={() => setDraggingId(s.id)}
                         onDragEnd={() => setDraggingId(null)}
-                        onClick={(e) => { e.stopPropagation(); setSelectedId((p) => (p === s.id ? null : s.id)); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedIds((prev) =>
+                            prev.includes(s.id)
+                              ? prev.filter((x) => x !== s.id)
+                              : e.metaKey || e.ctrlKey || e.shiftKey || prev.length > 0
+                                ? [...prev, s.id]
+                                : [s.id]
+                          );
+                        }}
                         className={`rounded-xl border px-3 py-2.5 bg-background cursor-grab active:cursor-grabbing transition-all hover:shadow-md hover:-translate-y-px ${
-                          selectedId === s.id ? "border-primary ring-2 ring-primary/30" : "border-border"
+                          selectedIds.includes(s.id) ? "border-primary ring-2 ring-primary/30" : "border-border"
                         } ${draggingId === s.id ? "opacity-40" : ""} ${dim ? "opacity-25" : ""} ${changed ? "bg-warning/5 border-warning/50" : ""}`}
                       >
                         <div className="flex items-center gap-2">
