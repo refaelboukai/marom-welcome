@@ -517,6 +517,54 @@ const ClassBoard = () => {
   );
   const filtersActive = !!(search.trim() || filterGrade || filterGender || filterFlagged);
 
+  // Keyboard shortcuts: Ctrl/Cmd+Z undo, Ctrl/Cmd+Shift+Z redo, Ctrl/Cmd+S save, "/" search, Esc clear.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      const typing = !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable);
+      const mod = e.metaKey || e.ctrlKey;
+      if (mod && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        if (e.shiftKey) redo(); else undo();
+        return;
+      }
+      if (mod && e.key.toLowerCase() === "s") { e.preventDefault(); saveAll(); return; }
+      if (e.key === "Escape") {
+        setSelectedIds([]);
+        if (typing) (el as HTMLInputElement).blur();
+        return;
+      }
+      if (e.key === "/" && !typing) {
+        e.preventDefault();
+        document.getElementById("board-search")?.focus();
+      }
+      if (e.key === "?" && !typing) setShowShortcuts(true);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
+
+  /** "What if" — health delta per class for the single selected student. */
+  const whatIf = useMemo(() => {
+    if (selectedIds.length !== 1) return null;
+    const s = sessionsById[selectedIds[0]];
+    if (!s) return null;
+    const assigned = order.reduce((a, k) => a + (columns[k]?.length || 0), 0);
+    const avgSize = order.length ? assigned / order.length : 0;
+    const conducts = order
+      .flatMap((k) => (columns[k] || []).map((x) => buildStudentProfile(x).conductMetrics?.average))
+      .filter((v): v is number => typeof v === "number" && v > 0);
+    const globalConduct = conducts.length ? conducts.reduce((a, b) => a + b, 0) / conducts.length : null;
+    const opt = toOptStudent(s);
+    const out: Record<string, number> = {};
+    optClasses.forEach((c) => {
+      if ((assign[s.id] || "") === c.key) return;
+      const list = (columns[c.key] || []).map(toOptStudent);
+      out[c.key] = classHealth(c, [...list, opt], avgSize, globalConduct).score - classHealth(c, list, avgSize, globalConduct).score;
+    });
+    return { name: s.studentName, deltas: out };
+  }, [selectedIds, sessionsById, columns, order, optClasses, assign]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
