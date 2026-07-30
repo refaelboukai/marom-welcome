@@ -538,8 +538,8 @@ const ClassBoard = () => {
         )}
       </div>
 
-      <div className="max-w-[1400px] mx-auto p-4">
-        <p className="text-[11px] text-muted-foreground mb-3">
+      <div className="max-w-[1700px] mx-auto p-6">
+        <p className="text-sm text-muted-foreground mb-4">
           גררו תלמיד לכיתה אחרת, או הקישו על כרטיס ואז על הכיתה היעד. סידור הכיתות משמאל לימין נשמר עם השמירה.
         </p>
         {showBalance && (
