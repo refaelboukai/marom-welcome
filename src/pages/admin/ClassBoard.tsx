@@ -50,7 +50,9 @@ import {
   Printer,
   Filter,
   BarChart3,
+  PieChart,
 } from "lucide-react";
+import BoardAnalytics from "@/components/placement/BoardAnalytics";
 
 const UNASSIGNED = "__unassigned__";
 
@@ -110,6 +112,7 @@ const ClassBoard = () => {
   const [filterFlagged, setFilterFlagged] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [showBalance, setShowBalance] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
   const [newClassOpen, setNewClassOpen] = useState(false);
   const [newClassName, setNewClassName] = useState("");
 
@@ -475,6 +478,10 @@ const ClassBoard = () => {
                 className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showBalance ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
                 <BarChart3 className="w-4 h-4" /> מאזן כיתות
               </button>
+              <button onClick={() => setShowAnalytics((v) => !v)}
+                className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showAnalytics ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
+                <PieChart className="w-4 h-4" /> ניתוח וגרפים
+              </button>
             </div>
 
             <div className="flex items-center gap-1 p-1 rounded-xl bg-muted/60">
@@ -600,6 +607,17 @@ const ClassBoard = () => {
               </tbody>
             </table>
           </div>
+        )}
+        {showAnalytics && (
+          <BoardAnalytics
+            sections={order.map((k) => ({
+              key: k,
+              label: classGroups[k] || k,
+              teacher: teachers[k]?.name,
+              students: columns[k] || [],
+            }))}
+            unassigned={columns[UNASSIGNED] || []}
+          />
         )}
         <div className="flex gap-4 overflow-x-auto pb-6 items-start">
           {columnKeys.map((key, idx) => {
