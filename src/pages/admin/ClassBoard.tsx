@@ -1021,6 +1021,47 @@ const ClassBoard = () => {
         </div>
       </div>
 
+      {/* Auto-balance preview */}
+      <AlertDialog open={!!balance} onOpenChange={(o) => { if (!o) setBalance(null); }}>
+        <AlertDialogContent dir="rtl" className="text-right max-w-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Wand2 className="w-5 h-5 text-primary" /> הצעת איזון אוטומטי
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-right">
+                <p className="text-xs">
+                  המנוע בחן העברות והחלפות בין הכיתות כדי לשפר גודל, איזון מגדרי, פרופיל התנהגותי, עוגנים, עומס חושי וכימיה חברתית.
+                </p>
+                {balance && balance.moves.length === 0 ? (
+                  <p className="text-sm text-success">הלוח כבר מאוזן — לא נמצאו העברות משפרות.</p>
+                ) : (
+                  <>
+                    <p className="text-xs">
+                      עלות איזון: <strong>{balance?.before}</strong> ← <strong className="text-success">{balance?.after}</strong> · {balance?.moves.length} העברות מוצעות
+                    </p>
+                    <div className="max-h-64 overflow-y-auto space-y-1">
+                      {balance?.moves.map((m) => (
+                        <div key={m.id} className="flex items-center gap-2 text-xs rounded-lg border border-border px-2.5 py-1.5">
+                          <span className="font-semibold">{m.name}</span>
+                          <span className="text-muted-foreground">{m.from} ← {m.to}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-row-reverse gap-2">
+            <AlertDialogAction onClick={applyBalance} disabled={!balance || balance.moves.length === 0}>
+              החל את ההצעה
+            </AlertDialogAction>
+            <AlertDialogCancel>ביטול</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Move confirmation */}
       <AlertDialog open={!!pendingMove} onOpenChange={(o) => { if (!o) setPendingMove(null); }}>
         <AlertDialogContent dir="rtl" className="text-right">
