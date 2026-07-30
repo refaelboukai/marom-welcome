@@ -214,6 +214,70 @@ const ClassBoard = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [columns, order, teachers]);
 
+  const optClasses = useMemo<OptClass[]>(
+    () => order.map((k) => ({
+      key: k,
+      label: classGroups[k] || k,
+      teacherGrades: teachers[k]?.grades || [],
+      capacity: capacities[k],
+    })),
+    [order, classGroups, teachers, capacities]
+  );
+
+  const health = useMemo(() => {
+    const assigned = order.reduce((a, k) => a + (columns[k]?.length || 0), 0);
+    const avgSize = order.length ? assigned / order.length : 0;
+    const conducts = order
+      .flatMap((k) => (columns[k] || []).map((s) => buildStudentProfile(s).conductMetrics?.average))
+      .filter((v): v is number => typeof v === "number" && v > 0);
+    const globalConduct = conducts.length ? conducts.reduce((a, b) => a + b, 0) / conducts.length : null;
+    const out: Record<string, ReturnType<typeof classHealth>> = {};
+    optClasses.forEach((c) => {
+      out[c.key] = classHealth(c, (columns[c.key] || []).map(toOptStudent), avgSize, globalConduct);
+    });
+    return out;
+  }, [optClasses, columns, order]);
+
+  const boardScore = useMemo(() => {
+    const vals = Object.values(health).map((h) => h.score);
+    return vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0;
+  }, [health]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("board_capacities");
+      if (raw) setCapacities(JSON.parse(raw));
+    } catch { /* ignore */ }
+  }, []);
+
+  const setCapacity = (key: string, value: number) => {
+    setCapacities((prev) => {
+      const next = { ...prev };
+      if (!value || value <= 0) delete next[key]; else next[key] = value;
+      try { localStorage.setItem("board_capacities", JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  };
+
+  const runAutoBalance = (includeUnassigned: boolean) => {
+    setBalancing(true);
+    setTimeout(() => {
+      const students = sessions.map(toOptStudent);
+      const current: Record<string, string> = {};
+      sessions.forEach((s) => { current[s.id] = assign[s.id] || ""; });
+      const res = autoBalance(optClasses, students, current, { includeUnassigned });
+      setBalance(res);
+      setBalancing(false);
+    }, 30);
+  };
+
+  const applyBalance = () => {
+    if (!balance) return;
+    setHistory((h) => [...h.slice(-19), assign]);
+    setAssign((prev) => ({ ...prev, ...balance.assign }));
+    setBalance(null);
+  };
+
   const dirtyIds = useMemo(
     () => Object.keys(assign).filter((id) => (assign[id] || "") !== (baseline[id] || "")),
     [assign, baseline]
