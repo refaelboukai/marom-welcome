@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import * as XLSX from "xlsx";
 import {
   getSessionsDB,
   getClassGroups,
@@ -45,6 +46,10 @@ import {
   Copy,
   Eye,
   EyeOff,
+  FileSpreadsheet,
+  Printer,
+  Filter,
+  BarChart3,
 } from "lucide-react";
 
 const UNASSIGNED = "__unassigned__";
@@ -100,6 +105,13 @@ const ClassBoard = () => {
   const [renameValue, setRenameValue] = useState("");
   const [pendingMove, setPendingMove] = useState<PendingMove | null>(null);
   const [confirmDeleteClass, setConfirmDeleteClass] = useState<string | null>(null);
+  const [filterGrade, setFilterGrade] = useState("");
+  const [filterGender, setFilterGender] = useState("");
+  const [filterFlagged, setFilterFlagged] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [showBalance, setShowBalance] = useState(false);
+  const [newClassOpen, setNewClassOpen] = useState(false);
+  const [newClassName, setNewClassName] = useState("");
 
   useEffect(() => {
     Promise.all([getSessionsDB(), getClassGroups(), getTeacherProfiles()]).then(([s, g, t]) => {
@@ -274,8 +286,9 @@ const ClassBoard = () => {
   };
 
   const addClass = async () => {
-    const label = prompt("שם הכיתה החדשה:");
-    const clean = (label || "").trim();
+    const clean = newClassName.trim();
+    setNewClassOpen(false);
+    setNewClassName("");
     if (!clean) return;
     let key = `class_${Date.now().toString(36)}`;
     while (classGroups[key]) key = `${key}x`;
@@ -312,8 +325,28 @@ const ClassBoard = () => {
     });
   };
 
-  const matchesSearch = (s: IntakeSession) =>
-    !search.trim() || s.studentName.includes(search.trim()) || (s.grade || "").includes(search.trim());
+  const isFlagged = (s: IntakeSession) => {
+    const p = buildStudentProfile(s);
+    const avg = p.conductMetrics?.average;
+    const sens = p.sensorySensitivity;
+    return (typeof avg === "number" && avg > 0 && avg <= 2.5) ||
+      (typeof sens === "number" && sens > 0 && sens <= 2.5);
+  };
+
+  const matchesSearch = (s: IntakeSession) => {
+    const q = search.trim();
+    if (q && !s.studentName.includes(q) && !(s.grade || "").includes(q)) return false;
+    if (filterGrade && (s.grade || "") !== filterGrade) return false;
+    if (filterGender && resolveGender(s) !== filterGender) return false;
+    if (filterFlagged && !isFlagged(s)) return false;
+    return true;
+  };
+
+  const allGrades = useMemo(
+    () => Array.from(new Set(sessions.map((s) => s.grade).filter(Boolean) as string[])).sort((a, b) => a.localeCompare(b, "he")),
+    [sessions]
+  );
+  const filtersActive = !!(search.trim() || filterGrade || filterGender || filterFlagged);
 
   if (loading) {
     return (
@@ -341,6 +374,52 @@ const ClassBoard = () => {
     setSavedFlash(true);
     setTimeout(() => setSavedFlash(false), 1500);
   };
+
+  const exportExcel = () => {
+    const wb = XLSX.utils.book_new();
+    const rows: any[][] = [["כיתה", "מחנכת", "שם התלמיד", "שכבה", "מגדר", "ממוצע התנהגות", "רגישות חושית"]];
+    [...order, UNASSIGNED].forEach((k) => {
+      const st = allStats[k];
+      const label = k === UNASSIGNED ? "ללא שיוך" : classGroups[k] || k;
+      st.list.forEach((s) => {
+        const p = buildStudentProfile(s);
+        const g = resolveGender(s);
+        rows.push([
+          label,
+          k === UNASSIGNED ? "" : teachers[k]?.name || "",
+          s.studentName,
+          s.grade || "",
+          g === "male" ? "זכר" : g === "female" ? "נקבה" : "לא ידוע",
+          p.conductMetrics?.average ?? "",
+          typeof p.sensorySensitivity === "number" ? p.sensorySensitivity : "",
+        ]);
+      });
+    });
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws["!cols"] = [{ wch: 18 }, { wch: 14 }, { wch: 20 }, { wch: 8 }, { wch: 10 }, { wch: 16 }, { wch: 14 }];
+    XLSX.utils.book_append_sheet(wb, ws, "שיבוצים");
+
+    const sum: any[][] = [["כיתה", "מחנכת", "תלמידים", "בנים", "בנות", "ממוצע התנהגות", "עוגנים", "עומס"]];
+    order.forEach((k) => {
+      const st = allStats[k];
+      sum.push([
+        classGroups[k] || k,
+        teachers[k]?.name || "",
+        st.list.length,
+        st.male,
+        st.female,
+        st.avgConduct ?? "",
+        st.diversity.anchorCount,
+        st.load.status === "ok" ? "תקין" : st.load.status === "high" ? "גבוה" : "מלא",
+      ]);
+    });
+    const ws2 = XLSX.utils.aoa_to_sheet(sum);
+    ws2["!cols"] = [{ wch: 18 }, { wch: 14 }, { wch: 10 }, { wch: 8 }, { wch: 8 }, { wch: 16 }, { wch: 10 }, { wch: 10 }];
+    XLSX.utils.book_append_sheet(wb, ws2, "סיכום כיתות");
+    XLSX.writeFile(wb, `שיבוצים-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
+
+  const printBoard = () => window.print();
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
@@ -370,10 +449,24 @@ const ClassBoard = () => {
             <button onClick={() => setShowStats((v) => !v)} className="btn-intake bg-muted text-xs flex items-center gap-1">
               {showStats ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />} נתוני כיתה
             </button>
+            <button onClick={() => setShowFilters((v) => !v)}
+              className={`btn-intake text-xs flex items-center gap-1 ${filtersActive ? "bg-primary/10 text-primary" : "bg-muted"}`}>
+              <Filter className="w-3.5 h-3.5" /> סינון
+            </button>
+            <button onClick={() => setShowBalance((v) => !v)}
+              className={`btn-intake text-xs flex items-center gap-1 ${showBalance ? "bg-primary/10 text-primary" : "bg-muted"}`}>
+              <BarChart3 className="w-3.5 h-3.5" /> מאזן כיתות
+            </button>
             <button onClick={copySummary} className="btn-intake bg-muted text-xs flex items-center gap-1">
               <Copy className="w-3.5 h-3.5" /> העתק סיכום
             </button>
-            <button onClick={addClass} className="btn-intake bg-muted text-xs flex items-center gap-1">
+            <button onClick={exportExcel} className="btn-intake bg-muted text-xs flex items-center gap-1">
+              <FileSpreadsheet className="w-3.5 h-3.5" /> ייצוא לאקסל
+            </button>
+            <button onClick={printBoard} className="btn-intake bg-muted text-xs flex items-center gap-1">
+              <Printer className="w-3.5 h-3.5" /> הדפסה
+            </button>
+            <button onClick={() => { setNewClassName(""); setNewClassOpen(true); }} className="btn-intake bg-muted text-xs flex items-center gap-1">
               <Plus className="w-3.5 h-3.5" /> כיתה חדשה
             </button>
             <button onClick={undo} disabled={history.length === 0}
@@ -402,12 +495,97 @@ const ClassBoard = () => {
             )}
           </div>
         )}
+        {showFilters && (
+          <div className="max-w-[1400px] mx-auto mt-2 flex items-center gap-2 flex-wrap text-xs">
+            <select value={filterGrade} onChange={(e) => setFilterGrade(e.target.value)}
+              className="border border-border rounded-lg py-1.5 px-2 bg-background">
+              <option value="">כל השכבות</option>
+              {allGrades.map((g) => <option key={g} value={g}>{g}</option>)}
+            </select>
+            <select value={filterGender} onChange={(e) => setFilterGender(e.target.value)}
+              className="border border-border rounded-lg py-1.5 px-2 bg-background">
+              <option value="">כל המגדרים</option>
+              <option value="male">בנים</option>
+              <option value="female">בנות</option>
+              <option value="unknown">לא מוגדר</option>
+            </select>
+            <label className="flex items-center gap-1.5 cursor-pointer">
+              <input type="checkbox" checked={filterFlagged} onChange={(e) => setFilterFlagged(e.target.checked)} />
+              תלמידים עם סימון לתשומת לב
+            </label>
+            {filtersActive && (
+              <button onClick={() => { setSearch(""); setFilterGrade(""); setFilterGender(""); setFilterFlagged(false); }}
+                className="btn-intake bg-muted text-xs flex items-center gap-1">
+                <X className="w-3.5 h-3.5" /> נקה סינון
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="max-w-[1400px] mx-auto p-4">
         <p className="text-[11px] text-muted-foreground mb-3">
           גררו תלמיד לכיתה אחרת, או הקישו על כרטיס ואז על הכיתה היעד. סידור הכיתות משמאל לימין נשמר עם השמירה.
         </p>
+        {showBalance && (
+          <div className="mb-4 rounded-xl border border-border bg-card p-3 overflow-x-auto">
+            <h2 className="text-sm font-heading font-bold mb-2 flex items-center gap-1.5">
+              <BarChart3 className="w-4 h-4 text-primary" /> מאזן בין הכיתות
+            </h2>
+            <table className="w-full text-xs text-right">
+              <thead className="text-[11px] text-muted-foreground">
+                <tr>
+                  <th className="py-1 pl-2 font-medium">כיתה</th>
+                  <th className="py-1 pl-2 font-medium">מחנכת</th>
+                  <th className="py-1 pl-2 font-medium">תלמידים</th>
+                  <th className="py-1 pl-2 font-medium">איזון מגדרי</th>
+                  <th className="py-1 pl-2 font-medium">ממוצע התנהגות</th>
+                  <th className="py-1 pl-2 font-medium">עוגנים</th>
+                  <th className="py-1 pl-2 font-medium">עומס</th>
+                </tr>
+              </thead>
+              <tbody>
+                {order.map((k) => {
+                  const st = allStats[k];
+                  const total = Math.max(st.list.length, 1);
+                  const avgSize = order.length
+                    ? order.reduce((a, kk) => a + allStats[kk].list.length, 0) / order.length
+                    : 0;
+                  const off = st.list.length - avgSize;
+                  return (
+                    <tr key={k} className="border-t border-border">
+                      <td className="py-1.5 pl-2 font-semibold">{classGroups[k] || k}</td>
+                      <td className="py-1.5 pl-2 text-muted-foreground">{teachers[k]?.name || "—"}</td>
+                      <td className="py-1.5 pl-2">
+                        {st.list.length}
+                        <span className={`mr-1 text-[10px] ${Math.abs(off) >= 2 ? "text-warning" : "text-muted-foreground"}`}>
+                          ({off > 0 ? "+" : ""}{Math.round(off * 10) / 10})
+                        </span>
+                      </td>
+                      <td className="py-1.5 pl-2">
+                        <div className="flex h-2 w-24 rounded-full overflow-hidden bg-muted">
+                          <div className="bg-sky-400" style={{ width: `${(st.male / total) * 100}%` }} />
+                          <div className="bg-pink-400" style={{ width: `${(st.female / total) * 100}%` }} />
+                        </div>
+                        <span className="text-[10px] text-muted-foreground">{st.male}♂ / {st.female}♀</span>
+                      </td>
+                      <td className="py-1.5 pl-2">{st.avgConduct ?? "—"}</td>
+                      <td className="py-1.5 pl-2">{st.diversity.anchorCount}</td>
+                      <td className="py-1.5 pl-2">
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] ${
+                          st.load.status === "ok" ? "bg-success/15 text-success" :
+                          st.load.status === "high" ? "bg-warning/15 text-warning" : "bg-destructive/15 text-destructive"
+                        }`}>
+                          {st.load.status === "ok" ? "תקין" : st.load.status === "high" ? "גבוה" : "מלא"}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
         <div className="flex gap-3 overflow-x-auto pb-4 items-start">
           {columnKeys.map((key, idx) => {
             const isUn = key === UNASSIGNED;
@@ -574,6 +752,29 @@ const ClassBoard = () => {
       </AlertDialog>
 
       {/* Delete class confirmation */}
+      <AlertDialog open={newClassOpen} onOpenChange={setNewClassOpen}>
+        <AlertDialogContent dir="rtl" className="text-right">
+          <AlertDialogHeader>
+            <AlertDialogTitle>הוספת כיתה חדשה</AlertDialogTitle>
+            <AlertDialogDescription>בחרו שם לכיתה. אפשר לשנות אותו בכל שלב.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <input
+            autoFocus
+            value={newClassName}
+            onChange={(e) => setNewClassName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && newClassName.trim()) addClass(); }}
+            placeholder="לדוגמה: הכיתה של אורי"
+            className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background"
+          />
+          <AlertDialogFooter className="flex-row-reverse gap-2">
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); addClass(); }} disabled={!newClassName.trim()}>
+              הוסף כיתה
+            </AlertDialogAction>
+            <AlertDialogCancel>ביטול</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <AlertDialog open={!!confirmDeleteClass} onOpenChange={(o) => { if (!o) setConfirmDeleteClass(null); }}>
         <AlertDialogContent dir="rtl" className="text-right">
           <AlertDialogHeader>
