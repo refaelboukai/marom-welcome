@@ -677,6 +677,9 @@ const SmartPlacement = () => {
                 selectedId={selectedId}
                 setSelectedId={setSelectedId}
                 classFlagsByKey={classFlagsByKey}
+                onRenameClass={renameClass}
+                onAddClass={addClass}
+                onDeleteClass={removeClass}
               />
             ) : (
               <TableView
