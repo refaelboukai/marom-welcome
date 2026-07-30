@@ -767,6 +767,39 @@ const ClassBoard = () => {
             </table>
           </div>
         )}
+        {showChanges && dirtyIds.length > 0 && (
+          <div className="mb-5 rounded-2xl border border-warning/40 bg-warning/5 p-4">
+            <h3 className="text-sm font-heading font-bold mb-2 flex items-center gap-1.5">
+              <ListChecks className="w-4 h-4 text-warning" /> שינויים שטרם נשמרו ({dirtyIds.length})
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
+              {dirtyIds.map((id) => {
+                const s = sessionsById[id];
+                if (!s) return null;
+                const from = baseline[id] ? classGroups[baseline[id]] || baseline[id] : "ללא שיוך";
+                const to = assign[id] ? classGroups[assign[id]] || assign[id] : "ללא שיוך";
+                return (
+                  <div key={id} className="flex items-center gap-2 text-xs rounded-xl bg-card border border-border px-3 py-2">
+                    <span className="font-semibold truncate">{s.studentName}</span>
+                    <span className="text-muted-foreground truncate">{from} ← {to}</span>
+                    <button onClick={() => applyMove(id, baseline[id] || UNASSIGNED)}
+                      className="mr-auto p-1 rounded-lg hover:bg-muted text-muted-foreground" title="בטל שינוי זה">
+                      <Undo2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        {showBestFit && (
+          <BestFitPanel
+            unassigned={columns[UNASSIGNED] || []}
+            classes={optClasses}
+            membersBySection={columns}
+            onAssign={(sid, ck) => requestMove(sid, ck)}
+          />
+        )}
         {showStudio && (
           <ChartStudio
             sections={order.map((k) => ({
