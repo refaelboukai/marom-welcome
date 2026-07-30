@@ -423,100 +423,115 @@ const ClassBoard = () => {
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
-      <div className="bg-card border-b border-border px-4 py-3 sticky top-0 z-20">
-        <div className="max-w-[1400px] mx-auto flex items-center gap-3 flex-wrap">
-          <button onClick={() => navigate("/admin/placement")} className="p-2 rounded-lg hover:bg-muted">
-            <ArrowRight className="w-5 h-5" />
-          </button>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-heading font-bold truncate flex items-center gap-2">
-              <LayoutGrid className="w-5 h-5 text-primary" /> לוח השיבוצים המאושרים
-            </h1>
-            <p className="text-xs text-muted-foreground">
-              עריכה מלאה: העברת תלמידים, שינוי שמות כיתות, סידור מחדש של הכיתות והוספה/מחיקה
-            </p>
+      <div className="bg-card/95 backdrop-blur border-b border-border px-5 py-4 sticky top-0 z-20 shadow-sm">
+        <div className="max-w-[1700px] mx-auto space-y-3">
+          <div className="flex items-center gap-3">
+            <button onClick={() => navigate("/admin/placement")}
+              className="p-2.5 rounded-xl border border-border hover:bg-muted transition-colors shrink-0">
+              <ArrowRight className="w-5 h-5" />
+            </button>
+            <div className="w-11 h-11 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <LayoutGrid className="w-6 h-6" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-2xl font-heading font-bold leading-tight">לוח השיבוצים המאושרים</h1>
+              <p className="text-sm text-muted-foreground">
+                {order.length} כיתות · {sessions.length} תלמידים · {allStats[UNASSIGNED].list.length} ללא שיוך
+              </p>
+            </div>
+            <div className="hidden md:block">
+              {savedFlash ? (
+                <span className="text-sm text-success flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-success/10">
+                  <Check className="w-4 h-4" /> נשמר בהצלחה
+                </span>
+              ) : (dirtyIds.length > 0 || orderDirty) ? (
+                <span className="text-sm text-warning flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-warning/10">
+                  <AlertTriangle className="w-4 h-4" /> {dirtyIds.length} שינויים שלא נשמרו
+                </span>
+              ) : null}
+            </div>
           </div>
-          <div className="flex items-center gap-1.5 flex-wrap">
+
+          <div className="flex items-center gap-2 flex-wrap">
             <div className="relative">
-              <Search className="w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Search className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="חיפוש תלמיד…"
-                className="text-xs border border-border rounded-lg py-1.5 pr-7 pl-2 bg-background w-36"
+                className="text-sm border border-border rounded-xl py-2 pr-9 pl-3 bg-background w-52 focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
             </div>
-            <button onClick={() => setShowStats((v) => !v)} className="btn-intake bg-muted text-xs flex items-center gap-1">
-              {showStats ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />} נתוני כיתה
+            <div className="flex items-center gap-1 p-1 rounded-xl bg-muted/60">
+              <button onClick={() => setShowStats((v) => !v)}
+                className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showStats ? "bg-card shadow-sm" : "hover:bg-card/60"}`}>
+                {showStats ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />} נתוני כיתה
+              </button>
+              <button onClick={() => setShowFilters((v) => !v)}
+                className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showFilters || filtersActive ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
+                <Filter className="w-4 h-4" /> סינון
+              </button>
+              <button onClick={() => setShowBalance((v) => !v)}
+                className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showBalance ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
+                <BarChart3 className="w-4 h-4" /> מאזן כיתות
+              </button>
+            </div>
+
+            <div className="flex items-center gap-1 p-1 rounded-xl bg-muted/60">
+              <button onClick={copySummary} title="העתק סיכום" className="px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 hover:bg-card/80">
+                <Copy className="w-4 h-4" /> העתק
+              </button>
+              <button onClick={exportExcel} title="ייצוא לאקסל" className="px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 hover:bg-card/80">
+                <FileSpreadsheet className="w-4 h-4" /> אקסל
+              </button>
+              <button onClick={printBoard} title="הדפסה" className="px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 hover:bg-card/80">
+                <Printer className="w-4 h-4" /> הדפסה
+              </button>
+            </div>
+
+            <div className="flex-1" />
+
+            <button onClick={() => { setNewClassName(""); setNewClassOpen(true); }}
+              className="px-3.5 py-2 rounded-xl text-sm border border-border hover:bg-muted flex items-center gap-1.5">
+              <Plus className="w-4 h-4" /> כיתה חדשה
             </button>
-            <button onClick={() => setShowFilters((v) => !v)}
-              className={`btn-intake text-xs flex items-center gap-1 ${filtersActive ? "bg-primary/10 text-primary" : "bg-muted"}`}>
-              <Filter className="w-3.5 h-3.5" /> סינון
-            </button>
-            <button onClick={() => setShowBalance((v) => !v)}
-              className={`btn-intake text-xs flex items-center gap-1 ${showBalance ? "bg-primary/10 text-primary" : "bg-muted"}`}>
-              <BarChart3 className="w-3.5 h-3.5" /> מאזן כיתות
-            </button>
-            <button onClick={copySummary} className="btn-intake bg-muted text-xs flex items-center gap-1">
-              <Copy className="w-3.5 h-3.5" /> העתק סיכום
-            </button>
-            <button onClick={exportExcel} className="btn-intake bg-muted text-xs flex items-center gap-1">
-              <FileSpreadsheet className="w-3.5 h-3.5" /> ייצוא לאקסל
-            </button>
-            <button onClick={printBoard} className="btn-intake bg-muted text-xs flex items-center gap-1">
-              <Printer className="w-3.5 h-3.5" /> הדפסה
-            </button>
-            <button onClick={() => { setNewClassName(""); setNewClassOpen(true); }} className="btn-intake bg-muted text-xs flex items-center gap-1">
-              <Plus className="w-3.5 h-3.5" /> כיתה חדשה
-            </button>
-            <button onClick={undo} disabled={history.length === 0}
-              className="btn-intake bg-muted text-xs flex items-center gap-1 disabled:opacity-40">
-              <Undo2 className="w-3.5 h-3.5" /> בטל
+            <button onClick={undo} disabled={history.length === 0} title="בטל פעולה אחרונה"
+              className="px-3.5 py-2 rounded-xl text-sm border border-border hover:bg-muted flex items-center gap-1.5 disabled:opacity-40">
+              <Undo2 className="w-4 h-4" /> בטל
             </button>
             <button onClick={revertAll} disabled={dirtyIds.length === 0 && !orderDirty}
-              className="btn-intake bg-muted text-xs flex items-center gap-1 disabled:opacity-40">
-              <RotateCcw className="w-3.5 h-3.5" /> אפס שינויים
+              className="px-3.5 py-2 rounded-xl text-sm border border-border hover:bg-muted flex items-center gap-1.5 disabled:opacity-40">
+              <RotateCcw className="w-4 h-4" /> אפס
             </button>
             <button onClick={saveAll} disabled={saving || (dirtyIds.length === 0 && !orderDirty)}
-              className="btn-intake bg-primary text-primary-foreground text-xs flex items-center gap-1 disabled:opacity-50">
-              {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              className="px-5 py-2 rounded-xl text-sm font-semibold bg-primary text-primary-foreground shadow-sm hover:opacity-90 flex items-center gap-1.5 disabled:opacity-50">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               שמור{dirtyIds.length > 0 ? ` (${dirtyIds.length})` : ""}
             </button>
           </div>
         </div>
-        {(dirtyIds.length > 0 || orderDirty || savedFlash) && (
-          <div className="max-w-[1400px] mx-auto mt-2 text-[11px]">
-            {savedFlash ? (
-              <span className="text-success flex items-center gap-1"><Check className="w-3.5 h-3.5" /> נשמר בהצלחה</span>
-            ) : (
-              <span className="text-warning flex items-center gap-1">
-                <AlertTriangle className="w-3.5 h-3.5" /> יש שינויים שלא נשמרו
-              </span>
-            )}
-          </div>
-        )}
         {showFilters && (
-          <div className="max-w-[1400px] mx-auto mt-2 flex items-center gap-2 flex-wrap text-xs">
+          <div className="max-w-[1700px] mx-auto mt-3 flex items-center gap-2 flex-wrap text-sm border-t border-border pt-3">
             <select value={filterGrade} onChange={(e) => setFilterGrade(e.target.value)}
-              className="border border-border rounded-lg py-1.5 px-2 bg-background">
+              className="border border-border rounded-xl py-2 px-3 bg-background">
               <option value="">כל השכבות</option>
               {allGrades.map((g) => <option key={g} value={g}>{g}</option>)}
             </select>
             <select value={filterGender} onChange={(e) => setFilterGender(e.target.value)}
-              className="border border-border rounded-lg py-1.5 px-2 bg-background">
+              className="border border-border rounded-xl py-2 px-3 bg-background">
               <option value="">כל המגדרים</option>
               <option value="male">בנים</option>
               <option value="female">בנות</option>
               <option value="unknown">לא מוגדר</option>
             </select>
-            <label className="flex items-center gap-1.5 cursor-pointer">
+            <label className="flex items-center gap-2 cursor-pointer px-3 py-2 rounded-xl border border-border">
               <input type="checkbox" checked={filterFlagged} onChange={(e) => setFilterFlagged(e.target.checked)} />
               תלמידים עם סימון לתשומת לב
             </label>
             {filtersActive && (
               <button onClick={() => { setSearch(""); setFilterGrade(""); setFilterGender(""); setFilterFlagged(false); }}
-                className="btn-intake bg-muted text-xs flex items-center gap-1">
-                <X className="w-3.5 h-3.5" /> נקה סינון
+                className="px-3 py-2 rounded-xl border border-border hover:bg-muted flex items-center gap-1.5">
+                <X className="w-4 h-4" /> נקה סינון
               </button>
             )}
           </div>
