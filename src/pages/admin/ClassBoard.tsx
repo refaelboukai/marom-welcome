@@ -271,6 +271,10 @@ const ClassBoard = () => {
       const raw = localStorage.getItem("board_capacities");
       if (raw) setCapacities(JSON.parse(raw));
     } catch { /* ignore */ }
+    try {
+      const p = localStorage.getItem("board_pinned");
+      if (p) setPinnedIds(JSON.parse(p));
+    } catch { /* ignore */ }
   }, []);
 
   const setCapacity = (key: string, value: number) => {
@@ -288,7 +292,7 @@ const ClassBoard = () => {
       const students = sessions.map(toOptStudent);
       const current: Record<string, string> = {};
       sessions.forEach((s) => { current[s.id] = assign[s.id] || ""; });
-      const res = autoBalance(optClasses, students, current, { includeUnassigned });
+      const res = autoBalance(optClasses, students, current, { includeUnassigned, lockedIds: pinnedIds });
       setBalance(res);
       setBalancing(false);
     }, 30);
@@ -296,7 +300,7 @@ const ClassBoard = () => {
 
   const applyBalance = () => {
     if (!balance) return;
-    setHistory((h) => [...h.slice(-19), assign]);
+    pushHistory(assign);
     setAssign((prev) => ({ ...prev, ...balance.assign }));
     setBalance(null);
   };
