@@ -53,6 +53,7 @@ import {
   PieChart,
   HeartHandshake,
   Target,
+  Sliders,
 } from "lucide-react";
 import BoardAnalytics from "@/components/placement/BoardAnalytics";
 import ChartStudio from "@/components/placement/ChartStudio";
