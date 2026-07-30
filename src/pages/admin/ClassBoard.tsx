@@ -423,108 +423,123 @@ const ClassBoard = () => {
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
-      <div className="bg-card border-b border-border px-4 py-3 sticky top-0 z-20">
-        <div className="max-w-[1400px] mx-auto flex items-center gap-3 flex-wrap">
-          <button onClick={() => navigate("/admin/placement")} className="p-2 rounded-lg hover:bg-muted">
-            <ArrowRight className="w-5 h-5" />
-          </button>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-heading font-bold truncate flex items-center gap-2">
-              <LayoutGrid className="w-5 h-5 text-primary" /> לוח השיבוצים המאושרים
-            </h1>
-            <p className="text-xs text-muted-foreground">
-              עריכה מלאה: העברת תלמידים, שינוי שמות כיתות, סידור מחדש של הכיתות והוספה/מחיקה
-            </p>
+      <div className="bg-card/95 backdrop-blur border-b border-border px-5 py-4 sticky top-0 z-20 shadow-sm">
+        <div className="max-w-[1700px] mx-auto space-y-3">
+          <div className="flex items-center gap-3">
+            <button onClick={() => navigate("/admin/placement")}
+              className="p-2.5 rounded-xl border border-border hover:bg-muted transition-colors shrink-0">
+              <ArrowRight className="w-5 h-5" />
+            </button>
+            <div className="w-11 h-11 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <LayoutGrid className="w-6 h-6" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-2xl font-heading font-bold leading-tight">לוח השיבוצים המאושרים</h1>
+              <p className="text-sm text-muted-foreground">
+                {order.length} כיתות · {sessions.length} תלמידים · {allStats[UNASSIGNED].list.length} ללא שיוך
+              </p>
+            </div>
+            <div className="hidden md:block">
+              {savedFlash ? (
+                <span className="text-sm text-success flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-success/10">
+                  <Check className="w-4 h-4" /> נשמר בהצלחה
+                </span>
+              ) : (dirtyIds.length > 0 || orderDirty) ? (
+                <span className="text-sm text-warning flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-warning/10">
+                  <AlertTriangle className="w-4 h-4" /> {dirtyIds.length} שינויים שלא נשמרו
+                </span>
+              ) : null}
+            </div>
           </div>
-          <div className="flex items-center gap-1.5 flex-wrap">
+
+          <div className="flex items-center gap-2 flex-wrap">
             <div className="relative">
-              <Search className="w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Search className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="חיפוש תלמיד…"
-                className="text-xs border border-border rounded-lg py-1.5 pr-7 pl-2 bg-background w-36"
+                className="text-sm border border-border rounded-xl py-2 pr-9 pl-3 bg-background w-52 focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
             </div>
-            <button onClick={() => setShowStats((v) => !v)} className="btn-intake bg-muted text-xs flex items-center gap-1">
-              {showStats ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />} נתוני כיתה
+            <div className="flex items-center gap-1 p-1 rounded-xl bg-muted/60">
+              <button onClick={() => setShowStats((v) => !v)}
+                className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showStats ? "bg-card shadow-sm" : "hover:bg-card/60"}`}>
+                {showStats ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />} נתוני כיתה
+              </button>
+              <button onClick={() => setShowFilters((v) => !v)}
+                className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showFilters || filtersActive ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
+                <Filter className="w-4 h-4" /> סינון
+              </button>
+              <button onClick={() => setShowBalance((v) => !v)}
+                className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showBalance ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
+                <BarChart3 className="w-4 h-4" /> מאזן כיתות
+              </button>
+            </div>
+
+            <div className="flex items-center gap-1 p-1 rounded-xl bg-muted/60">
+              <button onClick={copySummary} title="העתק סיכום" className="px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 hover:bg-card/80">
+                <Copy className="w-4 h-4" /> העתק
+              </button>
+              <button onClick={exportExcel} title="ייצוא לאקסל" className="px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 hover:bg-card/80">
+                <FileSpreadsheet className="w-4 h-4" /> אקסל
+              </button>
+              <button onClick={printBoard} title="הדפסה" className="px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 hover:bg-card/80">
+                <Printer className="w-4 h-4" /> הדפסה
+              </button>
+            </div>
+
+            <div className="flex-1" />
+
+            <button onClick={() => { setNewClassName(""); setNewClassOpen(true); }}
+              className="px-3.5 py-2 rounded-xl text-sm border border-border hover:bg-muted flex items-center gap-1.5">
+              <Plus className="w-4 h-4" /> כיתה חדשה
             </button>
-            <button onClick={() => setShowFilters((v) => !v)}
-              className={`btn-intake text-xs flex items-center gap-1 ${filtersActive ? "bg-primary/10 text-primary" : "bg-muted"}`}>
-              <Filter className="w-3.5 h-3.5" /> סינון
-            </button>
-            <button onClick={() => setShowBalance((v) => !v)}
-              className={`btn-intake text-xs flex items-center gap-1 ${showBalance ? "bg-primary/10 text-primary" : "bg-muted"}`}>
-              <BarChart3 className="w-3.5 h-3.5" /> מאזן כיתות
-            </button>
-            <button onClick={copySummary} className="btn-intake bg-muted text-xs flex items-center gap-1">
-              <Copy className="w-3.5 h-3.5" /> העתק סיכום
-            </button>
-            <button onClick={exportExcel} className="btn-intake bg-muted text-xs flex items-center gap-1">
-              <FileSpreadsheet className="w-3.5 h-3.5" /> ייצוא לאקסל
-            </button>
-            <button onClick={printBoard} className="btn-intake bg-muted text-xs flex items-center gap-1">
-              <Printer className="w-3.5 h-3.5" /> הדפסה
-            </button>
-            <button onClick={() => { setNewClassName(""); setNewClassOpen(true); }} className="btn-intake bg-muted text-xs flex items-center gap-1">
-              <Plus className="w-3.5 h-3.5" /> כיתה חדשה
-            </button>
-            <button onClick={undo} disabled={history.length === 0}
-              className="btn-intake bg-muted text-xs flex items-center gap-1 disabled:opacity-40">
-              <Undo2 className="w-3.5 h-3.5" /> בטל
+            <button onClick={undo} disabled={history.length === 0} title="בטל פעולה אחרונה"
+              className="px-3.5 py-2 rounded-xl text-sm border border-border hover:bg-muted flex items-center gap-1.5 disabled:opacity-40">
+              <Undo2 className="w-4 h-4" /> בטל
             </button>
             <button onClick={revertAll} disabled={dirtyIds.length === 0 && !orderDirty}
-              className="btn-intake bg-muted text-xs flex items-center gap-1 disabled:opacity-40">
-              <RotateCcw className="w-3.5 h-3.5" /> אפס שינויים
+              className="px-3.5 py-2 rounded-xl text-sm border border-border hover:bg-muted flex items-center gap-1.5 disabled:opacity-40">
+              <RotateCcw className="w-4 h-4" /> אפס
             </button>
             <button onClick={saveAll} disabled={saving || (dirtyIds.length === 0 && !orderDirty)}
-              className="btn-intake bg-primary text-primary-foreground text-xs flex items-center gap-1 disabled:opacity-50">
-              {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              className="px-5 py-2 rounded-xl text-sm font-semibold bg-primary text-primary-foreground shadow-sm hover:opacity-90 flex items-center gap-1.5 disabled:opacity-50">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               שמור{dirtyIds.length > 0 ? ` (${dirtyIds.length})` : ""}
             </button>
           </div>
         </div>
-        {(dirtyIds.length > 0 || orderDirty || savedFlash) && (
-          <div className="max-w-[1400px] mx-auto mt-2 text-[11px]">
-            {savedFlash ? (
-              <span className="text-success flex items-center gap-1"><Check className="w-3.5 h-3.5" /> נשמר בהצלחה</span>
-            ) : (
-              <span className="text-warning flex items-center gap-1">
-                <AlertTriangle className="w-3.5 h-3.5" /> יש שינויים שלא נשמרו
-              </span>
-            )}
-          </div>
-        )}
         {showFilters && (
-          <div className="max-w-[1400px] mx-auto mt-2 flex items-center gap-2 flex-wrap text-xs">
+          <div className="max-w-[1700px] mx-auto mt-3 flex items-center gap-2 flex-wrap text-sm border-t border-border pt-3">
             <select value={filterGrade} onChange={(e) => setFilterGrade(e.target.value)}
-              className="border border-border rounded-lg py-1.5 px-2 bg-background">
+              className="border border-border rounded-xl py-2 px-3 bg-background">
               <option value="">כל השכבות</option>
               {allGrades.map((g) => <option key={g} value={g}>{g}</option>)}
             </select>
             <select value={filterGender} onChange={(e) => setFilterGender(e.target.value)}
-              className="border border-border rounded-lg py-1.5 px-2 bg-background">
+              className="border border-border rounded-xl py-2 px-3 bg-background">
               <option value="">כל המגדרים</option>
               <option value="male">בנים</option>
               <option value="female">בנות</option>
               <option value="unknown">לא מוגדר</option>
             </select>
-            <label className="flex items-center gap-1.5 cursor-pointer">
+            <label className="flex items-center gap-2 cursor-pointer px-3 py-2 rounded-xl border border-border">
               <input type="checkbox" checked={filterFlagged} onChange={(e) => setFilterFlagged(e.target.checked)} />
               תלמידים עם סימון לתשומת לב
             </label>
             {filtersActive && (
               <button onClick={() => { setSearch(""); setFilterGrade(""); setFilterGender(""); setFilterFlagged(false); }}
-                className="btn-intake bg-muted text-xs flex items-center gap-1">
-                <X className="w-3.5 h-3.5" /> נקה סינון
+                className="px-3 py-2 rounded-xl border border-border hover:bg-muted flex items-center gap-1.5">
+                <X className="w-4 h-4" /> נקה סינון
               </button>
             )}
           </div>
         )}
       </div>
 
-      <div className="max-w-[1400px] mx-auto p-4">
-        <p className="text-[11px] text-muted-foreground mb-3">
+      <div className="max-w-[1700px] mx-auto p-6">
+        <p className="text-sm text-muted-foreground mb-4">
           גררו תלמיד לכיתה אחרת, או הקישו על כרטיס ואז על הכיתה היעד. סידור הכיתות משמאל לימין נשמר עם השמירה.
         </p>
         {showBalance && (
@@ -586,7 +601,7 @@ const ClassBoard = () => {
             </table>
           </div>
         )}
-        <div className="flex gap-3 overflow-x-auto pb-4 items-start">
+        <div className="flex gap-4 overflow-x-auto pb-6 items-start">
           {columnKeys.map((key, idx) => {
             const isUn = key === UNASSIGNED;
             const st = allStats[key];
@@ -603,22 +618,22 @@ const ClassBoard = () => {
                   setDraggingId(null);
                 }}
                 onClick={() => { if (selectedId) requestMove(selectedId, key); }}
-                className={`min-w-[250px] w-[250px] rounded-xl border p-2.5 transition-colors ${
-                  dropTarget === key ? "border-primary bg-primary/5" : "border-border bg-card"
-                } ${isUn ? "bg-muted/40" : ""}`}
+                className={`min-w-[300px] w-[300px] rounded-2xl border p-3.5 shadow-sm transition-all ${
+                  dropTarget === key ? "border-primary ring-2 ring-primary/25 bg-primary/5" : "border-border bg-card"
+                } ${isUn ? "bg-muted/40 border-dashed" : ""}`}
               >
-                <div className="flex items-center gap-1 mb-1">
+                <div className="flex items-center gap-1 mb-2">
                   {!isUn && (
                     <>
                       <button onClick={(e) => { e.stopPropagation(); moveColumn(key, 1); }}
                         disabled={idx === order.length - 1}
-                        className="p-1 rounded hover:bg-muted disabled:opacity-30" title="הזז שמאלה">
-                        <ChevronLeft className="w-3.5 h-3.5" />
+                        className="p-1.5 rounded-lg hover:bg-muted disabled:opacity-30" title="הזז שמאלה">
+                        <ChevronLeft className="w-4 h-4" />
                       </button>
                       <button onClick={(e) => { e.stopPropagation(); moveColumn(key, -1); }}
                         disabled={idx === 0}
-                        className="p-1 rounded hover:bg-muted disabled:opacity-30" title="הזז ימינה">
-                        <ChevronRight className="w-3.5 h-3.5" />
+                        className="p-1.5 rounded-lg hover:bg-muted disabled:opacity-30" title="הזז ימינה">
+                        <ChevronRight className="w-4 h-4" />
                       </button>
                     </>
                   )}
@@ -626,22 +641,22 @@ const ClassBoard = () => {
                     <div className="flex items-center gap-1 flex-1" onClick={(e) => e.stopPropagation()}>
                       <input autoFocus value={renameValue} onChange={(e) => setRenameValue(e.target.value)}
                         onKeyDown={(e) => { if (e.key === "Enter") commitRename(key); if (e.key === "Escape") setRenaming(null); }}
-                        className="text-xs border border-border rounded px-1.5 py-1 w-full bg-background" />
-                      <button onClick={() => commitRename(key)} className="p-1 rounded hover:bg-muted text-success"><Check className="w-3.5 h-3.5" /></button>
-                      <button onClick={() => setRenaming(null)} className="p-1 rounded hover:bg-muted"><X className="w-3.5 h-3.5" /></button>
+                        className="text-sm border border-border rounded-lg px-2 py-1.5 w-full bg-background" />
+                      <button onClick={() => commitRename(key)} className="p-1.5 rounded-lg hover:bg-muted text-success"><Check className="w-4 h-4" /></button>
+                      <button onClick={() => setRenaming(null)} className="p-1.5 rounded-lg hover:bg-muted"><X className="w-4 h-4" /></button>
                     </div>
                   ) : (
                     <>
-                      <h3 className="text-sm font-heading font-bold flex-1 truncate">{label}</h3>
-                      <span className="text-[11px] text-muted-foreground flex items-center gap-0.5">
-                        <Users className="w-3 h-3" />{st.list.length}
+                      <h3 className="text-base font-heading font-bold flex-1 truncate">{label}</h3>
+                      <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted">
+                        <Users className="w-3.5 h-3.5" />{st.list.length}
                       </span>
                       {!isUn && (
                         <>
                           <button onClick={(e) => { e.stopPropagation(); setRenaming(key); setRenameValue(label); }}
-                            className="p-1 rounded hover:bg-muted" title="שנה שם"><Pencil className="w-3.5 h-3.5" /></button>
+                            className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground" title="שנה שם"><Pencil className="w-4 h-4" /></button>
                           <button onClick={(e) => { e.stopPropagation(); setConfirmDeleteClass(key); }}
-                            className="p-1 rounded hover:bg-destructive/10 text-destructive" title="מחק כיתה"><Trash2 className="w-3.5 h-3.5" /></button>
+                            className="p-1.5 rounded-lg hover:bg-destructive/10 text-destructive" title="מחק כיתה"><Trash2 className="w-4 h-4" /></button>
                         </>
                       )}
                     </>
@@ -649,42 +664,42 @@ const ClassBoard = () => {
                 </div>
 
                 {!isUn && teachers[key]?.name && (
-                  <p className="text-[11px] text-muted-foreground mb-1.5">מחנכת: {teachers[key]?.name}</p>
+                  <p className="text-xs text-muted-foreground mb-2 pb-2 border-b border-border">מחנכת: <span className="font-medium text-foreground">{teachers[key]?.name}</span></p>
                 )}
 
                 {showStats && !isUn && (
-                  <div className="mb-2 space-y-1">
-                    <div className="flex items-center gap-1 flex-wrap text-[10px]">
-                      <span className="px-1.5 py-0.5 rounded bg-sky-100 text-sky-700">♂ {st.male}</span>
-                      <span className="px-1.5 py-0.5 rounded bg-pink-100 text-pink-700">♀ {st.female}</span>
+                  <div className="mb-3 space-y-1.5">
+                    <div className="flex items-center gap-1.5 flex-wrap text-[11px]">
+                      <span className="px-2 py-1 rounded-lg bg-sky-100 text-sky-700 font-medium">♂ {st.male}</span>
+                      <span className="px-2 py-1 rounded-lg bg-pink-100 text-pink-700 font-medium">♀ {st.female}</span>
                       {Object.entries(st.grades).map(([g, n]) => (
-                        <span key={g} className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{g}: {n}</span>
+                        <span key={g} className="px-2 py-1 rounded-lg bg-muted text-muted-foreground">{g}: {n}</span>
                       ))}
                     </div>
-                    <div className="flex items-center gap-1 flex-wrap text-[10px]">
+                    <div className="flex items-center gap-1.5 flex-wrap text-[11px]">
                       {st.avgConduct != null && (
-                        <span className="px-1.5 py-0.5 rounded bg-muted">התנהגות ממוצע {st.avgConduct}</span>
+                        <span className="px-2 py-1 rounded-lg bg-muted">התנהגות {st.avgConduct}</span>
                       )}
-                      <span className={`px-1.5 py-0.5 rounded ${
+                      <span className={`px-2 py-1 rounded-lg ${
                         st.load.status === "ok" ? "bg-success/15 text-success" :
                         st.load.status === "high" ? "bg-warning/15 text-warning" : "bg-destructive/15 text-destructive"
                       }`}>
                         עומס {st.load.status === "ok" ? "תקין" : st.load.status === "high" ? "גבוה" : "מלא"}
                       </span>
                       {st.diversity.anchorCount === 0 && st.list.length > 0 && (
-                        <span className="px-1.5 py-0.5 rounded bg-warning/15 text-warning">ללא עוגן</span>
+                        <span className="px-2 py-1 rounded-lg bg-warning/15 text-warning">ללא עוגן</span>
                       )}
                       {st.diversity.impulsiveTriadAlert && (
-                        <span className="px-1.5 py-0.5 rounded bg-destructive/15 text-destructive">ריכוז אימפולסיביות</span>
+                        <span className="px-2 py-1 rounded-lg bg-destructive/15 text-destructive">ריכוז אימפולסיביות</span>
                       )}
                       {st.diversity.sensitiveOverload && (
-                        <span className="px-1.5 py-0.5 rounded bg-warning/15 text-warning">עומס חושי</span>
+                        <span className="px-2 py-1 rounded-lg bg-warning/15 text-warning">עומס חושי</span>
                       )}
                     </div>
                   </div>
                 )}
 
-                <div className="space-y-1.5 min-h-[60px]">
+                <div className="space-y-2 min-h-[80px]">
                   {st.list.map((s) => {
                     const dim = !matchesSearch(s);
                     const changed = (assign[s.id] || "") !== (baseline[s.id] || "");
@@ -695,27 +710,31 @@ const ClassBoard = () => {
                         onDragStart={() => setDraggingId(s.id)}
                         onDragEnd={() => setDraggingId(null)}
                         onClick={(e) => { e.stopPropagation(); setSelectedId((p) => (p === s.id ? null : s.id)); }}
-                        className={`rounded-lg border px-2 py-1.5 bg-background cursor-grab active:cursor-grabbing transition-all ${
-                          selectedId === s.id ? "border-primary ring-1 ring-primary" : "border-border"
-                        } ${draggingId === s.id ? "opacity-40" : ""} ${dim ? "opacity-30" : ""} ${changed ? "bg-warning/5 border-warning/40" : ""}`}
+                        className={`rounded-xl border px-3 py-2.5 bg-background cursor-grab active:cursor-grabbing transition-all hover:shadow-md hover:-translate-y-px ${
+                          selectedId === s.id ? "border-primary ring-2 ring-primary/30" : "border-border"
+                        } ${draggingId === s.id ? "opacity-40" : ""} ${dim ? "opacity-25" : ""} ${changed ? "bg-warning/5 border-warning/50" : ""}`}
                       >
-                        <div className="flex items-center gap-1.5">
-                          <GripVertical className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                        <div className="flex items-center gap-2">
+                          <GripVertical className="w-4 h-4 text-muted-foreground/60 shrink-0" />
                           <GenderDot gender={resolveGender(s)} />
                           <button
                             onClick={(e) => { e.stopPropagation(); navigate(`/admin/student/${s.id}`); }}
-                            className="text-xs font-semibold truncate flex-1 text-right hover:text-primary"
+                            className="text-sm font-semibold truncate flex-1 text-right hover:text-primary transition-colors"
                             title="פתח פרופיל"
                           >
                             {s.studentName}
                           </button>
-                          {s.grade && <span className="text-[10px] text-muted-foreground shrink-0">{s.grade}</span>}
+                          {s.grade && (
+                            <span className="text-[11px] font-medium text-muted-foreground shrink-0 px-1.5 py-0.5 rounded-md bg-muted">{s.grade}</span>
+                          )}
                         </div>
                       </div>
                     );
                   })}
                   {st.list.length === 0 && (
-                    <p className="text-[11px] text-muted-foreground text-center py-4">אין תלמידים</p>
+                    <div className="text-xs text-muted-foreground text-center py-8 rounded-xl border border-dashed border-border">
+                      גררו לכאן תלמידים
+                    </div>
                   )}
                 </div>
               </div>
