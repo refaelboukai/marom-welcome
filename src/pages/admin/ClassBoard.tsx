@@ -362,7 +362,7 @@ const ClassBoard = () => {
   };
 
   const applyMove = (studentId: string, toKey: string) => {
-    setHistory((h) => [...h.slice(-19), assign]);
+    pushHistory(assign);
     setAssign((prev) => ({ ...prev, [studentId]: toKey === UNASSIGNED ? "" : toKey }));
     setSelectedIds((prev) => prev.filter((x) => x !== studentId));
   };
@@ -380,7 +380,7 @@ const ClassBoard = () => {
     );
     const destLabel = toKey === UNASSIGNED ? "ללא שיוך" : classGroups[toKey] || toKey;
     if (warnings.length === 0) {
-      setHistory((h) => [...h.slice(-19), assign]);
+      pushHistory(assign);
       setAssign((prev) => {
         const next = { ...prev };
         targets.forEach((id) => { next[id] = toKey === UNASSIGNED ? "" : toKey; });
@@ -396,13 +396,24 @@ const ClassBoard = () => {
     setHistory((h) => {
       if (h.length === 0) return h;
       const prev = h[h.length - 1];
+      setFuture((f) => [...f, assign]);
       setAssign(prev);
       return h.slice(0, -1);
     });
   };
 
+  const redo = () => {
+    setFuture((f) => {
+      if (f.length === 0) return f;
+      const next = f[f.length - 1];
+      setHistory((h) => [...h, assign]);
+      setAssign(next);
+      return f.slice(0, -1);
+    });
+  };
+
   const revertAll = () => {
-    setHistory((h) => [...h, assign]);
+    pushHistory(assign);
     setAssign(baseline);
     setOrder(Object.keys(classGroups));
   };
