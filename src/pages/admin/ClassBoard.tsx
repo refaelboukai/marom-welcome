@@ -923,6 +923,22 @@ const ClassBoard = () => {
             onAssign={(sid, ck) => requestMove(sid, ck)}
           />
         )}
+        {showScenarios && (
+          <ScenarioPanel
+            currentAssign={assign}
+            currentScore={boardScore}
+            classLabels={Object.fromEntries(order.map((k) => [k, classGroups[k] || k]))}
+            namesById={Object.fromEntries(sessions.map((s) => [s.id, s.studentName]))}
+            onLoad={(next) => {
+              pushHistory(assign);
+              setAssign((prev) => {
+                const merged = { ...prev };
+                sessions.forEach((s) => { merged[s.id] = next[s.id] ?? ""; });
+                return merged;
+              });
+            }}
+          />
+        )}
         {showStudio && (
           <ChartStudio
             sections={order.map((k) => ({
