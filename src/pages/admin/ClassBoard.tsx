@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import * as XLSX from "xlsx";
 import {
   getSessionsDB,
   getClassGroups,
@@ -45,6 +46,11 @@ import {
   Copy,
   Eye,
   EyeOff,
+  FileSpreadsheet,
+  Printer,
+  Filter,
+  BarChart3,
+  Shuffle,
 } from "lucide-react";
 
 const UNASSIGNED = "__unassigned__";
