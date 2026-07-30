@@ -680,9 +680,10 @@ const ClassBoard = () => {
             <div className="relative">
               <Search className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
+                id="board-search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="חיפוש תלמיד…"
+                placeholder="חיפוש תלמיד…  (/)"
                 className="text-sm border border-border rounded-xl py-2 pr-9 pl-3 bg-background w-52 focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
             </div>
@@ -690,6 +691,10 @@ const ClassBoard = () => {
               <button onClick={() => setShowStats((v) => !v)}
                 className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showStats ? "bg-card shadow-sm" : "hover:bg-card/60"}`}>
                 {showStats ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />} נתוני כיתה
+              </button>
+              <button onClick={() => setCompact((v) => !v)} title="צפיפות תצוגה"
+                className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${compact ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
+                <Rows3 className="w-4 h-4" /> {compact ? "מרווח" : "מצומצם"}
               </button>
               <button onClick={() => setShowFilters((v) => !v)}
                 className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showFilters || filtersActive ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
