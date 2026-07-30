@@ -550,7 +550,9 @@ export async function getClassGroups(): Promise<ClassGroupsMap> {
   if (error || !data) return { ...DEFAULT_CLASS_GROUPS };
   const value = data.value;
   if (value && typeof value === "object" && !Array.isArray(value)) {
-    return { ...DEFAULT_CLASS_GROUPS, ...value };
+    // Stored map is authoritative (allows renaming AND deleting default classes)
+    if (Object.keys(value).length > 0) return { ...value };
+    return { ...DEFAULT_CLASS_GROUPS };
   }
   return { ...DEFAULT_CLASS_GROUPS };
 }
