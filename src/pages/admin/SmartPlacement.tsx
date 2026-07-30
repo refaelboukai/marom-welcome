@@ -524,6 +524,61 @@ const SmartPlacement = () => {
     }
   };
 
+  // ----- Class management (rename / add / delete) -----
+  const renameClass = async (key: string, label: string) => {
+    const clean = label.trim();
+    if (!clean) return;
+    const next = { ...classGroups, [key]: clean };
+    setClassGroups(next);
+    await saveClassGroups(next);
+  };
+
+  const addClass = async (label: string) => {
+    const clean = label.trim();
+    if (!clean) return;
+    let key = `class_${Date.now().toString(36)}`;
+    while (classGroups[key]) key = `${key}x`;
+    const next = { ...classGroups, [key]: clean };
+    setClassGroups(next);
+    await saveClassGroups(next);
+  };
+
+  const removeClass = async (key: string) => {
+    const label = classGroups[key] || key;
+    const count = (columns[key] || []).length;
+    if (!confirm(`למחוק את "${label}"?${count ? ` ${count} תלמידים יעברו ל"ללא שיוך".` : ""}`)) return;
+    // Move its students back to unassigned
+    setOverrides((prev) => {
+      const next = { ...prev };
+      (columns[key] || []).forEach((a) => { next[a.studentId] = UNASSIGNED_KEY; });
+      return next;
+    });
+    const next = { ...classGroups };
+    delete next[key];
+    setClassGroups(next);
+    await saveClassGroups(next);
+  };
+
+  const _unusedDeleteStudent = async (studentId: string, studentName: string) => {
+    if (!confirm(`למחוק לצמיתות את ${studentName}? פעולה זו אינה הפיכה.`)) return;
+    try {
+      await deleteSessionDB(studentId);
+      setSessions((prev) => prev.filter((s) => s.id !== studentId));
+      setBatchResult((prev) =>
+        prev ? { ...prev, assignments: prev.assignments.filter((a) => a.studentId !== studentId) } : prev
+      );
+      setOverrides((prev) => {
+        const next = { ...prev };
+        delete next[studentId];
+        return next;
+      });
+      if (selectedId === studentId) setSelectedId(null);
+    } catch (e) {
+      console.error(e);
+      alert("שגיאה במחיקת התלמיד");
+    }
+  };
+
   // Group assignments by column
   const columns = useMemo(() => {
     const cols: Record<string, BatchAssignment[]> = { [UNASSIGNED_KEY]: [] };
