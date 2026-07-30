@@ -57,6 +57,10 @@ import {
   Wand2,
   ListChecks,
   Activity,
+  Redo2,
+  Lock,
+  Rows3,
+  Keyboard,
 } from "lucide-react";
 import BoardAnalytics from "@/components/placement/BoardAnalytics";
 import ChartStudio from "@/components/placement/ChartStudio";
@@ -64,6 +68,7 @@ import BestFitPanel from "@/components/placement/BestFitPanel";
 import { autoBalance, classHealth, toOptStudent, OptClass, BalanceResult } from "@/lib/placement-optimizer";
 import PairSuggestions, { RelationType } from "@/components/placement/PairSuggestions";
 import ClassFocus from "@/components/placement/ClassFocus";
+import StudentEditor from "@/components/placement/StudentEditor";
 
 const UNASSIGNED = "__unassigned__";
 
@@ -108,6 +113,11 @@ const ClassBoard = () => {
   const [assign, setAssign] = useState<Record<string, string>>({});
   const [baseline, setBaseline] = useState<Record<string, string>>({});
   const [history, setHistory] = useState<Record<string, string>[]>([]);
+  const [future, setFuture] = useState<Record<string, string>[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [pinnedIds, setPinnedIds] = useState<string[]>([]);
+  const [compact, setCompact] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
 
   const [search, setSearch] = useState("");
   const [showStats, setShowStats] = useState(true);
@@ -132,6 +142,19 @@ const ClassBoard = () => {
   const [capacities, setCapacities] = useState<Record<string, number>>({});
   const [balance, setBalance] = useState<BalanceResult | null>(null);
   const [balancing, setBalancing] = useState(false);
+
+  const pushHistory = (snapshot: Record<string, string>) => {
+    setHistory((h) => [...h.slice(-29), snapshot]);
+    setFuture([]);
+  };
+
+  const togglePin = (id: string) => {
+    setPinnedIds((prev) => {
+      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
+      try { localStorage.setItem("board_pinned", JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  };
 
   const setRelation = async (aId: string, bId: string, type: RelationType) => {
     const apply = (s: IntakeSession, otherId: string): IntakeSession => {
@@ -248,6 +271,10 @@ const ClassBoard = () => {
       const raw = localStorage.getItem("board_capacities");
       if (raw) setCapacities(JSON.parse(raw));
     } catch { /* ignore */ }
+    try {
+      const p = localStorage.getItem("board_pinned");
+      if (p) setPinnedIds(JSON.parse(p));
+    } catch { /* ignore */ }
   }, []);
 
   const setCapacity = (key: string, value: number) => {
@@ -265,7 +292,7 @@ const ClassBoard = () => {
       const students = sessions.map(toOptStudent);
       const current: Record<string, string> = {};
       sessions.forEach((s) => { current[s.id] = assign[s.id] || ""; });
-      const res = autoBalance(optClasses, students, current, { includeUnassigned });
+      const res = autoBalance(optClasses, students, current, { includeUnassigned, lockedIds: pinnedIds });
       setBalance(res);
       setBalancing(false);
     }, 30);
@@ -273,7 +300,7 @@ const ClassBoard = () => {
 
   const applyBalance = () => {
     if (!balance) return;
-    setHistory((h) => [...h.slice(-19), assign]);
+    pushHistory(assign);
     setAssign((prev) => ({ ...prev, ...balance.assign }));
     setBalance(null);
   };
@@ -335,7 +362,7 @@ const ClassBoard = () => {
   };
 
   const applyMove = (studentId: string, toKey: string) => {
-    setHistory((h) => [...h.slice(-19), assign]);
+    pushHistory(assign);
     setAssign((prev) => ({ ...prev, [studentId]: toKey === UNASSIGNED ? "" : toKey }));
     setSelectedIds((prev) => prev.filter((x) => x !== studentId));
   };
@@ -353,7 +380,7 @@ const ClassBoard = () => {
     );
     const destLabel = toKey === UNASSIGNED ? "ללא שיוך" : classGroups[toKey] || toKey;
     if (warnings.length === 0) {
-      setHistory((h) => [...h.slice(-19), assign]);
+      pushHistory(assign);
       setAssign((prev) => {
         const next = { ...prev };
         targets.forEach((id) => { next[id] = toKey === UNASSIGNED ? "" : toKey; });
@@ -369,13 +396,24 @@ const ClassBoard = () => {
     setHistory((h) => {
       if (h.length === 0) return h;
       const prev = h[h.length - 1];
+      setFuture((f) => [...f, assign]);
       setAssign(prev);
       return h.slice(0, -1);
     });
   };
 
+  const redo = () => {
+    setFuture((f) => {
+      if (f.length === 0) return f;
+      const next = f[f.length - 1];
+      setHistory((h) => [...h, assign]);
+      setAssign(next);
+      return f.slice(0, -1);
+    });
+  };
+
   const revertAll = () => {
-    setHistory((h) => [...h, assign]);
+    pushHistory(assign);
     setAssign(baseline);
     setOrder(Object.keys(classGroups));
   };
@@ -399,6 +437,7 @@ const ClassBoard = () => {
       setAssign(map);
       setBaseline(map);
       setHistory([]);
+      setFuture([]);
       setSavedFlash(true);
       setTimeout(() => setSavedFlash(false), 2200);
     } finally {
@@ -478,6 +517,54 @@ const ClassBoard = () => {
     [sessions]
   );
   const filtersActive = !!(search.trim() || filterGrade || filterGender || filterFlagged);
+
+  // Keyboard shortcuts: Ctrl/Cmd+Z undo, Ctrl/Cmd+Shift+Z redo, Ctrl/Cmd+S save, "/" search, Esc clear.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      const typing = !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable);
+      const mod = e.metaKey || e.ctrlKey;
+      if (mod && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        if (e.shiftKey) redo(); else undo();
+        return;
+      }
+      if (mod && e.key.toLowerCase() === "s") { e.preventDefault(); saveAll(); return; }
+      if (e.key === "Escape") {
+        setSelectedIds([]);
+        if (typing) (el as HTMLInputElement).blur();
+        return;
+      }
+      if (e.key === "/" && !typing) {
+        e.preventDefault();
+        document.getElementById("board-search")?.focus();
+      }
+      if (e.key === "?" && !typing) setShowShortcuts(true);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
+
+  /** "What if" — health delta per class for the single selected student. */
+  const whatIf = useMemo(() => {
+    if (selectedIds.length !== 1) return null;
+    const s = sessionsById[selectedIds[0]];
+    if (!s) return null;
+    const assigned = order.reduce((a, k) => a + (columns[k]?.length || 0), 0);
+    const avgSize = order.length ? assigned / order.length : 0;
+    const conducts = order
+      .flatMap((k) => (columns[k] || []).map((x) => buildStudentProfile(x).conductMetrics?.average))
+      .filter((v): v is number => typeof v === "number" && v > 0);
+    const globalConduct = conducts.length ? conducts.reduce((a, b) => a + b, 0) / conducts.length : null;
+    const opt = toOptStudent(s);
+    const out: Record<string, number> = {};
+    optClasses.forEach((c) => {
+      if ((assign[s.id] || "") === c.key) return;
+      const list = (columns[c.key] || []).map(toOptStudent);
+      out[c.key] = classHealth(c, [...list, opt], avgSize, globalConduct).score - classHealth(c, list, avgSize, globalConduct).score;
+    });
+    return { name: s.studentName, deltas: out };
+  }, [selectedIds, sessionsById, columns, order, optClasses, assign]);
 
   if (loading) {
     return (
@@ -594,9 +681,10 @@ const ClassBoard = () => {
             <div className="relative">
               <Search className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
+                id="board-search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="חיפוש תלמיד…"
+                placeholder="חיפוש תלמיד…  (/)"
                 className="text-sm border border-border rounded-xl py-2 pr-9 pl-3 bg-background w-52 focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
             </div>
@@ -604,6 +692,10 @@ const ClassBoard = () => {
               <button onClick={() => setShowStats((v) => !v)}
                 className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showStats ? "bg-card shadow-sm" : "hover:bg-card/60"}`}>
                 {showStats ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />} נתוני כיתה
+              </button>
+              <button onClick={() => setCompact((v) => !v)} title="צפיפות תצוגה"
+                className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${compact ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
+                <Rows3 className="w-4 h-4" /> {compact ? "מרווח" : "מצומצם"}
               </button>
               <button onClick={() => setShowFilters((v) => !v)}
                 className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showFilters || filtersActive ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
@@ -665,6 +757,14 @@ const ClassBoard = () => {
               className="px-3.5 py-2 rounded-xl text-sm border border-border hover:bg-muted flex items-center gap-1.5 disabled:opacity-40">
               <Undo2 className="w-4 h-4" /> בטל
             </button>
+            <button onClick={redo} disabled={future.length === 0} title="בצע מחדש (Ctrl+Shift+Z)"
+              className="px-3.5 py-2 rounded-xl text-sm border border-border hover:bg-muted flex items-center gap-1.5 disabled:opacity-40">
+              <Redo2 className="w-4 h-4" /> בצע מחדש
+            </button>
+            <button onClick={() => setShowShortcuts(true)} title="קיצורי מקלדת"
+              className="px-3 py-2 rounded-xl text-sm border border-border hover:bg-muted flex items-center">
+              <Keyboard className="w-4 h-4" />
+            </button>
             <button onClick={revertAll} disabled={dirtyIds.length === 0 && !orderDirty}
               className="px-3.5 py-2 rounded-xl text-sm border border-border hover:bg-muted flex items-center gap-1.5 disabled:opacity-40">
               <RotateCcw className="w-4 h-4" /> אפס
@@ -707,7 +807,7 @@ const ClassBoard = () => {
       <div className="max-w-[1700px] mx-auto p-6">
         <div className="flex items-center gap-2 mb-4 flex-wrap">
           <p className="text-sm text-muted-foreground">
-            גררו תלמיד לכיתה אחרת, או סמנו כמה תלמידים (לחיצה על כרטיס) ואז לחצו על הכיתה היעד. סידור הכיתות נשמר עם השמירה.
+            גררו תלמיד לכיתה אחרת, או סמנו כמה תלמידים (לחיצה על כרטיס) ואז לחצו על הכיתה היעד. לחיצה כפולה על כרטיס פותחת עריכה והוספת מידע. סימון תלמיד יחיד מציג בכל כיתה את השפעת ההעברה על ציון האיזון.
           </p>
           {selectedIds.length > 0 && (
             <span className="text-xs px-3 py-1.5 rounded-full bg-primary/10 text-primary flex items-center gap-2">
@@ -916,6 +1016,15 @@ const ClassBoard = () => {
                   <p className="text-xs text-muted-foreground mb-2 pb-2 border-b border-border">מחנכת: <span className="font-medium text-foreground">{teachers[key]?.name}</span></p>
                 )}
 
+                {!isUn && whatIf && whatIf.deltas[key] !== undefined && (
+                  <div className={`mb-2 text-[11px] px-2 py-1 rounded-lg flex items-center gap-1.5 ${
+                    whatIf.deltas[key] > 0 ? "bg-success/10 text-success" : whatIf.deltas[key] < 0 ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"
+                  }`}>
+                    <Activity className="w-3.5 h-3.5" />
+                    העברת {whatIf.name} לכאן: {whatIf.deltas[key] > 0 ? "+" : ""}{whatIf.deltas[key]} נק׳ איזון
+                  </div>
+                )}
+
                 {!isUn && health[key] && (
                   <div className="mb-2.5">
                     <div className="flex items-center gap-2 mb-1">
@@ -996,9 +1105,14 @@ const ClassBoard = () => {
                                 : [s.id]
                           );
                         }}
-                        className={`rounded-xl border px-3 py-2.5 bg-background cursor-grab active:cursor-grabbing transition-all hover:shadow-md hover:-translate-y-px ${
+                        onDoubleClick={(e) => { e.stopPropagation(); setEditingId(s.id); }}
+                        className={`rounded-xl border bg-background cursor-grab active:cursor-grabbing transition-all hover:shadow-md hover:-translate-y-px ${
+                          compact ? "px-2.5 py-1.5" : "px-3 py-2.5"
+                        } ${
                           selectedIds.includes(s.id) ? "border-primary ring-2 ring-primary/30" : "border-border"
-                        } ${draggingId === s.id ? "opacity-40" : ""} ${dim ? "opacity-25" : ""} ${changed ? "bg-warning/5 border-warning/50" : ""}`}
+                        } ${draggingId === s.id ? "opacity-40" : ""} ${dim ? "opacity-25" : ""} ${changed ? "bg-warning/5 border-warning/50" : ""} ${
+                          pinnedIds.includes(s.id) ? "ring-1 ring-primary/25" : ""
+                        }`}
                       >
                         <div className="flex items-center gap-2">
                           <GripVertical className="w-4 h-4 text-muted-foreground/60 shrink-0" />
@@ -1010,11 +1124,19 @@ const ClassBoard = () => {
                           >
                             {s.studentName}
                           </button>
+                          {pinnedIds.includes(s.id) && <Lock className="w-3.5 h-3.5 text-primary shrink-0" />}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setEditingId(s.id); }}
+                            className="p-1 rounded-md text-muted-foreground hover:bg-muted hover:text-primary shrink-0"
+                            title="עריכה והוספת מידע"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
                           {s.grade && (
                             <span className="text-[11px] font-medium text-muted-foreground shrink-0 px-1.5 py-0.5 rounded-md bg-muted">{s.grade}</span>
                           )}
                         </div>
-                        {showStats && (() => {
+                        {showStats && !compact && (() => {
                           const p = buildStudentProfile(s);
                           const ca = p.conductMetrics?.average;
                           const sens = p.sensorySensitivity;
@@ -1049,6 +1171,34 @@ const ClassBoard = () => {
       </div>
 
       {/* Auto-balance preview */}
+      <StudentEditor
+        session={editingId ? sessionsById[editingId] || null : null}
+        allSessions={sessions}
+        pinned={!!editingId && pinnedIds.includes(editingId)}
+        onTogglePin={() => editingId && togglePin(editingId)}
+        onClose={() => setEditingId(null)}
+        onSaved={(updated) => setSessions((prev) => prev.map((s) => (s.id === updated.id ? updated : s)))}
+      />
+
+      <AlertDialog open={showShortcuts} onOpenChange={setShowShortcuts}>
+        <AlertDialogContent dir="rtl" className="text-right max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2"><Keyboard className="w-5 h-5 text-primary" /> קיצורי מקלדת</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <ul className="space-y-1.5 text-sm text-right">
+                <li>· <strong>/</strong> — מעבר לשדה החיפוש</li>
+                <li>· <strong>Ctrl/⌘ + Z</strong> — ביטול פעולה</li>
+                <li>· <strong>Ctrl/⌘ + Shift + Z</strong> — ביצוע מחדש</li>
+                <li>· <strong>Ctrl/⌘ + S</strong> — שמירת השיבוצים</li>
+                <li>· <strong>Esc</strong> — ניקוי הסימון</li>
+                <li>· <strong>לחיצה כפולה</strong> על כרטיס — עריכת מידע התלמיד</li>
+              </ul>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel>סגירה</AlertDialogCancel></AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <AlertDialog open={!!balance} onOpenChange={(o) => { if (!o) setBalance(null); }}>
         <AlertDialogContent dir="rtl" className="text-right max-w-2xl">
           <AlertDialogHeader>
