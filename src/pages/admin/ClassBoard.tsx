@@ -74,6 +74,7 @@ import StudentEditor from "@/components/placement/StudentEditor";
 import ScenarioPanel from "@/components/placement/ScenarioPanel";
 
 const UNASSIGNED = "__unassigned__";
+const DEFAULT_CAPACITY = 9;
 
 function resolveGender(s?: IntakeSession | null): Gender {
   if (!s) return "unknown";
@@ -247,7 +248,7 @@ const ClassBoard = () => {
       key: k,
       label: classGroups[k] || k,
       teacherGrades: teachers[k]?.grades || [],
-      capacity: capacities[k],
+      capacity: capacities[k] ?? DEFAULT_CAPACITY,
     })),
     [order, classGroups, teachers, capacities]
   );
