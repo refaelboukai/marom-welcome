@@ -14,6 +14,7 @@ import NewIntake from "./pages/admin/NewIntake";
 import ClassInsights from "./pages/admin/ClassInsights";
 import PlacementEngine from "./pages/admin/PlacementEngine";
 import SmartPlacement from "./pages/admin/SmartPlacement";
+import ClassBoard from "./pages/admin/ClassBoard";
 import TeacherProfiles from "./pages/admin/TeacherProfiles";
 import ClassVisual from "./pages/admin/ClassVisual";
 import NotFound from "./pages/NotFound";
@@ -42,6 +43,7 @@ const App = () => {
           <Route path="/admin/class/:classKey/visual" element={<ClassVisual />} />
           <Route path="/admin/placement" element={<PlacementEngine />} />
           <Route path="/admin/placement/smart" element={<SmartPlacement />} />
+          <Route path="/admin/placement/board" element={<ClassBoard />} />
           <Route path="/admin/teachers" element={<TeacherProfiles />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

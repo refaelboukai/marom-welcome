@@ -394,6 +394,25 @@ const PlacementEngine = () => {
       </div>
 
       <div className="max-w-6xl mx-auto p-4 space-y-4">
+        {/* Approved placements board */}
+        <div className="intake-card border-primary/20">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div>
+              <h3 className="font-heading font-bold text-sm flex items-center gap-2">
+                <Users className="w-4 h-4 text-primary" />
+                לוח השיבוצים המאושרים
+              </h3>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                צפייה בחלוקה הקיימת לכיתות ועריכה מלאה — העברת תלמידים, שינוי שמות כיתות, סידור מחדש והוספה/מחיקה של כיתה.
+              </p>
+            </div>
+            <button onClick={() => navigate("/admin/placement/board")}
+              className="btn-intake bg-primary/10 text-primary text-xs flex items-center gap-1.5">
+              <Users className="w-3.5 h-3.5" /> פתח לוח שיבוצים
+            </button>
+          </div>
+        </div>
+
         {/* Smart batch placement CTA */}
         <div className="intake-card bg-gradient-to-l from-primary/10 to-primary/5 border-primary/20">
           <div className="flex items-center justify-between gap-3 flex-wrap">
