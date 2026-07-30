@@ -112,7 +112,7 @@ const ClassBoard = () => {
   const [search, setSearch] = useState("");
   const [showStats, setShowStats] = useState(true);
   const [draggingId, setDraggingId] = useState<string | null>(null);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [dropTarget, setDropTarget] = useState<string | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
