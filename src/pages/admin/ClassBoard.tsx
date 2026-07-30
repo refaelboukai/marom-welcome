@@ -1035,9 +1035,11 @@ const ClassBoard = () => {
                       <h3 className="text-base font-heading font-bold flex-1 truncate">{label}</h3>
                       <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted">
                         <Users className="w-3.5 h-3.5" />{st.list.length}
-                        {!isUn && capacities[key] ? (
-                          <span className={st.list.length > capacities[key] ? "text-destructive" : "text-muted-foreground"}>/{capacities[key]}</span>
-                        ) : null}
+                        {!isUn && (
+                          <span className={st.list.length > (capacities[key] ?? DEFAULT_CAPACITY) ? "text-destructive font-bold" : "text-muted-foreground"}>
+                            /{capacities[key] ?? DEFAULT_CAPACITY}
+                          </span>
+                        )}
                       </span>
                       {!isUn && (
                         <>
@@ -1076,11 +1078,11 @@ const ClassBoard = () => {
                       <input
                         type="number"
                         min={0}
-                        value={capacities[key] ?? ""}
+                        value={capacities[key] ?? DEFAULT_CAPACITY}
                         onClick={(e) => e.stopPropagation()}
                         onChange={(e) => setCapacity(key, Number(e.target.value))}
                         placeholder="תקן"
-                        title="תקן מקסימלי לכיתה"
+                        title="תקן מקסימלי לכיתה (ברירת מחדל 9)"
                         className="w-12 text-[10px] text-center rounded-md border border-border bg-background py-0.5"
                       />
                     </div>
