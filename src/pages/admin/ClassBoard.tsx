@@ -527,6 +527,65 @@ const ClassBoard = () => {
         <p className="text-[11px] text-muted-foreground mb-3">
           גררו תלמיד לכיתה אחרת, או הקישו על כרטיס ואז על הכיתה היעד. סידור הכיתות משמאל לימין נשמר עם השמירה.
         </p>
+        {showBalance && (
+          <div className="mb-4 rounded-xl border border-border bg-card p-3 overflow-x-auto">
+            <h2 className="text-sm font-heading font-bold mb-2 flex items-center gap-1.5">
+              <BarChart3 className="w-4 h-4 text-primary" /> מאזן בין הכיתות
+            </h2>
+            <table className="w-full text-xs text-right">
+              <thead className="text-[11px] text-muted-foreground">
+                <tr>
+                  <th className="py-1 pl-2 font-medium">כיתה</th>
+                  <th className="py-1 pl-2 font-medium">מחנכת</th>
+                  <th className="py-1 pl-2 font-medium">תלמידים</th>
+                  <th className="py-1 pl-2 font-medium">איזון מגדרי</th>
+                  <th className="py-1 pl-2 font-medium">ממוצע התנהגות</th>
+                  <th className="py-1 pl-2 font-medium">עוגנים</th>
+                  <th className="py-1 pl-2 font-medium">עומס</th>
+                </tr>
+              </thead>
+              <tbody>
+                {order.map((k) => {
+                  const st = allStats[k];
+                  const total = Math.max(st.list.length, 1);
+                  const avgSize = order.length
+                    ? order.reduce((a, kk) => a + allStats[kk].list.length, 0) / order.length
+                    : 0;
+                  const off = st.list.length - avgSize;
+                  return (
+                    <tr key={k} className="border-t border-border">
+                      <td className="py-1.5 pl-2 font-semibold">{classGroups[k] || k}</td>
+                      <td className="py-1.5 pl-2 text-muted-foreground">{teachers[k]?.name || "—"}</td>
+                      <td className="py-1.5 pl-2">
+                        {st.list.length}
+                        <span className={`mr-1 text-[10px] ${Math.abs(off) >= 2 ? "text-warning" : "text-muted-foreground"}`}>
+                          ({off > 0 ? "+" : ""}{Math.round(off * 10) / 10})
+                        </span>
+                      </td>
+                      <td className="py-1.5 pl-2">
+                        <div className="flex h-2 w-24 rounded-full overflow-hidden bg-muted">
+                          <div className="bg-sky-400" style={{ width: `${(st.male / total) * 100}%` }} />
+                          <div className="bg-pink-400" style={{ width: `${(st.female / total) * 100}%` }} />
+                        </div>
+                        <span className="text-[10px] text-muted-foreground">{st.male}♂ / {st.female}♀</span>
+                      </td>
+                      <td className="py-1.5 pl-2">{st.avgConduct ?? "—"}</td>
+                      <td className="py-1.5 pl-2">{st.diversity.anchorCount}</td>
+                      <td className="py-1.5 pl-2">
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] ${
+                          st.load.status === "ok" ? "bg-success/15 text-success" :
+                          st.load.status === "high" ? "bg-warning/15 text-warning" : "bg-destructive/15 text-destructive"
+                        }`}>
+                          {st.load.status === "ok" ? "תקין" : st.load.status === "high" ? "גבוה" : "מלא"}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
         <div className="flex gap-3 overflow-x-auto pb-4 items-start">
           {columnKeys.map((key, idx) => {
             const isUn = key === UNASSIGNED;
