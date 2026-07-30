@@ -450,10 +450,24 @@ const ClassBoard = () => {
             <button onClick={() => setShowStats((v) => !v)} className="btn-intake bg-muted text-xs flex items-center gap-1">
               {showStats ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />} נתוני כיתה
             </button>
+            <button onClick={() => setShowFilters((v) => !v)}
+              className={`btn-intake text-xs flex items-center gap-1 ${filtersActive ? "bg-primary/10 text-primary" : "bg-muted"}`}>
+              <Filter className="w-3.5 h-3.5" /> סינון
+            </button>
+            <button onClick={() => setShowBalance((v) => !v)}
+              className={`btn-intake text-xs flex items-center gap-1 ${showBalance ? "bg-primary/10 text-primary" : "bg-muted"}`}>
+              <BarChart3 className="w-3.5 h-3.5" /> מאזן כיתות
+            </button>
             <button onClick={copySummary} className="btn-intake bg-muted text-xs flex items-center gap-1">
               <Copy className="w-3.5 h-3.5" /> העתק סיכום
             </button>
-            <button onClick={addClass} className="btn-intake bg-muted text-xs flex items-center gap-1">
+            <button onClick={exportExcel} className="btn-intake bg-muted text-xs flex items-center gap-1">
+              <FileSpreadsheet className="w-3.5 h-3.5" /> ייצוא לאקסל
+            </button>
+            <button onClick={printBoard} className="btn-intake bg-muted text-xs flex items-center gap-1">
+              <Printer className="w-3.5 h-3.5" /> הדפסה
+            </button>
+            <button onClick={() => { setNewClassName(""); setNewClassOpen(true); }} className="btn-intake bg-muted text-xs flex items-center gap-1">
               <Plus className="w-3.5 h-3.5" /> כיתה חדשה
             </button>
             <button onClick={undo} disabled={history.length === 0}
@@ -479,6 +493,32 @@ const ClassBoard = () => {
               <span className="text-warning flex items-center gap-1">
                 <AlertTriangle className="w-3.5 h-3.5" /> יש שינויים שלא נשמרו
               </span>
+            )}
+          </div>
+        )}
+        {showFilters && (
+          <div className="max-w-[1400px] mx-auto mt-2 flex items-center gap-2 flex-wrap text-xs">
+            <select value={filterGrade} onChange={(e) => setFilterGrade(e.target.value)}
+              className="border border-border rounded-lg py-1.5 px-2 bg-background">
+              <option value="">כל השכבות</option>
+              {allGrades.map((g) => <option key={g} value={g}>{g}</option>)}
+            </select>
+            <select value={filterGender} onChange={(e) => setFilterGender(e.target.value)}
+              className="border border-border rounded-lg py-1.5 px-2 bg-background">
+              <option value="">כל המגדרים</option>
+              <option value="male">בנים</option>
+              <option value="female">בנות</option>
+              <option value="unknown">לא מוגדר</option>
+            </select>
+            <label className="flex items-center gap-1.5 cursor-pointer">
+              <input type="checkbox" checked={filterFlagged} onChange={(e) => setFilterFlagged(e.target.checked)} />
+              תלמידים עם סימון לתשומת לב
+            </label>
+            {filtersActive && (
+              <button onClick={() => { setSearch(""); setFilterGrade(""); setFilterGender(""); setFilterFlagged(false); }}
+                className="btn-intake bg-muted text-xs flex items-center gap-1">
+                <X className="w-3.5 h-3.5" /> נקה סינון
+              </button>
             )}
           </div>
         )}
