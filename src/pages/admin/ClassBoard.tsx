@@ -50,7 +50,6 @@ import {
   Printer,
   Filter,
   BarChart3,
-  Shuffle,
 } from "lucide-react";
 
 const UNASSIGNED = "__unassigned__";
