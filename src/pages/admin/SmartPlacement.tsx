@@ -301,9 +301,11 @@ const SmartPlacement = () => {
     setBatchConfirming(true);
     try {
       for (const a of batchResult.assignments) {
-        const classKey = overrides[a.studentId] || a.classKey;
-        if (!classKey || classKey === UNASSIGNED_KEY) continue;
-        try { await updateSessionDB(a.studentId, { classGroup: classKey } as any); } catch (e) { console.error(e); }
+        const classKey = overrides[a.studentId] ?? a.classKey;
+        const current = sessionsById[a.studentId]?.classGroup || "";
+        const target = !classKey || classKey === UNASSIGNED_KEY ? "" : classKey;
+        if (target === current) continue;
+        try { await updateSessionDB(a.studentId, { classGroup: target } as any); } catch (e) { console.error(e); }
       }
       const fresh = await getSessionsDB();
       setSessions(fresh);
@@ -312,6 +314,26 @@ const SmartPlacement = () => {
     } finally {
       setBatchConfirming(false);
     }
+  };
+
+  // Load the CURRENT saved placement into the board so classes/students can be edited
+  // without re-running the AI engine.
+  const loadExistingBoard = () => {
+    const active = sessions.filter((s) => s.status !== "archived");
+    if (active.length === 0) return;
+    setBatchResult({
+      assignments: active.map((s) => ({
+        studentId: s.id,
+        studentName: s.studentName,
+        classKey: s.classGroup || UNASSIGNED_KEY,
+        rationale: s.classGroup ? "שיבוץ קיים — נטען לעריכה ידנית." : "",
+      })),
+      overallRationale: "",
+    });
+    setOverrides({});
+    setBatchChat([]);
+    setDraftSavedAt(null);
+    setView("board");
   };
 
   const saveDraft = () => {
