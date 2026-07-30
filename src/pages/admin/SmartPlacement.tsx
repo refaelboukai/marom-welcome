@@ -7,6 +7,7 @@ import {
   getTeacherProfiles,
   updateSessionDB,
   deleteSessionDB,
+  saveClassGroups,
   DEFAULT_CLASS_GROUPS,
   ClassGroupsMap,
   TeacherProfilesMap,
@@ -44,6 +45,9 @@ import {
   X,
   Save,
   RotateCcw,
+  Plus,
+  Pencil,
+  Check,
 } from "lucide-react";
 
 interface BatchAssignment {
