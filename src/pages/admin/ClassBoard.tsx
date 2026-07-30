@@ -908,6 +908,34 @@ const ClassBoard = () => {
                   <p className="text-xs text-muted-foreground mb-2 pb-2 border-b border-border">מחנכת: <span className="font-medium text-foreground">{teachers[key]?.name}</span></p>
                 )}
 
+                {!isUn && health[key] && (
+                  <div className="mb-2.5">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[10px] text-muted-foreground">ציון איזון</span>
+                      <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                        <div className="h-full rounded-full transition-all"
+                          style={{ width: `${health[key].score}%`, background: health[key].score >= 75 ? "#10b981" : health[key].score >= 55 ? "#f59e0b" : "#ef4444" }} />
+                      </div>
+                      <span className="text-[11px] font-bold">{health[key].score}</span>
+                      <input
+                        type="number"
+                        min={0}
+                        value={capacities[key] ?? ""}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => setCapacity(key, Number(e.target.value))}
+                        placeholder="תקן"
+                        title="תקן מקסימלי לכיתה"
+                        className="w-12 text-[10px] text-center rounded-md border border-border bg-background py-0.5"
+                      />
+                    </div>
+                    {showStats && health[key].issues.length > 0 && (
+                      <ul className="text-[10px] text-muted-foreground space-y-0.5">
+                        {health[key].issues.slice(0, 3).map((iss, i) => <li key={i}>• {iss}</li>)}
+                      </ul>
+                    )}
+                  </div>
+                )}
+
                 {showStats && !isUn && (
                   <div className="mb-3 space-y-1.5">
                     <div className="flex items-center gap-1.5 flex-wrap text-[11px]">
