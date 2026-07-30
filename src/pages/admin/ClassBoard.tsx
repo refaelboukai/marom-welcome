@@ -329,6 +329,10 @@ const ClassBoard = () => {
       w.push(`שכבת התלמיד (${student.grade}) אינה בשכבות שמלמדת המחנכת (${teacherGrades.join(", ")}).`);
     }
     if (st) {
+      const cap = capacities[toKey] ?? DEFAULT_CAPACITY;
+      if (st.list.length + 1 > cap) {
+        w.push(`הכיתה תחרוג מהתקן (${st.list.length + 1} מתוך ${cap} תלמידים).`);
+      }
       const g = resolveGender(student);
       const total = st.list.length + 1;
       const males = st.male + (g === "male" ? 1 : 0);
