@@ -752,6 +752,29 @@ const ClassBoard = () => {
       </AlertDialog>
 
       {/* Delete class confirmation */}
+      <AlertDialog open={newClassOpen} onOpenChange={setNewClassOpen}>
+        <AlertDialogContent dir="rtl" className="text-right">
+          <AlertDialogHeader>
+            <AlertDialogTitle>הוספת כיתה חדשה</AlertDialogTitle>
+            <AlertDialogDescription>בחרו שם לכיתה. אפשר לשנות אותו בכל שלב.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <input
+            autoFocus
+            value={newClassName}
+            onChange={(e) => setNewClassName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && newClassName.trim()) addClass(); }}
+            placeholder="לדוגמה: הכיתה של אורי"
+            className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background"
+          />
+          <AlertDialogFooter className="flex-row-reverse gap-2">
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); addClass(); }} disabled={!newClassName.trim()}>
+              הוסף כיתה
+            </AlertDialogAction>
+            <AlertDialogCancel>ביטול</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <AlertDialog open={!!confirmDeleteClass} onOpenChange={(o) => { if (!o) setConfirmDeleteClass(null); }}>
         <AlertDialogContent dir="rtl" className="text-right">
           <AlertDialogHeader>
