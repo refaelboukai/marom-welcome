@@ -649,6 +649,17 @@ const ClassBoard = () => {
             </table>
           </div>
         )}
+        {showStudio && (
+          <ChartStudio
+            sections={order.map((k) => ({
+              key: k,
+              label: classGroups[k] || k,
+              teacher: teachers[k]?.name,
+              students: columns[k] || [],
+            }))}
+            unassigned={columns[UNASSIGNED] || []}
+          />
+        )}
         {showFocus && (
           <ClassFocus
             sections={order.map((k) => ({
