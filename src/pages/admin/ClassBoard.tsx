@@ -570,6 +570,13 @@ const ClassBoard = () => {
                 {order.length} כיתות · {sessions.length} תלמידים · {allStats[UNASSIGNED].list.length} ללא שיוך
               </p>
             </div>
+            <div className="hidden lg:flex items-center gap-2 shrink-0 px-3 py-1.5 rounded-xl bg-muted/60" title="ציון איזון כולל של הלוח">
+              <Activity className={`w-4 h-4 ${boardScore >= 75 ? "text-success" : boardScore >= 55 ? "text-warning" : "text-destructive"}`} />
+              <div>
+                <p className="text-[10px] text-muted-foreground leading-none">ציון איזון הלוח</p>
+                <p className="text-lg font-bold leading-tight">{boardScore}</p>
+              </div>
+            </div>
             <div className="hidden md:block">
               {savedFlash ? (
                 <span className="text-sm text-success flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-success/10">
