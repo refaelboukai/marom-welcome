@@ -622,6 +622,10 @@ const ClassBoard = () => {
                 className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showStudio ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
                 <Sliders className="w-4 h-4" /> בונה ניתוחים
               </button>
+              <button onClick={() => setShowBestFit((v) => !v)}
+                className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showBestFit ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
+                <Wand2 className="w-4 h-4" /> שיבוץ מיטבי
+              </button>
             </div>
 
             <div className="flex items-center gap-1 p-1 rounded-xl bg-muted/60">
