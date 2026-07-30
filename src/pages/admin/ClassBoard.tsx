@@ -74,6 +74,7 @@ import StudentEditor from "@/components/placement/StudentEditor";
 import ScenarioPanel from "@/components/placement/ScenarioPanel";
 
 const UNASSIGNED = "__unassigned__";
+const DEFAULT_CAPACITY = 9;
 
 function resolveGender(s?: IntakeSession | null): Gender {
   if (!s) return "unknown";
@@ -247,7 +248,7 @@ const ClassBoard = () => {
       key: k,
       label: classGroups[k] || k,
       teacherGrades: teachers[k]?.grades || [],
-      capacity: capacities[k],
+      capacity: capacities[k] ?? DEFAULT_CAPACITY,
     })),
     [order, classGroups, teachers, capacities]
   );
@@ -328,6 +329,10 @@ const ClassBoard = () => {
       w.push(`שכבת התלמיד (${student.grade}) אינה בשכבות שמלמדת המחנכת (${teacherGrades.join(", ")}).`);
     }
     if (st) {
+      const cap = capacities[toKey] ?? DEFAULT_CAPACITY;
+      if (st.list.length + 1 > cap) {
+        w.push(`הכיתה תחרוג מהתקן (${st.list.length + 1} מתוך ${cap} תלמידים).`);
+      }
       const g = resolveGender(student);
       const total = st.list.length + 1;
       const males = st.male + (g === "male" ? 1 : 0);
@@ -1000,7 +1005,9 @@ const ClassBoard = () => {
                 onClick={() => { if (selectedIds.length) requestMoveMany(selectedIds, key); }}
                 className={`min-w-[300px] w-[300px] rounded-2xl border p-3.5 shadow-sm transition-all ${
                   dropTarget === key ? "border-primary ring-2 ring-primary/25 bg-primary/5" : "border-border bg-card"
-                } ${isUn ? "bg-muted/40 border-dashed" : ""}`}
+                } ${isUn ? "bg-muted/40 border-dashed" : ""} ${
+                  !isUn && st.list.length > (capacities[key] ?? DEFAULT_CAPACITY) ? "border-destructive/60" : ""
+                }`}
               >
                 <div className="flex items-center gap-1 mb-2">
                   {!isUn && (
@@ -1030,9 +1037,11 @@ const ClassBoard = () => {
                       <h3 className="text-base font-heading font-bold flex-1 truncate">{label}</h3>
                       <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted">
                         <Users className="w-3.5 h-3.5" />{st.list.length}
-                        {!isUn && capacities[key] ? (
-                          <span className={st.list.length > capacities[key] ? "text-destructive" : "text-muted-foreground"}>/{capacities[key]}</span>
-                        ) : null}
+                        {!isUn && (
+                          <span className={st.list.length > (capacities[key] ?? DEFAULT_CAPACITY) ? "text-destructive font-bold" : "text-muted-foreground"}>
+                            /{capacities[key] ?? DEFAULT_CAPACITY}
+                          </span>
+                        )}
                       </span>
                       {!isUn && (
                         <>
@@ -1071,11 +1080,11 @@ const ClassBoard = () => {
                       <input
                         type="number"
                         min={0}
-                        value={capacities[key] ?? ""}
+                        value={capacities[key] ?? DEFAULT_CAPACITY}
                         onClick={(e) => e.stopPropagation()}
                         onChange={(e) => setCapacity(key, Number(e.target.value))}
                         placeholder="תקן"
-                        title="תקן מקסימלי לכיתה"
+                        title="תקן מקסימלי לכיתה (ברירת מחדל 9)"
                         className="w-12 text-[10px] text-center rounded-md border border-border bg-background py-0.5"
                       />
                     </div>
