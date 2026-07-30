@@ -7,6 +7,7 @@ import {
   getTeacherProfiles,
   updateSessionDB,
   deleteSessionDB,
+  saveClassGroups,
   DEFAULT_CLASS_GROUPS,
   ClassGroupsMap,
   TeacherProfilesMap,
@@ -44,6 +45,9 @@ import {
   X,
   Save,
   RotateCcw,
+  Plus,
+  Pencil,
+  Check,
 } from "lucide-react";
 
 interface BatchAssignment {
@@ -520,6 +524,41 @@ const SmartPlacement = () => {
     }
   };
 
+  // ----- Class management (rename / add / delete) -----
+  const renameClass = async (key: string, label: string) => {
+    const clean = label.trim();
+    if (!clean) return;
+    const next = { ...classGroups, [key]: clean };
+    setClassGroups(next);
+    await saveClassGroups(next);
+  };
+
+  const addClass = async (label: string) => {
+    const clean = label.trim();
+    if (!clean) return;
+    let key = `class_${Date.now().toString(36)}`;
+    while (classGroups[key]) key = `${key}x`;
+    const next = { ...classGroups, [key]: clean };
+    setClassGroups(next);
+    await saveClassGroups(next);
+  };
+
+  const removeClass = async (key: string) => {
+    const label = classGroups[key] || key;
+    const count = (columns[key] || []).length;
+    if (!confirm(`למחוק את "${label}"?${count ? ` ${count} תלמידים יעברו ל"ללא שיוך".` : ""}`)) return;
+    // Move its students back to unassigned
+    setOverrides((prev) => {
+      const next = { ...prev };
+      (columns[key] || []).forEach((a) => { next[a.studentId] = UNASSIGNED_KEY; });
+      return next;
+    });
+    const next = { ...classGroups };
+    delete next[key];
+    setClassGroups(next);
+    await saveClassGroups(next);
+  };
+
   // Group assignments by column
   const columns = useMemo(() => {
     const cols: Record<string, BatchAssignment[]> = { [UNASSIGNED_KEY]: [] };
@@ -638,6 +677,9 @@ const SmartPlacement = () => {
                 selectedId={selectedId}
                 setSelectedId={setSelectedId}
                 classFlagsByKey={classFlagsByKey}
+                onRenameClass={renameClass}
+                onAddClass={addClass}
+                onDeleteClass={removeClass}
               />
             ) : (
               <TableView
@@ -830,7 +872,7 @@ const SmartPlacement = () => {
 const BoardView = ({
   columns, classGroups, teachers, sessionsById,
   onMove, onDelete, onOpenDetails, draggingId, setDraggingId, dropTarget, setDropTarget,
-  selectedId, setSelectedId, classFlagsByKey,
+  selectedId, setSelectedId, classFlagsByKey, onRenameClass, onAddClass, onDeleteClass,
 }: {
   columns: Record<string, BatchAssignment[]>;
   classGroups: ClassGroupsMap;
@@ -846,18 +888,51 @@ const BoardView = ({
   selectedId: string | null;
   setSelectedId: React.Dispatch<React.SetStateAction<string | null>>;
   classFlagsByKey: Record<string, any>;
+  onRenameClass: (key: string, label: string) => void;
+  onAddClass: (label: string) => void;
+  onDeleteClass: (key: string) => void;
 }) => {
   const classKeys = Object.keys(classGroups);
   const orderedCols: Array<{ key: string; label: string }> = [
     ...classKeys.map((k) => ({ key: k, label: classGroups[k] })),
     { key: UNASSIGNED_KEY, label: "ללא שיוך" },
   ];
+  const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState("");
+  const [addingClass, setAddingClass] = useState(false);
+  const [newClassName, setNewClassName] = useState("");
 
   return (
     <>
-      <p className="text-[11px] text-muted-foreground text-center">
-        גרור/י כרטיס תלמיד לכיתה אחרת · במגע: הקש/י על כרטיס ואז על שם הכיתה
-      </p>
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+        <p className="text-[11px] text-muted-foreground">
+          גרור/י כרטיס תלמיד לכיתה אחרת · במגע: הקש/י על כרטיס ואז על שם הכיתה · לחיצה על ✎ לשינוי שם כיתה
+        </p>
+        {addingClass ? (
+          <div className="flex items-center gap-1">
+            <input
+              autoFocus
+              value={newClassName}
+              onChange={(e) => setNewClassName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") { onAddClass(newClassName); setNewClassName(""); setAddingClass(false); }
+                if (e.key === "Escape") { setNewClassName(""); setAddingClass(false); }
+              }}
+              placeholder="שם הכיתה החדשה"
+              className="bg-card border border-input rounded-lg px-2 py-1 text-xs"
+            />
+            <button onClick={() => { onAddClass(newClassName); setNewClassName(""); setAddingClass(false); }}
+              className="btn-intake bg-primary text-primary-foreground text-[11px] px-2 py-1 gap-1"><Check className="w-3 h-3" /> הוסף</button>
+            <button onClick={() => { setNewClassName(""); setAddingClass(false); }}
+              className="btn-intake bg-muted text-foreground text-[11px] px-2 py-1"><X className="w-3 h-3" /></button>
+          </div>
+        ) : (
+          <button onClick={() => setAddingClass(true)}
+            className="btn-intake bg-primary/10 text-primary text-[11px] px-2.5 py-1 gap-1 flex-shrink-0">
+            <Plus className="w-3.5 h-3.5" /> כיתה חדשה
+          </button>
+        )}
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
         {orderedCols.map(({ key, label }) => {
           const items = columns[key] || [];
@@ -891,7 +966,40 @@ const BoardView = ({
             >
               <div className="flex items-center justify-between mb-2">
                 <div className="min-w-0">
-                  <p className="font-heading font-bold text-sm truncate">{label}</p>
+                  {editingKey === key ? (
+                    <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        autoFocus
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") { onRenameClass(key, editValue); setEditingKey(null); }
+                          if (e.key === "Escape") setEditingKey(null);
+                        }}
+                        className="bg-card border border-input rounded-md px-1.5 py-0.5 text-xs w-32"
+                      />
+                      <button onClick={() => { onRenameClass(key, editValue); setEditingKey(null); }} className="p-1 rounded hover:bg-muted text-success"><Check className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => setEditingKey(null)} className="p-1 rounded hover:bg-muted text-muted-foreground"><X className="w-3.5 h-3.5" /></button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1 min-w-0">
+                      <p className="font-heading font-bold text-sm truncate">{label}</p>
+                      {key !== UNASSIGNED_KEY && (
+                        <>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setEditingKey(key); setEditValue(label); }}
+                            title="שנה שם כיתה"
+                            className="p-0.5 rounded hover:bg-muted text-muted-foreground flex-shrink-0"
+                          ><Pencil className="w-3 h-3" /></button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); onDeleteClass(key); }}
+                            title="מחק כיתה"
+                            className="p-0.5 rounded hover:bg-destructive/10 text-destructive/70 flex-shrink-0"
+                          ><Trash2 className="w-3 h-3" /></button>
+                        </>
+                      )}
+                    </div>
+                  )}
                   {key !== UNASSIGNED_KEY && teachers[key]?.name && (
                     <p className="text-[10px] text-muted-foreground truncate">מחנכת: {teachers[key]!.name}</p>
                   )}
