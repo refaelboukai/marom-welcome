@@ -273,7 +273,32 @@ const ClassBoard = () => {
   const applyMove = (studentId: string, toKey: string) => {
     setHistory((h) => [...h.slice(-19), assign]);
     setAssign((prev) => ({ ...prev, [studentId]: toKey === UNASSIGNED ? "" : toKey }));
-    setSelectedId(null);
+    setSelectedIds((prev) => prev.filter((x) => x !== studentId));
+  };
+
+  /** Move every selected student (or a single dragged one) into a class. */
+  const requestMoveMany = (ids: string[], toKey: string) => {
+    const targets = ids.filter((id) => (assign[id] || UNASSIGNED) !== toKey);
+    if (targets.length === 0) return;
+    if (targets.length === 1) { requestMove(targets[0], toKey); return; }
+    const warnings = Array.from(
+      new Set(targets.flatMap((id) => {
+        const s = sessionsById[id];
+        return s ? buildWarnings(s, toKey).map((w) => `${s.studentName}: ${w}`) : [];
+      }))
+    );
+    const destLabel = toKey === UNASSIGNED ? "ללא שיוך" : classGroups[toKey] || toKey;
+    if (warnings.length === 0) {
+      setHistory((h) => [...h.slice(-19), assign]);
+      setAssign((prev) => {
+        const next = { ...prev };
+        targets.forEach((id) => { next[id] = toKey === UNASSIGNED ? "" : toKey; });
+        return next;
+      });
+      setSelectedIds([]);
+      return;
+    }
+    setPendingMove({ studentId: targets.join(","), studentName: `${targets.length} תלמידים`, toKey, destLabel, warnings });
   };
 
   const undo = () => {
