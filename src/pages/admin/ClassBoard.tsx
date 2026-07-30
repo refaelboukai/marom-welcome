@@ -113,6 +113,11 @@ const ClassBoard = () => {
   const [assign, setAssign] = useState<Record<string, string>>({});
   const [baseline, setBaseline] = useState<Record<string, string>>({});
   const [history, setHistory] = useState<Record<string, string>[]>([]);
+  const [future, setFuture] = useState<Record<string, string>[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [pinnedIds, setPinnedIds] = useState<string[]>([]);
+  const [compact, setCompact] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
 
   const [search, setSearch] = useState("");
   const [showStats, setShowStats] = useState(true);
@@ -137,6 +142,19 @@ const ClassBoard = () => {
   const [capacities, setCapacities] = useState<Record<string, number>>({});
   const [balance, setBalance] = useState<BalanceResult | null>(null);
   const [balancing, setBalancing] = useState(false);
+
+  const pushHistory = (snapshot: Record<string, string>) => {
+    setHistory((h) => [...h.slice(-29), snapshot]);
+    setFuture([]);
+  };
+
+  const togglePin = (id: string) => {
+    setPinnedIds((prev) => {
+      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
+      try { localStorage.setItem("board_pinned", JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  };
 
   const setRelation = async (aId: string, bId: string, type: RelationType) => {
     const apply = (s: IntakeSession, otherId: string): IntakeSession => {
