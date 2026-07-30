@@ -1006,6 +1006,25 @@ const ClassBoard = () => {
                             <span className="text-[11px] font-medium text-muted-foreground shrink-0 px-1.5 py-0.5 rounded-md bg-muted">{s.grade}</span>
                           )}
                         </div>
+                        {showStats && (() => {
+                          const p = buildStudentProfile(s);
+                          const ca = p.conductMetrics?.average;
+                          const sens = p.sensorySensitivity;
+                          const anchor = !!(ca && ca >= 4 && (p.scores?.qualityOfLife || 0) >= 4);
+                          const tags: { t: string; c: string }[] = [];
+                          if (ca) tags.push({ t: `התנהגות ${ca}`, c: ca <= 2.5 ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground" });
+                          if (typeof sens === "number" && sens > 0 && sens <= 2.5) tags.push({ t: "רגיש חושית", c: "bg-warning/15 text-warning" });
+                          if (p.riskFlags.length) tags.push({ t: `${p.riskFlags.length} דגלים`, c: "bg-destructive/10 text-destructive" });
+                          if (anchor) tags.push({ t: "עוגן", c: "bg-success/15 text-success" });
+                          if (!tags.length) return null;
+                          return (
+                            <div className="flex flex-wrap gap-1 mt-1.5 pr-6">
+                              {tags.map((tg, i) => (
+                                <span key={i} className={`text-[10px] px-1.5 py-0.5 rounded-md ${tg.c}`}>{tg.t}</span>
+                              ))}
+                            </div>
+                          );
+                        })()}
                       </div>
                     );
                   })}
