@@ -364,8 +364,8 @@ const Dashboard = () => {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 mb-4 overflow-x-auto pb-1 items-center">
-          {tabs.map((t) => (
+        <div className="flex gap-1 mb-2 overflow-x-auto pb-1 items-center">
+          {tabs.filter((t) => t.key !== "unassigned").map((t) => (
             <div key={t.key} className="inline-flex items-center">
               <button onClick={() => setTab(t.key)}
                 onDoubleClick={() => t.deletable && handleRenameClass(t.key)}
@@ -390,6 +390,18 @@ const Dashboard = () => {
             <Plus className="w-3.5 h-3.5" /> הוסף כיתה
           </button>
         </div>
+
+        {/* Unassigned row (separate line) */}
+        {tabs.filter((t) => t.key === "unassigned").map((t) => (
+          <div key={t.key} className="flex mb-4">
+            <button onClick={() => setTab(t.key)}
+              className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all border border-dashed ${
+                tab === t.key ? "bg-primary text-primary-foreground border-primary shadow-md" : "bg-muted/30 text-muted-foreground border-border hover:bg-muted"
+              }`}>
+              {t.label} {t.count != null && <span className="mr-1 opacity-70">({t.count})</span>}
+            </button>
+          </div>
+        ))}
 
         {/* Codes Tab */}
         {tab === "codes" ? (
