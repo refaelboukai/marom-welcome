@@ -1104,9 +1104,14 @@ const ClassBoard = () => {
                                 : [s.id]
                           );
                         }}
-                        className={`rounded-xl border px-3 py-2.5 bg-background cursor-grab active:cursor-grabbing transition-all hover:shadow-md hover:-translate-y-px ${
+                        onDoubleClick={(e) => { e.stopPropagation(); setEditingId(s.id); }}
+                        className={`rounded-xl border bg-background cursor-grab active:cursor-grabbing transition-all hover:shadow-md hover:-translate-y-px ${
+                          compact ? "px-2.5 py-1.5" : "px-3 py-2.5"
+                        } ${
                           selectedIds.includes(s.id) ? "border-primary ring-2 ring-primary/30" : "border-border"
-                        } ${draggingId === s.id ? "opacity-40" : ""} ${dim ? "opacity-25" : ""} ${changed ? "bg-warning/5 border-warning/50" : ""}`}
+                        } ${draggingId === s.id ? "opacity-40" : ""} ${dim ? "opacity-25" : ""} ${changed ? "bg-warning/5 border-warning/50" : ""} ${
+                          pinnedIds.includes(s.id) ? "ring-1 ring-primary/25" : ""
+                        }`}
                       >
                         <div className="flex items-center gap-2">
                           <GripVertical className="w-4 h-4 text-muted-foreground/60 shrink-0" />
@@ -1118,11 +1123,19 @@ const ClassBoard = () => {
                           >
                             {s.studentName}
                           </button>
+                          {pinnedIds.includes(s.id) && <Lock className="w-3.5 h-3.5 text-primary shrink-0" />}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setEditingId(s.id); }}
+                            className="p-1 rounded-md text-muted-foreground hover:bg-muted hover:text-primary shrink-0"
+                            title="עריכה והוספת מידע"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
                           {s.grade && (
                             <span className="text-[11px] font-medium text-muted-foreground shrink-0 px-1.5 py-0.5 rounded-md bg-muted">{s.grade}</span>
                           )}
                         </div>
-                        {showStats && (() => {
+                        {showStats && !compact && (() => {
                           const p = buildStudentProfile(s);
                           const ca = p.conductMetrics?.average;
                           const sens = p.sensorySensitivity;
