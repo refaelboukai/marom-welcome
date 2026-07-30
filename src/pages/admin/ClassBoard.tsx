@@ -54,9 +54,14 @@ import {
   HeartHandshake,
   Target,
   Sliders,
+  Wand2,
+  ListChecks,
+  Activity,
 } from "lucide-react";
 import BoardAnalytics from "@/components/placement/BoardAnalytics";
 import ChartStudio from "@/components/placement/ChartStudio";
+import BestFitPanel from "@/components/placement/BestFitPanel";
+import { autoBalance, classHealth, toOptStudent, OptClass, BalanceResult } from "@/lib/placement-optimizer";
 import PairSuggestions, { RelationType } from "@/components/placement/PairSuggestions";
 import ClassFocus from "@/components/placement/ClassFocus";
 
@@ -122,6 +127,11 @@ const ClassBoard = () => {
   const [showPairs, setShowPairs] = useState(false);
   const [showFocus, setShowFocus] = useState(false);
   const [showStudio, setShowStudio] = useState(false);
+  const [showBestFit, setShowBestFit] = useState(false);
+  const [showChanges, setShowChanges] = useState(false);
+  const [capacities, setCapacities] = useState<Record<string, number>>({});
+  const [balance, setBalance] = useState<BalanceResult | null>(null);
+  const [balancing, setBalancing] = useState(false);
 
   const setRelation = async (aId: string, bId: string, type: RelationType) => {
     const apply = (s: IntakeSession, otherId: string): IntakeSession => {
