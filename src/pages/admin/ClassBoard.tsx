@@ -57,6 +57,10 @@ import {
   Wand2,
   ListChecks,
   Activity,
+  Redo2,
+  Lock,
+  Rows3,
+  Keyboard,
 } from "lucide-react";
 import BoardAnalytics from "@/components/placement/BoardAnalytics";
 import ChartStudio from "@/components/placement/ChartStudio";
@@ -64,6 +68,7 @@ import BestFitPanel from "@/components/placement/BestFitPanel";
 import { autoBalance, classHealth, toOptStudent, OptClass, BalanceResult } from "@/lib/placement-optimizer";
 import PairSuggestions, { RelationType } from "@/components/placement/PairSuggestions";
 import ClassFocus from "@/components/placement/ClassFocus";
+import StudentEditor from "@/components/placement/StudentEditor";
 
 const UNASSIGNED = "__unassigned__";
 
