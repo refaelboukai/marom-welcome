@@ -642,6 +642,14 @@ const ClassBoard = () => {
 
             <div className="flex-1" />
 
+            <button onClick={() => runAutoBalance(false)} disabled={balancing || order.length < 2}
+              className="px-3.5 py-2 rounded-xl text-sm border border-primary/40 text-primary hover:bg-primary/10 flex items-center gap-1.5 disabled:opacity-40">
+              {balancing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} איזון אוטומטי
+            </button>
+            <button onClick={() => setShowChanges((v) => !v)} disabled={dirtyIds.length === 0}
+              className={`px-3.5 py-2 rounded-xl text-sm border flex items-center gap-1.5 disabled:opacity-40 ${showChanges ? "border-primary text-primary bg-primary/5" : "border-border hover:bg-muted"}`}>
+              <ListChecks className="w-4 h-4" /> שינויים{dirtyIds.length ? ` (${dirtyIds.length})` : ""}
+            </button>
             <button onClick={() => { setNewClassName(""); setNewClassOpen(true); }}
               className="px-3.5 py-2 rounded-xl text-sm border border-border hover:bg-muted flex items-center gap-1.5">
               <Plus className="w-4 h-4" /> כיתה חדשה
