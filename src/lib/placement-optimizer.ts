@@ -182,11 +182,12 @@ export function autoBalance(
   classes: OptClass[],
   students: OptStudent[],
   current: Record<string, string>,
-  opts: { includeUnassigned?: boolean; maxMoves?: number } = {}
+  opts: { includeUnassigned?: boolean; maxMoves?: number; lockedIds?: string[] } = {}
 ): BalanceResult {
   const byId: Record<string, OptStudent> = {};
   students.forEach((s) => { byId[s.id] = s; });
-  const pool = students.filter((s) => (opts.includeUnassigned ? true : !!current[s.id]));
+  const locked = new Set(opts.lockedIds || []);
+  const pool = students.filter((s) => !locked.has(s.id) && (opts.includeUnassigned ? true : !!current[s.id]));
   const assign: Record<string, string> = {};
   students.forEach((s) => { assign[s.id] = current[s.id] || ""; });
 
