@@ -376,6 +376,52 @@ const ClassBoard = () => {
     setTimeout(() => setSavedFlash(false), 1500);
   };
 
+  const exportExcel = () => {
+    const wb = XLSX.utils.book_new();
+    const rows: any[][] = [["כיתה", "מחנכת", "שם התלמיד", "שכבה", "מגדר", "ממוצע התנהגות", "רגישות חושית"]];
+    [...order, UNASSIGNED].forEach((k) => {
+      const st = allStats[k];
+      const label = k === UNASSIGNED ? "ללא שיוך" : classGroups[k] || k;
+      st.list.forEach((s) => {
+        const p = buildStudentProfile(s);
+        const g = resolveGender(s);
+        rows.push([
+          label,
+          k === UNASSIGNED ? "" : teachers[k]?.name || "",
+          s.studentName,
+          s.grade || "",
+          g === "male" ? "זכר" : g === "female" ? "נקבה" : "לא ידוע",
+          p.conductMetrics?.average ?? "",
+          typeof p.sensorySensitivity === "number" ? p.sensorySensitivity : "",
+        ]);
+      });
+    });
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws["!cols"] = [{ wch: 18 }, { wch: 14 }, { wch: 20 }, { wch: 8 }, { wch: 10 }, { wch: 16 }, { wch: 14 }];
+    XLSX.utils.book_append_sheet(wb, ws, "שיבוצים");
+
+    const sum: any[][] = [["כיתה", "מחנכת", "תלמידים", "בנים", "בנות", "ממוצע התנהגות", "עוגנים", "עומס"]];
+    order.forEach((k) => {
+      const st = allStats[k];
+      sum.push([
+        classGroups[k] || k,
+        teachers[k]?.name || "",
+        st.list.length,
+        st.male,
+        st.female,
+        st.avgConduct ?? "",
+        st.diversity.anchorCount,
+        st.load.status === "ok" ? "תקין" : st.load.status === "high" ? "גבוה" : "מלא",
+      ]);
+    });
+    const ws2 = XLSX.utils.aoa_to_sheet(sum);
+    ws2["!cols"] = [{ wch: 18 }, { wch: 14 }, { wch: 10 }, { wch: 8 }, { wch: 8 }, { wch: 16 }, { wch: 10 }, { wch: 10 }];
+    XLSX.utils.book_append_sheet(wb, ws2, "סיכום כיתות");
+    XLSX.writeFile(wb, `שיבוצים-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
+
+  const printBoard = () => window.print();
+
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       <div className="bg-card border-b border-border px-4 py-3 sticky top-0 z-20">
