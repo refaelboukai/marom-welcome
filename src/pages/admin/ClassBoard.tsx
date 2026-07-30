@@ -1006,7 +1006,7 @@ const ClassBoard = () => {
                 className={`min-w-[300px] w-[300px] rounded-2xl border p-3.5 shadow-sm transition-all ${
                   dropTarget === key ? "border-primary ring-2 ring-primary/25 bg-primary/5" : "border-border bg-card"
                 } ${isUn ? "bg-muted/40 border-dashed" : ""}`}
-                data-over={!isUn && st.list.length > (capacities[key] ?? DEFAULT_CAPACITY) ? "1" : undefined}
+                  ${!isUn && st.list.length > (capacities[key] ?? DEFAULT_CAPACITY) ? "border-destructive/60" : ""}`}
               >
                 <div className="flex items-center gap-1 mb-2">
                   {!isUn && (
