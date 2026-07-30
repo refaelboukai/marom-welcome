@@ -1015,6 +1015,15 @@ const ClassBoard = () => {
                   <p className="text-xs text-muted-foreground mb-2 pb-2 border-b border-border">מחנכת: <span className="font-medium text-foreground">{teachers[key]?.name}</span></p>
                 )}
 
+                {!isUn && whatIf && whatIf.deltas[key] !== undefined && (
+                  <div className={`mb-2 text-[11px] px-2 py-1 rounded-lg flex items-center gap-1.5 ${
+                    whatIf.deltas[key] > 0 ? "bg-success/10 text-success" : whatIf.deltas[key] < 0 ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"
+                  }`}>
+                    <Activity className="w-3.5 h-3.5" />
+                    העברת {whatIf.name} לכאן: {whatIf.deltas[key] > 0 ? "+" : ""}{whatIf.deltas[key]} נק׳ איזון
+                  </div>
+                )}
+
                 {!isUn && health[key] && (
                   <div className="mb-2.5">
                     <div className="flex items-center gap-2 mb-1">
