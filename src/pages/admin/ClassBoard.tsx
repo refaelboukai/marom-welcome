@@ -53,8 +53,10 @@ import {
   PieChart,
   HeartHandshake,
   Target,
+  Sliders,
 } from "lucide-react";
 import BoardAnalytics from "@/components/placement/BoardAnalytics";
+import ChartStudio from "@/components/placement/ChartStudio";
 import PairSuggestions, { RelationType } from "@/components/placement/PairSuggestions";
 import ClassFocus from "@/components/placement/ClassFocus";
 
@@ -119,6 +121,7 @@ const ClassBoard = () => {
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [showPairs, setShowPairs] = useState(false);
   const [showFocus, setShowFocus] = useState(false);
+  const [showStudio, setShowStudio] = useState(false);
 
   const setRelation = async (aId: string, bId: string, type: RelationType) => {
     const apply = (s: IntakeSession, otherId: string): IntakeSession => {
@@ -516,6 +519,10 @@ const ClassBoard = () => {
                 className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showFocus ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
                 <Target className="w-4 h-4" /> מוקדי התמקדות
               </button>
+              <button onClick={() => setShowStudio((v) => !v)}
+                className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showStudio ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
+                <Sliders className="w-4 h-4" /> בונה ניתוחים
+              </button>
             </div>
 
             <div className="flex items-center gap-1 p-1 rounded-xl bg-muted/60">
@@ -641,6 +648,17 @@ const ClassBoard = () => {
               </tbody>
             </table>
           </div>
+        )}
+        {showStudio && (
+          <ChartStudio
+            sections={order.map((k) => ({
+              key: k,
+              label: classGroups[k] || k,
+              teacher: teachers[k]?.name,
+              students: columns[k] || [],
+            }))}
+            unassigned={columns[UNASSIGNED] || []}
+          />
         )}
         {showFocus && (
           <ClassFocus
