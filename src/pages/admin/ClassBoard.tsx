@@ -53,6 +53,8 @@ import {
   PieChart,
 } from "lucide-react";
 import BoardAnalytics from "@/components/placement/BoardAnalytics";
+import PairSuggestions, { RelationType } from "@/components/placement/PairSuggestions";
+import ClassFocus from "@/components/placement/ClassFocus";
 
 const UNASSIGNED = "__unassigned__";
 
@@ -113,6 +115,8 @@ const ClassBoard = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [showBalance, setShowBalance] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showPairs, setShowPairs] = useState(false);
+  const [showFocus, setShowFocus] = useState(false);
   const [newClassOpen, setNewClassOpen] = useState(false);
   const [newClassName, setNewClassName] = useState("");
 
@@ -482,6 +486,14 @@ const ClassBoard = () => {
                 className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showAnalytics ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
                 <PieChart className="w-4 h-4" /> ניתוח וגרפים
               </button>
+              <button onClick={() => setShowPairs((v) => !v)}
+                className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showPairs ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
+                <HeartHandshake className="w-4 h-4" /> התאמות
+              </button>
+              <button onClick={() => setShowFocus((v) => !v)}
+                className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showFocus ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
+                <Target className="w-4 h-4" /> מוקדי התמקדות
+              </button>
             </div>
 
             <div className="flex items-center gap-1 p-1 rounded-xl bg-muted/60">
@@ -607,6 +619,23 @@ const ClassBoard = () => {
               </tbody>
             </table>
           </div>
+        )}
+        {showFocus && (
+          <ClassFocus
+            sections={order.map((k) => ({
+              key: k,
+              label: classGroups[k] || k,
+              teacher: teachers[k]?.name,
+              students: columns[k] || [],
+            }))}
+          />
+        )}
+        {showPairs && (
+          <PairSuggestions
+            sections={order.map((k) => ({ key: k, label: classGroups[k] || k, students: columns[k] || [] }))}
+            unassigned={columns[UNASSIGNED] || []}
+            onSetRelation={setRelation}
+          />
         )}
         {showAnalytics && (
           <BoardAnalytics
