@@ -559,26 +559,6 @@ const SmartPlacement = () => {
     await saveClassGroups(next);
   };
 
-  const _unusedDeleteStudent = async (studentId: string, studentName: string) => {
-    if (!confirm(`למחוק לצמיתות את ${studentName}? פעולה זו אינה הפיכה.`)) return;
-    try {
-      await deleteSessionDB(studentId);
-      setSessions((prev) => prev.filter((s) => s.id !== studentId));
-      setBatchResult((prev) =>
-        prev ? { ...prev, assignments: prev.assignments.filter((a) => a.studentId !== studentId) } : prev
-      );
-      setOverrides((prev) => {
-        const next = { ...prev };
-        delete next[studentId];
-        return next;
-      });
-      if (selectedId === studentId) setSelectedId(null);
-    } catch (e) {
-      console.error(e);
-      alert("שגיאה במחיקת התלמיד");
-    }
-  };
-
   // Group assignments by column
   const columns = useMemo(() => {
     const cols: Record<string, BatchAssignment[]> = { [UNASSIGNED_KEY]: [] };
