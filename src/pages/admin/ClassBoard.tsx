@@ -730,6 +730,10 @@ const ClassBoard = () => {
                 className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showBestFit ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
                 <Wand2 className="w-4 h-4" /> שיבוץ מיטבי
               </button>
+              <button onClick={() => setShowScenarios((v) => !v)}
+                className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showScenarios ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
+                <Layers className="w-4 h-4" /> תרחישים
+              </button>
             </div>
 
             <div className="flex items-center gap-1 p-1 rounded-xl bg-muted/60">
@@ -799,6 +803,12 @@ const ClassBoard = () => {
               <input type="checkbox" checked={filterFlagged} onChange={(e) => setFilterFlagged(e.target.checked)} />
               תלמידים עם סימון לתשומת לב
             </label>
+            {filtersActive && (
+              <label className="flex items-center gap-2 cursor-pointer px-3 py-2 rounded-xl border border-border">
+                <input type="checkbox" checked={hideFiltered} onChange={(e) => setHideFiltered(e.target.checked)} />
+                <HideIcon className="w-4 h-4" /> הסתר תלמידים שאינם בסינון
+              </label>
+            )}
             {filtersActive && (
               <button onClick={() => { setSearch(""); setFilterGrade(""); setFilterGender(""); setFilterFlagged(false); }}
                 className="px-3 py-2 rounded-xl border border-border hover:bg-muted flex items-center gap-1.5">
