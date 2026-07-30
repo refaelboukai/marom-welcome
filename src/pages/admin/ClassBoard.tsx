@@ -54,9 +54,14 @@ import {
   HeartHandshake,
   Target,
   Sliders,
+  Wand2,
+  ListChecks,
+  Activity,
 } from "lucide-react";
 import BoardAnalytics from "@/components/placement/BoardAnalytics";
 import ChartStudio from "@/components/placement/ChartStudio";
+import BestFitPanel from "@/components/placement/BestFitPanel";
+import { autoBalance, classHealth, toOptStudent, OptClass, BalanceResult } from "@/lib/placement-optimizer";
 import PairSuggestions, { RelationType } from "@/components/placement/PairSuggestions";
 import ClassFocus from "@/components/placement/ClassFocus";
 
@@ -107,7 +112,7 @@ const ClassBoard = () => {
   const [search, setSearch] = useState("");
   const [showStats, setShowStats] = useState(true);
   const [draggingId, setDraggingId] = useState<string | null>(null);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [dropTarget, setDropTarget] = useState<string | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
@@ -122,6 +127,11 @@ const ClassBoard = () => {
   const [showPairs, setShowPairs] = useState(false);
   const [showFocus, setShowFocus] = useState(false);
   const [showStudio, setShowStudio] = useState(false);
+  const [showBestFit, setShowBestFit] = useState(false);
+  const [showChanges, setShowChanges] = useState(false);
+  const [capacities, setCapacities] = useState<Record<string, number>>({});
+  const [balance, setBalance] = useState<BalanceResult | null>(null);
+  const [balancing, setBalancing] = useState(false);
 
   const setRelation = async (aId: string, bId: string, type: RelationType) => {
     const apply = (s: IntakeSession, otherId: string): IntakeSession => {
@@ -204,6 +214,70 @@ const ClassBoard = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [columns, order, teachers]);
 
+  const optClasses = useMemo<OptClass[]>(
+    () => order.map((k) => ({
+      key: k,
+      label: classGroups[k] || k,
+      teacherGrades: teachers[k]?.grades || [],
+      capacity: capacities[k],
+    })),
+    [order, classGroups, teachers, capacities]
+  );
+
+  const health = useMemo(() => {
+    const assigned = order.reduce((a, k) => a + (columns[k]?.length || 0), 0);
+    const avgSize = order.length ? assigned / order.length : 0;
+    const conducts = order
+      .flatMap((k) => (columns[k] || []).map((s) => buildStudentProfile(s).conductMetrics?.average))
+      .filter((v): v is number => typeof v === "number" && v > 0);
+    const globalConduct = conducts.length ? conducts.reduce((a, b) => a + b, 0) / conducts.length : null;
+    const out: Record<string, ReturnType<typeof classHealth>> = {};
+    optClasses.forEach((c) => {
+      out[c.key] = classHealth(c, (columns[c.key] || []).map(toOptStudent), avgSize, globalConduct);
+    });
+    return out;
+  }, [optClasses, columns, order]);
+
+  const boardScore = useMemo(() => {
+    const vals = Object.values(health).map((h) => h.score);
+    return vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0;
+  }, [health]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("board_capacities");
+      if (raw) setCapacities(JSON.parse(raw));
+    } catch { /* ignore */ }
+  }, []);
+
+  const setCapacity = (key: string, value: number) => {
+    setCapacities((prev) => {
+      const next = { ...prev };
+      if (!value || value <= 0) delete next[key]; else next[key] = value;
+      try { localStorage.setItem("board_capacities", JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  };
+
+  const runAutoBalance = (includeUnassigned: boolean) => {
+    setBalancing(true);
+    setTimeout(() => {
+      const students = sessions.map(toOptStudent);
+      const current: Record<string, string> = {};
+      sessions.forEach((s) => { current[s.id] = assign[s.id] || ""; });
+      const res = autoBalance(optClasses, students, current, { includeUnassigned });
+      setBalance(res);
+      setBalancing(false);
+    }, 30);
+  };
+
+  const applyBalance = () => {
+    if (!balance) return;
+    setHistory((h) => [...h.slice(-19), assign]);
+    setAssign((prev) => ({ ...prev, ...balance.assign }));
+    setBalance(null);
+  };
+
   const dirtyIds = useMemo(
     () => Object.keys(assign).filter((id) => (assign[id] || "") !== (baseline[id] || "")),
     [assign, baseline]
@@ -263,7 +337,32 @@ const ClassBoard = () => {
   const applyMove = (studentId: string, toKey: string) => {
     setHistory((h) => [...h.slice(-19), assign]);
     setAssign((prev) => ({ ...prev, [studentId]: toKey === UNASSIGNED ? "" : toKey }));
-    setSelectedId(null);
+    setSelectedIds((prev) => prev.filter((x) => x !== studentId));
+  };
+
+  /** Move every selected student (or a single dragged one) into a class. */
+  const requestMoveMany = (ids: string[], toKey: string) => {
+    const targets = ids.filter((id) => (assign[id] || UNASSIGNED) !== toKey);
+    if (targets.length === 0) return;
+    if (targets.length === 1) { requestMove(targets[0], toKey); return; }
+    const warnings = Array.from(
+      new Set(targets.flatMap((id) => {
+        const s = sessionsById[id];
+        return s ? buildWarnings(s, toKey).map((w) => `${s.studentName}: ${w}`) : [];
+      }))
+    );
+    const destLabel = toKey === UNASSIGNED ? "ללא שיוך" : classGroups[toKey] || toKey;
+    if (warnings.length === 0) {
+      setHistory((h) => [...h.slice(-19), assign]);
+      setAssign((prev) => {
+        const next = { ...prev };
+        targets.forEach((id) => { next[id] = toKey === UNASSIGNED ? "" : toKey; });
+        return next;
+      });
+      setSelectedIds([]);
+      return;
+    }
+    setPendingMove({ studentId: targets.join(","), studentName: `${targets.length} תלמידים`, toKey, destLabel, warnings });
   };
 
   const undo = () => {
@@ -471,6 +570,13 @@ const ClassBoard = () => {
                 {order.length} כיתות · {sessions.length} תלמידים · {allStats[UNASSIGNED].list.length} ללא שיוך
               </p>
             </div>
+            <div className="hidden lg:flex items-center gap-2 shrink-0 px-3 py-1.5 rounded-xl bg-muted/60" title="ציון איזון כולל של הלוח">
+              <Activity className={`w-4 h-4 ${boardScore >= 75 ? "text-success" : boardScore >= 55 ? "text-warning" : "text-destructive"}`} />
+              <div>
+                <p className="text-[10px] text-muted-foreground leading-none">ציון איזון הלוח</p>
+                <p className="text-lg font-bold leading-tight">{boardScore}</p>
+              </div>
+            </div>
             <div className="hidden md:block">
               {savedFlash ? (
                 <span className="text-sm text-success flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-success/10">
@@ -523,6 +629,10 @@ const ClassBoard = () => {
                 className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showStudio ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
                 <Sliders className="w-4 h-4" /> בונה ניתוחים
               </button>
+              <button onClick={() => setShowBestFit((v) => !v)}
+                className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showBestFit ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
+                <Wand2 className="w-4 h-4" /> שיבוץ מיטבי
+              </button>
             </div>
 
             <div className="flex items-center gap-1 p-1 rounded-xl bg-muted/60">
@@ -539,6 +649,14 @@ const ClassBoard = () => {
 
             <div className="flex-1" />
 
+            <button onClick={() => runAutoBalance(false)} disabled={balancing || order.length < 2}
+              className="px-3.5 py-2 rounded-xl text-sm border border-primary/40 text-primary hover:bg-primary/10 flex items-center gap-1.5 disabled:opacity-40">
+              {balancing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} איזון אוטומטי
+            </button>
+            <button onClick={() => setShowChanges((v) => !v)} disabled={dirtyIds.length === 0}
+              className={`px-3.5 py-2 rounded-xl text-sm border flex items-center gap-1.5 disabled:opacity-40 ${showChanges ? "border-primary text-primary bg-primary/5" : "border-border hover:bg-muted"}`}>
+              <ListChecks className="w-4 h-4" /> שינויים{dirtyIds.length ? ` (${dirtyIds.length})` : ""}
+            </button>
             <button onClick={() => { setNewClassName(""); setNewClassOpen(true); }}
               className="px-3.5 py-2 rounded-xl text-sm border border-border hover:bg-muted flex items-center gap-1.5">
               <Plus className="w-4 h-4" /> כיתה חדשה
@@ -587,9 +705,17 @@ const ClassBoard = () => {
       </div>
 
       <div className="max-w-[1700px] mx-auto p-6">
-        <p className="text-sm text-muted-foreground mb-4">
-          גררו תלמיד לכיתה אחרת, או הקישו על כרטיס ואז על הכיתה היעד. סידור הכיתות משמאל לימין נשמר עם השמירה.
-        </p>
+        <div className="flex items-center gap-2 mb-4 flex-wrap">
+          <p className="text-sm text-muted-foreground">
+            גררו תלמיד לכיתה אחרת, או סמנו כמה תלמידים (לחיצה על כרטיס) ואז לחצו על הכיתה היעד. סידור הכיתות נשמר עם השמירה.
+          </p>
+          {selectedIds.length > 0 && (
+            <span className="text-xs px-3 py-1.5 rounded-full bg-primary/10 text-primary flex items-center gap-2">
+              {selectedIds.length} תלמידים מסומנים
+              <button onClick={() => setSelectedIds([])} className="hover:opacity-70"><X className="w-3.5 h-3.5" /></button>
+            </span>
+          )}
+        </div>
         {showBalance && (
           <div className="mb-4 rounded-xl border border-border bg-card p-3 overflow-x-auto">
             <h2 className="text-sm font-heading font-bold mb-2 flex items-center gap-1.5">
@@ -649,6 +775,39 @@ const ClassBoard = () => {
             </table>
           </div>
         )}
+        {showChanges && dirtyIds.length > 0 && (
+          <div className="mb-5 rounded-2xl border border-warning/40 bg-warning/5 p-4">
+            <h3 className="text-sm font-heading font-bold mb-2 flex items-center gap-1.5">
+              <ListChecks className="w-4 h-4 text-warning" /> שינויים שטרם נשמרו ({dirtyIds.length})
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
+              {dirtyIds.map((id) => {
+                const s = sessionsById[id];
+                if (!s) return null;
+                const from = baseline[id] ? classGroups[baseline[id]] || baseline[id] : "ללא שיוך";
+                const to = assign[id] ? classGroups[assign[id]] || assign[id] : "ללא שיוך";
+                return (
+                  <div key={id} className="flex items-center gap-2 text-xs rounded-xl bg-card border border-border px-3 py-2">
+                    <span className="font-semibold truncate">{s.studentName}</span>
+                    <span className="text-muted-foreground truncate">{from} ← {to}</span>
+                    <button onClick={() => applyMove(id, baseline[id] || UNASSIGNED)}
+                      className="mr-auto p-1 rounded-lg hover:bg-muted text-muted-foreground" title="בטל שינוי זה">
+                      <Undo2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        {showBestFit && (
+          <BestFitPanel
+            unassigned={columns[UNASSIGNED] || []}
+            classes={optClasses}
+            membersBySection={columns}
+            onAssign={(sid, ck) => requestMove(sid, ck)}
+          />
+        )}
         {showStudio && (
           <ChartStudio
             sections={order.map((k) => ({
@@ -701,10 +860,13 @@ const ClassBoard = () => {
                 onDrop={(e) => {
                   e.preventDefault();
                   setDropTarget(null);
-                  if (draggingId) requestMove(draggingId, key);
+                  if (draggingId) {
+                    const ids = selectedIds.includes(draggingId) ? selectedIds : [draggingId];
+                    requestMoveMany(ids, key);
+                  }
                   setDraggingId(null);
                 }}
-                onClick={() => { if (selectedId) requestMove(selectedId, key); }}
+                onClick={() => { if (selectedIds.length) requestMoveMany(selectedIds, key); }}
                 className={`min-w-[300px] w-[300px] rounded-2xl border p-3.5 shadow-sm transition-all ${
                   dropTarget === key ? "border-primary ring-2 ring-primary/25 bg-primary/5" : "border-border bg-card"
                 } ${isUn ? "bg-muted/40 border-dashed" : ""}`}
@@ -754,6 +916,34 @@ const ClassBoard = () => {
                   <p className="text-xs text-muted-foreground mb-2 pb-2 border-b border-border">מחנכת: <span className="font-medium text-foreground">{teachers[key]?.name}</span></p>
                 )}
 
+                {!isUn && health[key] && (
+                  <div className="mb-2.5">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[10px] text-muted-foreground">ציון איזון</span>
+                      <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                        <div className="h-full rounded-full transition-all"
+                          style={{ width: `${health[key].score}%`, background: health[key].score >= 75 ? "#10b981" : health[key].score >= 55 ? "#f59e0b" : "#ef4444" }} />
+                      </div>
+                      <span className="text-[11px] font-bold">{health[key].score}</span>
+                      <input
+                        type="number"
+                        min={0}
+                        value={capacities[key] ?? ""}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => setCapacity(key, Number(e.target.value))}
+                        placeholder="תקן"
+                        title="תקן מקסימלי לכיתה"
+                        className="w-12 text-[10px] text-center rounded-md border border-border bg-background py-0.5"
+                      />
+                    </div>
+                    {showStats && health[key].issues.length > 0 && (
+                      <ul className="text-[10px] text-muted-foreground space-y-0.5">
+                        {health[key].issues.slice(0, 3).map((iss, i) => <li key={i}>• {iss}</li>)}
+                      </ul>
+                    )}
+                  </div>
+                )}
+
                 {showStats && !isUn && (
                   <div className="mb-3 space-y-1.5">
                     <div className="flex items-center gap-1.5 flex-wrap text-[11px]">
@@ -796,9 +986,18 @@ const ClassBoard = () => {
                         draggable
                         onDragStart={() => setDraggingId(s.id)}
                         onDragEnd={() => setDraggingId(null)}
-                        onClick={(e) => { e.stopPropagation(); setSelectedId((p) => (p === s.id ? null : s.id)); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedIds((prev) =>
+                            prev.includes(s.id)
+                              ? prev.filter((x) => x !== s.id)
+                              : e.metaKey || e.ctrlKey || e.shiftKey || prev.length > 0
+                                ? [...prev, s.id]
+                                : [s.id]
+                          );
+                        }}
                         className={`rounded-xl border px-3 py-2.5 bg-background cursor-grab active:cursor-grabbing transition-all hover:shadow-md hover:-translate-y-px ${
-                          selectedId === s.id ? "border-primary ring-2 ring-primary/30" : "border-border"
+                          selectedIds.includes(s.id) ? "border-primary ring-2 ring-primary/30" : "border-border"
                         } ${draggingId === s.id ? "opacity-40" : ""} ${dim ? "opacity-25" : ""} ${changed ? "bg-warning/5 border-warning/50" : ""}`}
                       >
                         <div className="flex items-center gap-2">
@@ -815,6 +1014,25 @@ const ClassBoard = () => {
                             <span className="text-[11px] font-medium text-muted-foreground shrink-0 px-1.5 py-0.5 rounded-md bg-muted">{s.grade}</span>
                           )}
                         </div>
+                        {showStats && (() => {
+                          const p = buildStudentProfile(s);
+                          const ca = p.conductMetrics?.average;
+                          const sens = p.sensorySensitivity;
+                          const anchor = !!(ca && ca >= 4 && (p.scores?.qualityOfLife || 0) >= 4);
+                          const tags: { t: string; c: string }[] = [];
+                          if (ca) tags.push({ t: `התנהגות ${ca}`, c: ca <= 2.5 ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground" });
+                          if (typeof sens === "number" && sens > 0 && sens <= 2.5) tags.push({ t: "רגיש חושית", c: "bg-warning/15 text-warning" });
+                          if (p.riskFlags.length) tags.push({ t: `${p.riskFlags.length} דגלים`, c: "bg-destructive/10 text-destructive" });
+                          if (anchor) tags.push({ t: "עוגן", c: "bg-success/15 text-success" });
+                          if (!tags.length) return null;
+                          return (
+                            <div className="flex flex-wrap gap-1 mt-1.5 pr-6">
+                              {tags.map((tg, i) => (
+                                <span key={i} className={`text-[10px] px-1.5 py-0.5 rounded-md ${tg.c}`}>{tg.t}</span>
+                              ))}
+                            </div>
+                          );
+                        })()}
                       </div>
                     );
                   })}
@@ -829,6 +1047,47 @@ const ClassBoard = () => {
           })}
         </div>
       </div>
+
+      {/* Auto-balance preview */}
+      <AlertDialog open={!!balance} onOpenChange={(o) => { if (!o) setBalance(null); }}>
+        <AlertDialogContent dir="rtl" className="text-right max-w-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Wand2 className="w-5 h-5 text-primary" /> הצעת איזון אוטומטי
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-right">
+                <p className="text-xs">
+                  המנוע בחן העברות והחלפות בין הכיתות כדי לשפר גודל, איזון מגדרי, פרופיל התנהגותי, עוגנים, עומס חושי וכימיה חברתית.
+                </p>
+                {balance && balance.moves.length === 0 ? (
+                  <p className="text-sm text-success">הלוח כבר מאוזן — לא נמצאו העברות משפרות.</p>
+                ) : (
+                  <>
+                    <p className="text-xs">
+                      עלות איזון: <strong>{balance?.before}</strong> ← <strong className="text-success">{balance?.after}</strong> · {balance?.moves.length} העברות מוצעות
+                    </p>
+                    <div className="max-h-64 overflow-y-auto space-y-1">
+                      {balance?.moves.map((m) => (
+                        <div key={m.id} className="flex items-center gap-2 text-xs rounded-lg border border-border px-2.5 py-1.5">
+                          <span className="font-semibold">{m.name}</span>
+                          <span className="text-muted-foreground">{m.from} ← {m.to}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-row-reverse gap-2">
+            <AlertDialogAction onClick={applyBalance} disabled={!balance || balance.moves.length === 0}>
+              החל את ההצעה
+            </AlertDialogAction>
+            <AlertDialogCancel>ביטול</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Move confirmation */}
       <AlertDialog open={!!pendingMove} onOpenChange={(o) => { if (!o) setPendingMove(null); }}>
@@ -849,7 +1108,22 @@ const ClassBoard = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-row-reverse gap-2">
-            <AlertDialogAction onClick={() => { if (pendingMove) applyMove(pendingMove.studentId, pendingMove.toKey); setPendingMove(null); }}>
+            <AlertDialogAction onClick={() => {
+              if (pendingMove) {
+                const ids = pendingMove.studentId.split(",");
+                if (ids.length === 1) applyMove(ids[0], pendingMove.toKey);
+                else {
+                  setHistory((h) => [...h.slice(-19), assign]);
+                  setAssign((prev) => {
+                    const next = { ...prev };
+                    ids.forEach((id) => { next[id] = pendingMove.toKey === UNASSIGNED ? "" : pendingMove.toKey; });
+                    return next;
+                  });
+                  setSelectedIds([]);
+                }
+              }
+              setPendingMove(null);
+            }}>
               העבר בכל זאת
             </AlertDialogAction>
             <AlertDialogCancel>ביטול</AlertDialogCancel>
