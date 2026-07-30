@@ -1,10 +1,11 @@
 import { useMemo } from "react";
 import {
-  Bar, BarChart, CartesianGrid, Cell, Legend, PolarAngleAxis, PolarGrid, PolarRadiusAxis,
+  Bar, BarChart, CartesianGrid, Legend, PolarAngleAxis, PolarGrid, PolarRadiusAxis,
   Radar, RadarChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 import { IntakeSession } from "@/lib/types";
 import { buildStudentProfile } from "@/lib/class-aggregations";
+import { getStudentGender } from "@/lib/gender-utils";
 import { AlertTriangle, CheckCircle2, HeartHandshake, Sparkles, TrendingUp } from "lucide-react";
 
 export interface BoardSection {
@@ -33,6 +34,13 @@ const DOMAIN_DIMS: { key: string; label: string }[] = [
   { key: "learningCharacteristics", label: "מאפייני למידה" },
 ];
 
+const genderOf = (s: IntakeSession): "male" | "female" | "unknown" => {
+  if (s.gender === "female") return "female";
+  if (s.gender === "male") return "male";
+  const g = getStudentGender(s.studentName);
+  return g === "male" || g === "female" ? g : "unknown";
+};
+
 const avg = (vals: number[]) => (vals.length ? Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 100) / 100 : 0);
 
 const Panel = ({ title, icon, children, className = "" }: { title: string; icon: React.ReactNode; children: React.ReactNode; className?: string }) => (
@@ -53,8 +61,9 @@ const BoardAnalytics = ({ sections, unassigned }: { sections: BoardSection[]; un
     const sizeData = profilesByClass.map((c) => {
       let male = 0, female = 0;
       c.students.forEach((s) => {
-        if (s.gender === "female") female++;
-        else if (s.gender === "male") male++;
+        const g = genderOf(s);
+        if (g === "female") female++;
+        else if (g === "male") male++;
       });
       return { name: c.label, בנים: male, בנות: female, "לא מוגדר": c.students.length - male - female, total: c.students.length };
     });
@@ -119,8 +128,8 @@ const BoardAnalytics = ({ sections, unassigned }: { sections: BoardSection[]; un
     const scored = profilesByClass.map((c) => {
       const n = c.students.length || 1;
       const sizePenalty = Math.min(30, Math.abs(n - avgSize) * 8);
-      const males = c.students.filter((s) => s.gender === "male").length;
-      const females = c.students.filter((s) => s.gender === "female").length;
+      const males = c.students.filter((s) => genderOf(s) === "male").length;
+      const females = c.students.filter((s) => genderOf(s) === "female").length;
       const ratio = males + females > 0 ? Math.max(males, females) / (males + females) : 0.5;
       const genderPenalty = Math.max(0, (ratio - 0.6)) * 75;
       const conductAvg = avg(c.profiles.map((p) => p.conductMetrics?.average ?? 0).filter((v) => v > 0));
