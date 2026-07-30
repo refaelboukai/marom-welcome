@@ -1030,6 +1030,9 @@ const ClassBoard = () => {
                       <h3 className="text-base font-heading font-bold flex-1 truncate">{label}</h3>
                       <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted">
                         <Users className="w-3.5 h-3.5" />{st.list.length}
+                        {!isUn && capacities[key] ? (
+                          <span className={st.list.length > capacities[key] ? "text-destructive" : "text-muted-foreground"}>/{capacities[key]}</span>
+                        ) : null}
                       </span>
                       {!isUn && (
                         <>
@@ -1117,7 +1120,7 @@ const ClassBoard = () => {
                 )}
 
                 <div className="space-y-2 min-h-[80px]">
-                  {st.list.map((s) => {
+                  {st.list.filter((s) => !(hideFiltered && filtersActive && !matchesSearch(s))).map((s) => {
                     const dim = !matchesSearch(s);
                     const changed = (assign[s.id] || "") !== (baseline[s.id] || "");
                     return (
