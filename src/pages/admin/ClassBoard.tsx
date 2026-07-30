@@ -705,9 +705,17 @@ const ClassBoard = () => {
       </div>
 
       <div className="max-w-[1700px] mx-auto p-6">
-        <p className="text-sm text-muted-foreground mb-4">
-          גררו תלמיד לכיתה אחרת, או הקישו על כרטיס ואז על הכיתה היעד. סידור הכיתות משמאל לימין נשמר עם השמירה.
-        </p>
+        <div className="flex items-center gap-2 mb-4 flex-wrap">
+          <p className="text-sm text-muted-foreground">
+            גררו תלמיד לכיתה אחרת, או סמנו כמה תלמידים (לחיצה על כרטיס) ואז לחצו על הכיתה היעד. סידור הכיתות נשמר עם השמירה.
+          </p>
+          {selectedIds.length > 0 && (
+            <span className="text-xs px-3 py-1.5 rounded-full bg-primary/10 text-primary flex items-center gap-2">
+              {selectedIds.length} תלמידים מסומנים
+              <button onClick={() => setSelectedIds([])} className="hover:opacity-70"><X className="w-3.5 h-3.5" /></button>
+            </span>
+          )}
+        </div>
         {showBalance && (
           <div className="mb-4 rounded-xl border border-border bg-card p-3 overflow-x-auto">
             <h2 className="text-sm font-heading font-bold mb-2 flex items-center gap-1.5">
