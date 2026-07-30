@@ -61,6 +61,8 @@ import {
   Lock,
   Rows3,
   Keyboard,
+  Layers,
+  EyeOff as HideIcon,
 } from "lucide-react";
 import BoardAnalytics from "@/components/placement/BoardAnalytics";
 import ChartStudio from "@/components/placement/ChartStudio";
@@ -69,6 +71,7 @@ import { autoBalance, classHealth, toOptStudent, OptClass, BalanceResult } from 
 import PairSuggestions, { RelationType } from "@/components/placement/PairSuggestions";
 import ClassFocus from "@/components/placement/ClassFocus";
 import StudentEditor from "@/components/placement/StudentEditor";
+import ScenarioPanel from "@/components/placement/ScenarioPanel";
 
 const UNASSIGNED = "__unassigned__";
 
@@ -138,6 +141,8 @@ const ClassBoard = () => {
   const [showFocus, setShowFocus] = useState(false);
   const [showStudio, setShowStudio] = useState(false);
   const [showBestFit, setShowBestFit] = useState(false);
+  const [showScenarios, setShowScenarios] = useState(false);
+  const [hideFiltered, setHideFiltered] = useState(false);
   const [showChanges, setShowChanges] = useState(false);
   const [capacities, setCapacities] = useState<Record<string, number>>({});
   const [balance, setBalance] = useState<BalanceResult | null>(null);
@@ -725,6 +730,10 @@ const ClassBoard = () => {
                 className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showBestFit ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
                 <Wand2 className="w-4 h-4" /> שיבוץ מיטבי
               </button>
+              <button onClick={() => setShowScenarios((v) => !v)}
+                className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showScenarios ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
+                <Layers className="w-4 h-4" /> תרחישים
+              </button>
             </div>
 
             <div className="flex items-center gap-1 p-1 rounded-xl bg-muted/60">
@@ -794,6 +803,12 @@ const ClassBoard = () => {
               <input type="checkbox" checked={filterFlagged} onChange={(e) => setFilterFlagged(e.target.checked)} />
               תלמידים עם סימון לתשומת לב
             </label>
+            {filtersActive && (
+              <label className="flex items-center gap-2 cursor-pointer px-3 py-2 rounded-xl border border-border">
+                <input type="checkbox" checked={hideFiltered} onChange={(e) => setHideFiltered(e.target.checked)} />
+                <HideIcon className="w-4 h-4" /> הסתר תלמידים שאינם בסינון
+              </label>
+            )}
             {filtersActive && (
               <button onClick={() => { setSearch(""); setFilterGrade(""); setFilterGender(""); setFilterFlagged(false); }}
                 className="px-3 py-2 rounded-xl border border-border hover:bg-muted flex items-center gap-1.5">
@@ -908,6 +923,22 @@ const ClassBoard = () => {
             onAssign={(sid, ck) => requestMove(sid, ck)}
           />
         )}
+        {showScenarios && (
+          <ScenarioPanel
+            currentAssign={assign}
+            currentScore={boardScore}
+            classLabels={Object.fromEntries(order.map((k) => [k, classGroups[k] || k]))}
+            namesById={Object.fromEntries(sessions.map((s) => [s.id, s.studentName]))}
+            onLoad={(next) => {
+              pushHistory(assign);
+              setAssign((prev) => {
+                const merged = { ...prev };
+                sessions.forEach((s) => { merged[s.id] = next[s.id] ?? ""; });
+                return merged;
+              });
+            }}
+          />
+        )}
         {showStudio && (
           <ChartStudio
             sections={order.map((k) => ({
@@ -999,6 +1030,9 @@ const ClassBoard = () => {
                       <h3 className="text-base font-heading font-bold flex-1 truncate">{label}</h3>
                       <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted">
                         <Users className="w-3.5 h-3.5" />{st.list.length}
+                        {!isUn && capacities[key] ? (
+                          <span className={st.list.length > capacities[key] ? "text-destructive" : "text-muted-foreground"}>/{capacities[key]}</span>
+                        ) : null}
                       </span>
                       {!isUn && (
                         <>
@@ -1086,7 +1120,7 @@ const ClassBoard = () => {
                 )}
 
                 <div className="space-y-2 min-h-[80px]">
-                  {st.list.map((s) => {
+                  {st.list.filter((s) => !(hideFiltered && filtersActive && !matchesSearch(s))).map((s) => {
                     const dim = !matchesSearch(s);
                     const changed = (assign[s.id] || "") !== (baseline[s.id] || "");
                     return (
