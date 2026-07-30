@@ -756,6 +756,14 @@ const ClassBoard = () => {
               className="px-3.5 py-2 rounded-xl text-sm border border-border hover:bg-muted flex items-center gap-1.5 disabled:opacity-40">
               <Undo2 className="w-4 h-4" /> בטל
             </button>
+            <button onClick={redo} disabled={future.length === 0} title="בצע מחדש (Ctrl+Shift+Z)"
+              className="px-3.5 py-2 rounded-xl text-sm border border-border hover:bg-muted flex items-center gap-1.5 disabled:opacity-40">
+              <Redo2 className="w-4 h-4" /> בצע מחדש
+            </button>
+            <button onClick={() => setShowShortcuts(true)} title="קיצורי מקלדת"
+              className="px-3 py-2 rounded-xl text-sm border border-border hover:bg-muted flex items-center">
+              <Keyboard className="w-4 h-4" />
+            </button>
             <button onClick={revertAll} disabled={dirtyIds.length === 0 && !orderDirty}
               className="px-3.5 py-2 rounded-xl text-sm border border-border hover:bg-muted flex items-center gap-1.5 disabled:opacity-40">
               <RotateCcw className="w-4 h-4" /> אפס
