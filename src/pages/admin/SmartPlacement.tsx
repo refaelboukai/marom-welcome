@@ -650,11 +650,20 @@ const SmartPlacement = () => {
             <p className="text-xs text-muted-foreground mb-4">
               המנוע יציע חלוקה מאוזנת, ותוכל/י להזיז תלמידים בגרירה או דרך הטבלה.
             </p>
-            <button onClick={() => runBatch([])}
-              disabled={unassignedCount === 0}
-              className="btn-intake bg-primary text-primary-foreground text-sm inline-flex items-center gap-1.5 disabled:opacity-50">
-              <Sparkles className="w-4 h-4" /> התחל שיבוץ
-            </button>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <button onClick={() => runBatch([])}
+                disabled={unassignedCount === 0}
+                className="btn-intake bg-primary text-primary-foreground text-sm inline-flex items-center gap-1.5 disabled:opacity-50">
+                <Sparkles className="w-4 h-4" /> התחל שיבוץ
+              </button>
+              <button onClick={loadExistingBoard}
+                className="btn-intake bg-secondary text-secondary-foreground text-sm inline-flex items-center gap-1.5">
+                <Pencil className="w-4 h-4" /> ערוך שיבוץ קיים
+              </button>
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-3">
+              "ערוך שיבוץ קיים" טוען את החלוקה השמורה ללוח — אפשר לשנות שמות כיתות, להוסיף/למחוק כיתה ולהעביר תלמידים.
+            </p>
           </div>
         )}
 
