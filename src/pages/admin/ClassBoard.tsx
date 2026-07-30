@@ -287,8 +287,9 @@ const ClassBoard = () => {
   };
 
   const addClass = async () => {
-    const label = prompt("שם הכיתה החדשה:");
-    const clean = (label || "").trim();
+    const clean = newClassName.trim();
+    setNewClassOpen(false);
+    setNewClassName("");
     if (!clean) return;
     let key = `class_${Date.now().toString(36)}`;
     while (classGroups[key]) key = `${key}x`;
@@ -325,8 +326,28 @@ const ClassBoard = () => {
     });
   };
 
-  const matchesSearch = (s: IntakeSession) =>
-    !search.trim() || s.studentName.includes(search.trim()) || (s.grade || "").includes(search.trim());
+  const isFlagged = (s: IntakeSession) => {
+    const p = buildStudentProfile(s);
+    const avg = p.conductMetrics?.average;
+    const sens = p.sensorySensitivity;
+    return (typeof avg === "number" && avg > 0 && avg <= 2.5) ||
+      (typeof sens === "number" && sens > 0 && sens <= 2.5);
+  };
+
+  const matchesSearch = (s: IntakeSession) => {
+    const q = search.trim();
+    if (q && !s.studentName.includes(q) && !(s.grade || "").includes(q)) return false;
+    if (filterGrade && (s.grade || "") !== filterGrade) return false;
+    if (filterGender && resolveGender(s) !== filterGender) return false;
+    if (filterFlagged && !isFlagged(s)) return false;
+    return true;
+  };
+
+  const allGrades = useMemo(
+    () => Array.from(new Set(sessions.map((s) => s.grade).filter(Boolean) as string[])).sort((a, b) => a.localeCompare(b, "he")),
+    [sessions]
+  );
+  const filtersActive = !!(search.trim() || filterGrade || filterGender || filterFlagged);
 
   if (loading) {
     return (
