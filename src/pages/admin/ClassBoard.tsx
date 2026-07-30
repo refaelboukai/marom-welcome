@@ -710,27 +710,31 @@ const ClassBoard = () => {
                         onDragStart={() => setDraggingId(s.id)}
                         onDragEnd={() => setDraggingId(null)}
                         onClick={(e) => { e.stopPropagation(); setSelectedId((p) => (p === s.id ? null : s.id)); }}
-                        className={`rounded-lg border px-2 py-1.5 bg-background cursor-grab active:cursor-grabbing transition-all ${
-                          selectedId === s.id ? "border-primary ring-1 ring-primary" : "border-border"
-                        } ${draggingId === s.id ? "opacity-40" : ""} ${dim ? "opacity-30" : ""} ${changed ? "bg-warning/5 border-warning/40" : ""}`}
+                        className={`rounded-xl border px-3 py-2.5 bg-background cursor-grab active:cursor-grabbing transition-all hover:shadow-md hover:-translate-y-px ${
+                          selectedId === s.id ? "border-primary ring-2 ring-primary/30" : "border-border"
+                        } ${draggingId === s.id ? "opacity-40" : ""} ${dim ? "opacity-25" : ""} ${changed ? "bg-warning/5 border-warning/50" : ""}`}
                       >
-                        <div className="flex items-center gap-1.5">
-                          <GripVertical className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                        <div className="flex items-center gap-2">
+                          <GripVertical className="w-4 h-4 text-muted-foreground/60 shrink-0" />
                           <GenderDot gender={resolveGender(s)} />
                           <button
                             onClick={(e) => { e.stopPropagation(); navigate(`/admin/student/${s.id}`); }}
-                            className="text-xs font-semibold truncate flex-1 text-right hover:text-primary"
+                            className="text-sm font-semibold truncate flex-1 text-right hover:text-primary transition-colors"
                             title="פתח פרופיל"
                           >
                             {s.studentName}
                           </button>
-                          {s.grade && <span className="text-[10px] text-muted-foreground shrink-0">{s.grade}</span>}
+                          {s.grade && (
+                            <span className="text-[11px] font-medium text-muted-foreground shrink-0 px-1.5 py-0.5 rounded-md bg-muted">{s.grade}</span>
+                          )}
                         </div>
                       </div>
                     );
                   })}
                   {st.list.length === 0 && (
-                    <p className="text-[11px] text-muted-foreground text-center py-4">אין תלמידים</p>
+                    <div className="text-xs text-muted-foreground text-center py-8 rounded-xl border border-dashed border-border">
+                      גררו לכאן תלמידים
+                    </div>
                   )}
                 </div>
               </div>
