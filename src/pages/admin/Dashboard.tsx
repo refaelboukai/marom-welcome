@@ -39,6 +39,7 @@ const Dashboard = () => {
   const [showPromoteDialog, setShowPromoteDialog] = useState(false);
   const [promoteTargetYear, setPromoteTargetYear] = useState<string>('תשפ"ז');
   const [promoteSelected, setPromoteSelected] = useState<Set<string>>(new Set());
+  const [promoteCopyData, setPromoteCopyData] = useState(true);
   const [promoting, setPromoting] = useState(false);
   const [promoteResult, setPromoteResult] = useState<string | null>(null);
   const [showRulesEditor, setShowRulesEditor] = useState(false);
@@ -250,7 +251,22 @@ const Dashboard = () => {
         academicYear: promoteTargetYear,
         notes: s.notes,
       });
-      if (res) created++;
+      if (res) {
+        created++;
+        if (promoteCopyData) {
+          await updateSessionDB(res.id, {
+            studentResponses: s.studentResponses,
+            studentOpenResponses: s.studentOpenResponses,
+            parentResponses: s.parentResponses,
+            parentOpenResponse: s.parentOpenResponse,
+            staffResponses: s.staffResponses,
+            staffOpenResponses: s.staffOpenResponses,
+            adminNotes: s.adminNotes,
+            status: s.status === "archived" ? "not_started" : s.status,
+            ...( { narrativeSummary: (s as any).narrativeSummary, relationships: (s as any).relationships, gender: (s as any).gender, studentPhone: (s as any).studentPhone } as any),
+          });
+        }
+      }
     }
     const data = await getSessionsDB();
     setSessions(data);
@@ -700,6 +716,22 @@ const Dashboard = () => {
                 ))}
               </select>
             </div>
+
+            <label className="flex items-start gap-3 rounded-xl border border-input bg-muted/30 p-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={promoteCopyData}
+                onChange={(e) => setPromoteCopyData(e.target.checked)}
+                disabled={promoting}
+                className="mt-1 w-4 h-4 accent-primary"
+              />
+              <span className="text-sm">
+                <span className="font-medium">העתק גם את נתוני המיפוי</span>
+                <span className="block text-xs text-muted-foreground mt-0.5">
+                  תשובות התלמיד, ההורה והצוות, ציוני התנהגות, סיכום מילולי, כימיה בין תלמידים והערות. השנה הקודמת נשמרת כארכיון ללא שינוי.
+                </span>
+              </span>
+            </label>
 
             {sessionsForYear.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-6">אין תלמידים בשנה זו</p>
