@@ -91,7 +91,18 @@ const ClassFocus = ({ sections }: { sections: FocusSection[] }) => {
 
     const sensory = avg(profiles.map((p) => p.sensorySensitivity ?? -1).filter((v) => v > 0));
 
-    return { ...sec, count: sec.students.length, focus: all.slice(0, 5), strengths: [...all].reverse().slice(0, 3), atRisk, sensory, noData: all.length === 0 };
+    const focus = all.slice(0, 5);
+    const strengths = [...all].reverse().slice(0, 3);
+    const summary = all.length === 0
+      ? "טרם נאספו מספיק נתוני שאלונים כדי לגזור מוקדי התמקדות לכיתה זו."
+      : `הניתוח מדרג את כל תחומי השאלונים והמדדים ההתנהגותיים של ${sec.students.length} התלמידים בכיתה ${sec.label} מהנמוך לגבוה, ` +
+        `ומציג את חמשת התחומים החלשים ביותר כמוקדי העבודה המרכזיים לשנה. ` +
+        `האתגר המוביל הוא ${focus[0].label} בממוצע ${focus[0].value} מתוך 5` +
+        `${focus[0].count ? ` (${focus[0].count} תלמידים מתחת ל-2.5, כלומר קושי ממשי ולא רק נטייה קבוצתית)` : ""}. ` +
+        `${strengths.length ? `מנגד, ${strengths.map((s) => s.label).join(", ")} הם התחומים החזקים בכיתה — כדאי להישען עליהם כדי לקדם את מוקדי הקושי. ` : ""}` +
+        `${atRisk.length ? `${atRisk.length} תלמידים סומנו לתשומת לב על בסיס דגלי סיכון בשאלונים או ממוצע התנהגותי נמוך מ-2.6, ומומלץ לבנות עבורם מענה אישי כבר בשבועות הראשונים.` : "לא אותרו תלמידים הזקוקים למענה אישי דחוף."}`;
+
+    return { ...sec, count: sec.students.length, focus, strengths, atRisk, sensory, summary, noData: all.length === 0 };
   }), [sections]);
 
   if (sections.length === 0) return null;
@@ -120,7 +131,9 @@ const ClassFocus = ({ sections }: { sections: FocusSection[] }) => {
           </button>
 
           {open === c.key && (
-            <div className="px-4 pb-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="px-4 pb-4">
+              <p className="text-[12px] leading-relaxed text-muted-foreground bg-muted/40 rounded-xl p-3 mb-3">{c.summary}</p>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div>
                 <p className="text-xs font-semibold mb-2">חמשת מוקדי ההתמקדות המרכזיים</p>
                 {c.noData ? (
@@ -178,6 +191,7 @@ const ClassFocus = ({ sections }: { sections: FocusSection[] }) => {
                     ממוצע ויסות חושי בכיתה: <b>{c.sensory}</b> {c.sensory < 2.8 ? "— מומלץ להפחית גירויים ולהתאים את מרחב הכיתה." : "— בטווח תקין."}
                   </p>
                 )}
+              </div>
               </div>
             </div>
           )}
