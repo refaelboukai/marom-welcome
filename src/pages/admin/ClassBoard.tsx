@@ -135,14 +135,16 @@ const ClassBoard = () => {
   const [filterGrade, setFilterGrade] = useState("");
   const [filterGender, setFilterGender] = useState("");
   const [filterFlagged, setFilterFlagged] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
-  const [showBalance, setShowBalance] = useState(false);
-  const [showAnalytics, setShowAnalytics] = useState(false);
-  const [showPairs, setShowPairs] = useState(false);
-  const [showFocus, setShowFocus] = useState(false);
-  const [showStudio, setShowStudio] = useState(false);
-  const [showBestFit, setShowBestFit] = useState(false);
-  const [showScenarios, setShowScenarios] = useState(false);
+  const [panel, setPanel] = useState<string | null>(null);
+  const togglePanel = (p: string) => setPanel((cur) => (cur === p ? null : p));
+  const showFilters = panel === "filters";
+  const showBalance = panel === "balance";
+  const showAnalytics = panel === "analytics";
+  const showPairs = panel === "pairs";
+  const showFocus = panel === "focus";
+  const showStudio = panel === "studio";
+  const showBestFit = panel === "bestfit";
+  const showScenarios = panel === "scenarios";
   const [hideFiltered, setHideFiltered] = useState(false);
   const [showChanges, setShowChanges] = useState(false);
   const [capacities, setCapacities] = useState<Record<string, number>>({});
@@ -707,35 +709,35 @@ const ClassBoard = () => {
                 className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${compact ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
                 <Rows3 className="w-4 h-4" /> {compact ? "מרווח" : "מצומצם"}
               </button>
-              <button onClick={() => setShowFilters((v) => !v)}
+              <button onClick={() => togglePanel("filters")}
                 className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showFilters || filtersActive ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
                 <Filter className="w-4 h-4" /> סינון
               </button>
-              <button onClick={() => setShowBalance((v) => !v)}
+              <button onClick={() => togglePanel("balance")}
                 className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showBalance ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
                 <BarChart3 className="w-4 h-4" /> מאזן כיתות
               </button>
-              <button onClick={() => setShowAnalytics((v) => !v)}
+              <button onClick={() => togglePanel("analytics")}
                 className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showAnalytics ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
                 <PieChart className="w-4 h-4" /> ניתוח וגרפים
               </button>
-              <button onClick={() => setShowPairs((v) => !v)}
+              <button onClick={() => togglePanel("pairs")}
                 className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showPairs ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
                 <HeartHandshake className="w-4 h-4" /> התאמות
               </button>
-              <button onClick={() => setShowFocus((v) => !v)}
+              <button onClick={() => togglePanel("focus")}
                 className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showFocus ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
                 <Target className="w-4 h-4" /> מוקדי התמקדות
               </button>
-              <button onClick={() => setShowStudio((v) => !v)}
+              <button onClick={() => togglePanel("studio")}
                 className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showStudio ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
                 <Sliders className="w-4 h-4" /> בונה ניתוחים
               </button>
-              <button onClick={() => setShowBestFit((v) => !v)}
+              <button onClick={() => togglePanel("bestfit")}
                 className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showBestFit ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
                 <Wand2 className="w-4 h-4" /> שיבוץ מיטבי
               </button>
-              <button onClick={() => setShowScenarios((v) => !v)}
+              <button onClick={() => togglePanel("scenarios")}
                 className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showScenarios ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
                 <Layers className="w-4 h-4" /> תרחישים
               </button>
@@ -841,6 +843,13 @@ const ClassBoard = () => {
             <h2 className="text-sm font-heading font-bold mb-2 flex items-center gap-1.5">
               <BarChart3 className="w-4 h-4 text-primary" /> מאזן בין הכיתות
             </h2>
+            <p className="text-[11px] leading-relaxed text-muted-foreground mb-3 bg-muted/40 rounded-xl p-2.5">
+              <b>כיצד לקרוא את הטבלה:</b> עמודת <b>תלמידים</b> מציגה בסוגריים את הפער מהגודל הממוצע של כלל הכיתות — פער של 2 תלמידים ומעלה מסומן בכתום ומעיד על צורך באיזון מספרי.
+              <b> איזון מגדרי</b> מחושב כיחס בין בנים לבנות; כאשר קבוצה אחת עוברת 75% מהכיתה, מומלץ לשקול העברה כדי למנוע בידוד חברתי.
+              <b> ממוצע התנהגות</b> הוא ממוצע ששת מדדי הצוות (קבלת סמכות, שמירת כללים, התמודדות עם תסכול, ויסות אימפולסיביות, יציבות רגשית ושיתוף פעולה) בסולם 1–5; ממוצע מתחת ל-3 מצביע על כיתה הזקוקה למסגרת ברורה ולמחנכת בעלת סגנון מובנה.
+              <b> עוגנים</b> הם תלמידים יציבים המשמשים מודל חיובי ומייצבים את האקלים — מומלץ 2–3 עוגנים בכל כיתה.
+              <b> עומס</b> משקלל את מספר התלמידים מול התקן ואת ריכוז התלמידים הזקוקים לתיווך אישי מול משאבי המחנכת.
+            </p>
             <table className="w-full text-xs text-right">
               <thead className="text-[11px] text-muted-foreground">
                 <tr>

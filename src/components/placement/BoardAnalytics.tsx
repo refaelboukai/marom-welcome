@@ -139,7 +139,66 @@ const BoardAnalytics = ({ sections, unassigned }: { sections: BoardSection[]; un
       return { key: c.key, label: c.label, color: c.color, score, conductAvg, size: n };
     });
 
-    return { profilesByClass, sizeData, avgSize, conductRadar, domainBars, riskData, conflicts, separated, together, scored };
+    // ---- verbal narrative per class ----
+    const narratives = profilesByClass.map((c) => {
+      const sc = scored.find((s) => s.key === c.key)!;
+      const males = c.students.filter((s) => genderOf(s) === "male").length;
+      const females = c.students.filter((s) => genderOf(s) === "female").length;
+      const sizeGap = Math.round((c.students.length - avgSize) * 10) / 10;
+      const dims = CONDUCT_DIMS.map((d) => ({
+        label: d.label,
+        key: d.key,
+        value: avg(c.profiles.map((p) => p.conductMetrics?.[d.key] ?? 0).filter((v) => v > 0)),
+      })).filter((d) => d.value > 0).sort((a, b) => a.value - b.value);
+      const weakest = dims.slice(0, 2);
+      const strongest = [...dims].reverse().slice(0, 2);
+      const sensory = avg(c.profiles.map((p) => p.sensorySensitivity ?? 0).filter((v) => v > 0));
+      const flagged = c.profiles.filter((p) => p.riskFlags.length > 0).length;
+      const classConflicts = conflicts.filter((x) => x.where === c.label).length;
+
+      const paragraphs: string[] = [];
+      paragraphs.push(
+        `בכיתה ${c.label}${c.teacher ? ` בהובלת ${c.teacher}` : ""} משובצים כרגע ${c.students.length} תלמידים` +
+        `${Math.abs(sizeGap) >= 1 ? `, ${sizeGap > 0 ? `${Math.abs(sizeGap)} מעל` : `${Math.abs(sizeGap)} מתחת ל`}ממוצע הכיתות` : ", בהתאמה לגודל הממוצע"}` +
+        `. ההרכב המגדרי הוא ${males} בנים ו-${females} בנות` +
+        `${males + females > 0 && Math.max(males, females) / (males + females) > 0.75 ? " — הרכב חד-צדדי שכדאי לאזן כדי לאפשר מגוון חברתי." : " — הרכב מאוזן דיו."}`
+      );
+      if (sc.conductAvg > 0) {
+        paragraphs.push(
+          `ממוצע המדדים ההתנהגותיים בכיתה עומד על ${sc.conductAvg} מתוך 5` +
+          `${sc.conductAvg >= 3.6 ? ", כלומר קבוצה יציבה שמאפשרת עבודה לימודית רציפה." : sc.conductAvg >= 3 ? ", כלומר קבוצה תפקודית הזקוקה לשגרה ברורה ולגבולות עקביים." : ", כלומר קבוצה מאתגרת הדורשת מסגרת מובנית מאוד, נוכחות מבוגר משמעותית ותיווך יומיומי."}` +
+          `${weakest.length ? ` הנקודות הרגישות ביותר הן ${weakest.map((d) => `${d.label} (${d.value})`).join(" ו-")}.` : ""}` +
+          `${strongest.length ? ` לצד זאת, ${strongest.map((d) => `${d.label} (${d.value})`).join(" ו-")} מהווים בסיס חזק למינוף.` : ""}`
+        );
+      }
+      paragraphs.push(
+        `ציון האיזון הכיתתי הוא ${sc.score} מתוך 100` +
+        `${sc.score >= 75 ? " — איזון טוב, אין צורך בשינויים מהותיים." : sc.score >= 55 ? " — איזון סביר, כדאי לבצע התאמות נקודתיות." : " — איזון נמוך, מומלץ לבחון מחדש את ההרכב."}` +
+        `. הציון מורכב מארבעה רכיבים: פער מגודל הכיתה הממוצע, מידת האיזון המגדרי, הממוצע ההתנהגותי של הקבוצה, וכל התנגשות חברתית מוכרת (זוג שהוגדר "להפריד") שמופיעה בכיתה.` +
+        `${classConflicts ? ` בכיתה זו קיימות ${classConflicts} התנגשויות חברתיות פתוחות.` : ""}` +
+        `${flagged ? ` ${flagged} תלמידים נושאים דגלי תשומת לב מהשאלונים.` : ""}` +
+        `${sensory > 0 && sensory < 2.8 ? ` ממוצע הוויסות החושי (${sensory}) נמוך, ולכן חשוב לתכנן סביבה עם פחות גירויים.` : ""}`
+      );
+
+      const recs: string[] = [];
+      if (sc.conductAvg > 0 && sc.conductAvg < 3) recs.push("לפתוח את השנה עם חוזה כיתתי ברור, שגרות קבועות וחיזוקים חיוביים יומיים.");
+      weakest.forEach((d) => {
+        if (d.key === "authority") recs.push("לבסס קשר אישי עם כל תלמיד לפני אכיפת גבולות — קבלת סמכות בכיתה זו נבנית דרך יחס ולא דרך כוח.");
+        if (d.key === "rules") recs.push("להציג את הכללים באופן חזותי בכיתה ולחזור עליהם בתחילת כל יום.");
+        if (d.key === "frustration") recs.push("להנגיש טכניקות הרגעה ופינת רגיעה, ולתרגל התמודדות עם כישלון במצבים מוגנים.");
+        if (d.key === "impulsivity") recs.push("לשלב סימני עצירה מוסכמים והפוגות תנועה יזומות במהלך היום.");
+        if (d.key === "temperament") recs.push("לזהות מוקדם סימני מצוקה ולתאם מענה עם הצוות הרגשי.");
+        if (d.key === "cooperation") recs.push("לבנות משימות זוגיות ותפקידים כיתתיים המחזקים תרומה הדדית.");
+      });
+      if (classConflicts) recs.push("לתכנן ישיבה נפרדת ותפקידים שונים לזוגות שסומנו כהתנגשות, ולעקוב אחריהם בשבועיים הראשונים.");
+      if (sensory > 0 && sensory < 2.8) recs.push("להפחית גירויים בכיתה: מיקום ישיבה מותאם, תאורה רכה ואפשרות להפסקה חושית.");
+      if (males + females > 0 && Math.max(males, females) / (males + females) > 0.75) recs.push("לשקול העברת תלמיד/ה כדי לאזן מגדרית ולמנוע בידוד של המיעוט בכיתה.");
+      if (recs.length === 0) recs.push("הכיתה מאוזנת — מומלץ לשמר את ההרכב ולהתמקד בבניית אקלים ובחיזוק העוגנים החיוביים.");
+
+      return { key: c.key, label: c.label, color: c.color, paragraphs, recs: recs.slice(0, 5) };
+    });
+
+    return { profilesByClass, sizeData, avgSize, conductRadar, domainBars, riskData, conflicts, separated, together, scored, narratives };
   }, [sections, unassigned]);
 
   const labels = sections.map((s) => s.label);
@@ -147,6 +206,16 @@ const BoardAnalytics = ({ sections, unassigned }: { sections: BoardSection[]; un
 
   return (
     <div className="mb-5 grid grid-cols-1 xl:grid-cols-2 gap-4">
+      <Panel title="איך קוראים את הנתונים בלוח" icon={<Sparkles className="w-4 h-4 text-primary" />} className="xl:col-span-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[12px] leading-relaxed text-muted-foreground">
+          <p><b className="text-foreground">גודל והרכב מגדרי:</b> הקו המקווקו בגרף מסמן את הגודל הממוצע של הכיתות. ככל שכיתה רחוקה יותר מהקו, כך גדל הפער בעומס על המחנכת. הרכב מגדרי נחשב חד-צדדי כשקבוצה אחת עוברת 75%.</p>
+          <p><b className="text-foreground">פרופיל התנהגותי (1–5):</b> ממוצע דירוגי הצוות בשישה מדדים. ערך 1 מציין קושי משמעותי ו-5 תפקוד מיטבי. ציר שנופל בבירור מתחת לשאר מצביע על התחום שבו הכיתה תזדקק לתמיכה.</p>
+          <p><b className="text-foreground">ממוצעי תחומי השאלונים:</b> ממוצעי הדיווח העצמי של התלמידים (איכות חיים, מסוגלות, מיקוד שליטה, גמישות ומאפייני למידה). ממוצע מתחת ל-2.5 נחשב תחום בסיכון וממוצע מעל 3.5 מהווה חוזקה למינוף.</p>
+          <p><b className="text-foreground">עומס, סיכון ורגישות חושית:</b> "דגלי סיכון" הוא מספר הסימונים הממוצע לתלמיד בכיתה; "רגישות חושית" מבוססת על אשכול העוררות והוויסות בשאלון מאפייני הלמידה.</p>
+          <p className="md:col-span-2"><b className="text-foreground">מדד האיזון הכיתתי (0–100):</b> מתחיל מ-100 ומופחתים ממנו ארבעה קנסות — פער מגודל ממוצע (עד 30 נק'), חוסר איזון מגדרי מעל 60%, ממוצע התנהגותי מתחת ל-3.2, וכל התנגשות חברתית בכיתה (12 נק'). 75 ומעלה = איזון טוב, 55–74 = דורש התאמות, מתחת ל-55 = מומלץ לבחון מחדש את ההרכב.</p>
+        </div>
+      </Panel>
+
       <Panel title="גודל כיתות והרכב מגדרי" icon={<TrendingUp className="w-4 h-4 text-primary" />}>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
@@ -272,6 +341,30 @@ const BoardAnalytics = ({ sections, unassigned }: { sections: BoardSection[]; un
               </ul>
             </div>
           )}
+        </div>
+      </Panel>
+
+      <Panel title="פרשנות מילולית והמלצות למחנכת" icon={<HeartHandshake className="w-4 h-4 text-primary" />} className="xl:col-span-2">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          {data.narratives.map((n) => (
+            <div key={n.key} className="rounded-xl border border-border p-3">
+              <p className="text-xs font-heading font-bold mb-1.5 flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full" style={{ background: n.color }} />
+                {n.label}
+              </p>
+              <div className="space-y-1.5 text-[12px] leading-relaxed text-muted-foreground">
+                {n.paragraphs.map((p, i) => <p key={i}>{p}</p>)}
+              </div>
+              <p className="text-[11px] font-semibold mt-2.5 mb-1">המלצות מעשיות למחנכת</p>
+              <ul className="space-y-1">
+                {n.recs.map((r, i) => (
+                  <li key={i} className="text-[11px] text-muted-foreground flex gap-1.5">
+                    <span className="text-primary">•</span><span>{r}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
       </Panel>
     </div>
