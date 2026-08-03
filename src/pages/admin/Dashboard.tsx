@@ -39,6 +39,7 @@ const Dashboard = () => {
   const [showPromoteDialog, setShowPromoteDialog] = useState(false);
   const [promoteTargetYear, setPromoteTargetYear] = useState<string>('תשפ"ז');
   const [promoteSelected, setPromoteSelected] = useState<Set<string>>(new Set());
+  const [promoteCopyData, setPromoteCopyData] = useState(true);
   const [promoting, setPromoting] = useState(false);
   const [promoteResult, setPromoteResult] = useState<string | null>(null);
   const [showRulesEditor, setShowRulesEditor] = useState(false);
