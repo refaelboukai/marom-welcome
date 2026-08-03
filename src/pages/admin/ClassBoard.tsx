@@ -709,35 +709,35 @@ const ClassBoard = () => {
                 className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${compact ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
                 <Rows3 className="w-4 h-4" /> {compact ? "מרווח" : "מצומצם"}
               </button>
-              <button onClick={() => setShowFilters((v) => !v)}
+              <button onClick={() => togglePanel("filters")}
                 className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showFilters || filtersActive ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
                 <Filter className="w-4 h-4" /> סינון
               </button>
-              <button onClick={() => setShowBalance((v) => !v)}
+              <button onClick={() => togglePanel("balance")}
                 className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showBalance ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
                 <BarChart3 className="w-4 h-4" /> מאזן כיתות
               </button>
-              <button onClick={() => setShowAnalytics((v) => !v)}
+              <button onClick={() => togglePanel("analytics")}
                 className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showAnalytics ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
                 <PieChart className="w-4 h-4" /> ניתוח וגרפים
               </button>
-              <button onClick={() => setShowPairs((v) => !v)}
+              <button onClick={() => togglePanel("pairs")}
                 className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showPairs ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
                 <HeartHandshake className="w-4 h-4" /> התאמות
               </button>
-              <button onClick={() => setShowFocus((v) => !v)}
+              <button onClick={() => togglePanel("focus")}
                 className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showFocus ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
                 <Target className="w-4 h-4" /> מוקדי התמקדות
               </button>
-              <button onClick={() => setShowStudio((v) => !v)}
+              <button onClick={() => togglePanel("studio")}
                 className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showStudio ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
                 <Sliders className="w-4 h-4" /> בונה ניתוחים
               </button>
-              <button onClick={() => setShowBestFit((v) => !v)}
+              <button onClick={() => togglePanel("bestfit")}
                 className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showBestFit ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
                 <Wand2 className="w-4 h-4" /> שיבוץ מיטבי
               </button>
-              <button onClick={() => setShowScenarios((v) => !v)}
+              <button onClick={() => togglePanel("scenarios")}
                 className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors ${showScenarios ? "bg-card shadow-sm text-primary" : "hover:bg-card/60"}`}>
                 <Layers className="w-4 h-4" /> תרחישים
               </button>
