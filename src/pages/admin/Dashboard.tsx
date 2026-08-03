@@ -251,7 +251,22 @@ const Dashboard = () => {
         academicYear: promoteTargetYear,
         notes: s.notes,
       });
-      if (res) created++;
+      if (res) {
+        created++;
+        if (promoteCopyData) {
+          await updateSessionDB(res.id, {
+            studentResponses: s.studentResponses,
+            studentOpenResponses: s.studentOpenResponses,
+            parentResponses: s.parentResponses,
+            parentOpenResponse: s.parentOpenResponse,
+            staffResponses: s.staffResponses,
+            staffOpenResponses: s.staffOpenResponses,
+            adminNotes: s.adminNotes,
+            status: s.status === "archived" ? "not_started" : s.status,
+            ...( { narrativeSummary: (s as any).narrativeSummary, relationships: (s as any).relationships, gender: (s as any).gender, studentPhone: (s as any).studentPhone } as any),
+          });
+        }
+      }
     }
     const data = await getSessionsDB();
     setSessions(data);
