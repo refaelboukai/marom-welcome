@@ -562,6 +562,46 @@ export async function renderHTMLToPDF(html: string, filename: string, options?: 
   }
 }
 
+/**
+ * Render an explicit list of page HTML strings — one A4 page per entry.
+ * Guarantees no content is cut across page boundaries.
+ */
+export async function renderPagedHTMLToPDF(pages: string[], filename: string) {
+  const pdf = new jsPDF("p", "mm", "a4");
+  const pw = pdf.internal.pageSize.getWidth();
+  const ph = pdf.internal.pageSize.getHeight();
+  const margin = 8;
+
+  for (let i = 0; i < pages.length; i++) {
+    const container = document.createElement("div");
+    container.style.position = "fixed";
+    container.style.left = "-9999px";
+    container.style.top = "0";
+    container.style.width = "700px";
+    container.style.background = "white";
+    container.innerHTML = pages[i];
+    document.body.appendChild(container);
+    await document.fonts.ready;
+
+    try {
+      const canvas = await html2canvas(container, {
+        scale: 2, useCORS: true, logging: false, backgroundColor: "#ffffff",
+      });
+      const maxW = pw - margin * 2;
+      const maxH = ph - margin * 2;
+      let w = maxW;
+      let h = (canvas.height * maxW) / canvas.width;
+      if (h > maxH) { h = maxH; w = (canvas.width * maxH) / canvas.height; }
+      if (i > 0) pdf.addPage();
+      pdf.addImage(canvas.toDataURL("image/jpeg", 0.92), "JPEG", (pw - w) / 2, margin, w, h);
+    } finally {
+      document.body.removeChild(container);
+    }
+  }
+
+  pdf.save(filename);
+}
+
 export async function generateStudentPDF(session: IntakeSession, target: "staff" | "parent" = "staff") {
   const html = buildReportHTML(session, target);
   await renderHTMLToPDF(html, `${session.studentName}_${target === "staff" ? "staff_report" : "parent_report"}.pdf`);
