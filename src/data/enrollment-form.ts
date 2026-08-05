@@ -71,6 +71,15 @@ export const DIAGNOSES = [
   "לקות למידה", "קשיי קשב וריכוז", "קשיים רגשיים", "קשיים התנהגותיים", "קשיי תקשורת",
 ];
 
+export const VACCINES = [
+  "MMRV (חצבת, חזרת, אדמת, אבעבועות רוח)",
+  "Tdap-IPV (טטנוס, דיפתריה, שעלת, פוליו)",
+  "חיסון שפעת עונתי",
+  "HPV (נגיף הפפילומה)",
+];
+
+export const SCREENING_TESTS = ["בדיקת ראייה", "בדיקת שמיעה", "בדיקת שיניים", "מדידת גדילה (גובה ומשקל)"];
+
 export const SCHOOL_RULES: string[] = [
   "חובה לכבד את הצוות החינוכי של הכיתה ואת כל צוות בית הספר ולפעול לפי הוראותיהם.",
   "חובה להשתתף בכל סדר היום הבית ספרי ולהגיע עם הציוד הנדרש ללמידה.",
@@ -222,6 +231,23 @@ export const FORM_STEPS: FormStep[] = [
           { key: "meds_doctor_approval", label: "אנו מצהירים כי אישור הרופא המטפל יימסר לבית הספר", type: "checkbox", full: true, showIf: { key: "meds_request", equals: "כן" } },
         ],
       },
+      {
+        key: "doctor_order",
+        title: "פרטי הוראת רופא/ה למתן טיפול תרופתי (טופס 8)",
+        description: "יש למלא על פי ההוראה הרפואית החתומה. את ההוראה המקורית החתומה יש להעביר לבית הספר.",
+        fields: [
+          { key: "dr_diagnosis", label: "אבחנה רפואית", type: "text", showIf: { key: "meds_request", equals: "כן" } },
+          { key: "dr_frequency", label: "תדירות / מאפייני האירועים", type: "text", showIf: { key: "meds_request", equals: "כן" } },
+          { key: "dr_drug_latin", label: "שם התרופה (בלטינית)", type: "text", showIf: { key: "meds_request", equals: "כן" } },
+          { key: "dr_dosage", label: "מינון ואופן מתן", type: "text", showIf: { key: "meds_request", equals: "כן" } },
+          { key: "dr_emergency_instructions", label: "הנחיות לתופעות לוואי ולמצבי חירום", type: "textarea", full: true, showIf: { key: "meds_request", equals: "כן" } },
+          { key: "dr_valid_until", label: "תוקף ההוראה עד תאריך", type: "date", showIf: { key: "meds_request", equals: "כן" } },
+          { key: "dr_name", label: "שם הרופא/ה", type: "text", showIf: { key: "meds_request", equals: "כן" } },
+          { key: "dr_license", label: "מספר רישיון", type: "text", showIf: { key: "meds_request", equals: "כן" } },
+          { key: "dr_institution", label: "מוסד רפואי / מרפאה", type: "text", showIf: { key: "meds_request", equals: "כן" } },
+          { key: "dr_phone", label: "טלפון הרופא/ה", type: "tel", showIf: { key: "meds_request", equals: "כן" } },
+        ],
+      },
     ],
   },
   {
@@ -252,6 +278,21 @@ export const FORM_STEPS: FormStep[] = [
           { key: "h_vaccines_consent", label: "8. ידוע לי שבמסגרת שירותי הבריאות לתלמיד יינתן לבני/בתי חיסון לפי תוכנית משרד הבריאות", type: "yesno", full: true },
           { key: "h_extra_info", label: "מידע נוסף על בריאות ילדי שברצוני ליידע את בית הספר", type: "textarea", full: true },
           { key: "h_declaration", label: "אני מאשר/ת מתן מידע והעברת הצהרת הבריאות לצוות החינוכי ולצוות בריאות התלמיד, ומתחייב/ת להודיע למחנך/ת על כל שינוי במצב הבריאותי", type: "checkbox", required: true, full: true },
+        ],
+      },
+      {
+        key: "vaccines",
+        title: "חיסונים ובדיקות סקר (טופס 4)",
+        description: "החיסונים ובדיקות הסקר ניתנים במסגרת שירותי הבריאות לתלמיד, בהתאם לשכבת הגיל ולתוכנית משרד הבריאות.",
+        fields: [
+          { key: "v_consent", label: "אני מאשר/ת מתן חיסונים לבני/בתי במסגרת שירותי הבריאות לתלמיד", type: "yesno", full: true },
+          { key: "v_vaccines_list", label: "החיסונים שאני מאשר/ת (לפי שכבת הגיל)", type: "checkboxGroup", options: VACCINES, full: true, showIf: { key: "v_consent", equals: "כן" } },
+          { key: "v_refusal_reason", label: "נימוק לאי-הסכמה למתן חיסונים", type: "textarea", full: true, showIf: { key: "v_consent", equals: "לא" } },
+          { key: "v_screening_consent", label: "אני מאשר/ת ביצוע בדיקות סקר", type: "yesno", full: true },
+          { key: "v_screening_list", label: "בדיקות הסקר שאני מאשר/ת", type: "checkboxGroup", options: SCREENING_TESTS, full: true, showIf: { key: "v_screening_consent", equals: "כן" } },
+          { key: "v_past_reaction", label: "האם הייתה בעבר תגובה חריגה לחיסון?", type: "yesno", full: true },
+          { key: "v_past_reaction_details", label: "פירוט התגובה החריגה", type: "textarea", full: true, showIf: { key: "v_past_reaction", equals: "כן" } },
+          { key: "v_booklet_commit", label: "אני מתחייב/ת להעביר לבית הספר צילום של פנקס החיסונים", type: "checkbox", full: true },
         ],
       },
     ],
