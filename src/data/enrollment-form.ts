@@ -231,6 +231,23 @@ export const FORM_STEPS: FormStep[] = [
           { key: "meds_doctor_approval", label: "אנו מצהירים כי אישור הרופא המטפל יימסר לבית הספר", type: "checkbox", full: true, showIf: { key: "meds_request", equals: "כן" } },
         ],
       },
+      {
+        key: "doctor_order",
+        title: "פרטי הוראת רופא/ה למתן טיפול תרופתי (טופס 8)",
+        description: "יש למלא על פי ההוראה הרפואית החתומה. את ההוראה המקורית החתומה יש להעביר לבית הספר.",
+        fields: [
+          { key: "dr_diagnosis", label: "אבחנה רפואית", type: "text", showIf: { key: "meds_request", equals: "כן" } },
+          { key: "dr_frequency", label: "תדירות / מאפייני האירועים", type: "text", showIf: { key: "meds_request", equals: "כן" } },
+          { key: "dr_drug_latin", label: "שם התרופה (בלטינית)", type: "text", showIf: { key: "meds_request", equals: "כן" } },
+          { key: "dr_dosage", label: "מינון ואופן מתן", type: "text", showIf: { key: "meds_request", equals: "כן" } },
+          { key: "dr_emergency_instructions", label: "הנחיות לתופעות לוואי ולמצבי חירום", type: "textarea", full: true, showIf: { key: "meds_request", equals: "כן" } },
+          { key: "dr_valid_until", label: "תוקף ההוראה עד תאריך", type: "date", showIf: { key: "meds_request", equals: "כן" } },
+          { key: "dr_name", label: "שם הרופא/ה", type: "text", showIf: { key: "meds_request", equals: "כן" } },
+          { key: "dr_license", label: "מספר רישיון", type: "text", showIf: { key: "meds_request", equals: "כן" } },
+          { key: "dr_institution", label: "מוסד רפואי / מרפאה", type: "text", showIf: { key: "meds_request", equals: "כן" } },
+          { key: "dr_phone", label: "טלפון הרופא/ה", type: "tel", showIf: { key: "meds_request", equals: "כן" } },
+        ],
+      },
     ],
   },
   {
