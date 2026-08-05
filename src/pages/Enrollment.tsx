@@ -152,6 +152,8 @@ const Enrollment = () => {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const [pdfError, setPdfError] = useState("");
   const hydrated = useRef(!token);
 
   /* ---------- load personal invite ---------- */
@@ -209,6 +211,31 @@ const Enrollment = () => {
   const studentName = `${values.student_first_name || ""} ${values.student_last_name || ""}`.trim() || invite?.student_name || "";
 
   const goTo = (i: number) => { setStep(i); window.scrollTo({ top: 0, behavior: "smooth" }); };
+
+  const isIOS = typeof navigator !== "undefined" &&
+    (/iP(hone|ad|od)/.test(navigator.userAgent) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
+
+  const handleDownloadPDF = async () => {
+    if (pdfBusy) return;
+    setPdfBusy(true); setPdfError("");
+    // The tab must be opened synchronously inside the click for iOS Safari.
+    const win = isIOS ? window.open("", "_blank") : null;
+    try {
+      await generateEnrollmentPDF(
+        values,
+        studentName,
+        invite ? `מולא על ידי ${invite.parent_name}` : "",
+        { targetWindow: win },
+      );
+    } catch (e) {
+      console.error("enrollment pdf failed", e);
+      win?.close();
+      setPdfError("יצירת ה-PDF נכשלה. נסו שוב, או פנו למזכירות ונשלח לכם עותק.");
+    } finally {
+      setPdfBusy(false);
+    }
+  };
 
   const handleSubmit = async () => {
     setSubmitting(true); setError("");
@@ -375,10 +402,16 @@ const Enrollment = () => {
             תודה רבה! טופס הקליטה של {studentName || "התלמיד/ה"} התקבל במזכירות בית הספר.
             <br />ניצור אתכם קשר בהמשך להשלמת התהליך.
           </p>
-          <button onClick={() => generateEnrollmentPDF(values, studentName, invite ? `מולא על ידי ${invite.parent_name}` : "")}
-            className="btn-intake bg-primary text-primary-foreground shadow-md inline-flex items-center gap-2 mx-auto">
-            <Download className="w-4 h-4" /> הורדת עותק PDF
+          <button onClick={handleDownloadPDF} disabled={pdfBusy}
+            className="btn-intake bg-primary text-primary-foreground shadow-md inline-flex items-center gap-2 mx-auto disabled:opacity-60">
+            {pdfBusy
+              ? <><Loader2 className="w-4 h-4 animate-spin" /> מכין את הקובץ…</>
+              : <><Download className="w-4 h-4" /> הורדת עותק PDF</>}
           </button>
+          {pdfError && <p className="text-xs text-destructive mt-3">{pdfError}</p>}
+          {isIOS && !pdfError && (
+            <p className="text-[11px] text-muted-foreground mt-3">הקובץ ייפתח בלשונית חדשה — משם אפשר לשמור או לשתף.</p>
+          )}
         </div>
       </div>
     );
