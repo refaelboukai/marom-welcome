@@ -1,11 +1,16 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
-  CheckCircle2, ChevronLeft, ChevronRight, HeartPulse, Loader2, PenLine,
-  Send, Shield, Stethoscope, User, Users,
+  Check, CheckCircle2, ChevronLeft, ChevronRight, Cloud, Download, HeartPulse,
+  Loader2, PenLine, Send, Shield, Stethoscope, User, Users,
 } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 import { FORM_STEPS, FormField, SCHOOL_RULES } from "@/data/enrollment-form";
 import { FormValues, submitEnrollmentForm } from "@/lib/enrollment";
+import { generateEnrollmentPDF } from "@/lib/enrollment-pdf";
+import {
+  EnrollmentInvite, PARENT_ROLE_LABELS, getInviteByToken, markInviteSubmitted, saveInviteDraft,
+} from "@/lib/enrollment-invites";
 
 const DRAFT_KEY = "enrollment_draft_v2";
 
@@ -15,31 +20,66 @@ const ICONS = {
 } as const;
 
 const inputCls =
-  "w-full bg-background border border-input rounded-xl p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring";
+  "w-full bg-background border border-input rounded-xl p-2.5 text-sm transition-shadow focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary";
 
 const Enrollment = () => {
+  const [params] = useSearchParams();
+  const token = params.get("t") || "";
+
+  const [loading, setLoading] = useState(!!token);
+  const [invite, setInvite] = useState<EnrollmentInvite | null>(null);
   const [step, setStep] = useState(0);
   const [values, setValues] = useState<FormValues>(() => {
+    if (token) return {};
     try {
       const saved = localStorage.getItem(DRAFT_KEY);
       if (saved) return JSON.parse(saved);
     } catch { /* ignore */ }
     return {};
   });
+  const [saving, setSaving] = useState<"idle" | "saving" | "saved">("idle");
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
+  const hydrated = useRef(!token);
 
+  /* ---------- load personal invite ---------- */
   useEffect(() => {
-    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(values)); } catch { /* ignore */ }
-  }, [values]);
+    if (!token) return;
+    let cancelled = false;
+    getInviteByToken(token).then((inv) => {
+      if (cancelled) return;
+      if (inv) {
+        setInvite(inv);
+        setValues(inv.draft_data || {});
+        setStep(Math.min(inv.current_step || 0, FORM_STEPS.length - 1));
+        if (inv.status === "submitted") setDone(true);
+      }
+      hydrated.current = true;
+      setLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, [token]);
+
+  /* ---------- autosave ---------- */
+  useEffect(() => {
+    if (!hydrated.current || done) return;
+    try { localStorage.setItem(token ? `${DRAFT_KEY}_${token}` : DRAFT_KEY, JSON.stringify(values)); } catch { /* ignore */ }
+    if (!token) return;
+    setSaving("saving");
+    const id = setTimeout(async () => {
+      await saveInviteDraft(token, values, step);
+      setSaving("saved");
+    }, 700);
+    return () => clearTimeout(id);
+  }, [values, step, token, done]);
 
   const set = (key: string, value: FormValues[string]) => setValues((v) => ({ ...v, [key]: value }));
 
-  const visible = (f: FormField) => {
+  const visible = useCallback((f: FormField) => {
     if (!f.showIf) return true;
     return values[f.showIf.key] === f.showIf.equals;
-  };
+  }, [values]);
 
   const currentStep = FORM_STEPS[step];
 
@@ -53,25 +93,35 @@ const Enrollment = () => {
       }
     }
     return true;
-  }, [currentStep, values]);
+  }, [currentStep, values, visible]);
+
+  const studentName = `${values.student_first_name || ""} ${values.student_last_name || ""}`.trim() || invite?.student_name || "";
+
+  const goTo = (i: number) => { setStep(i); window.scrollTo({ top: 0, behavior: "smooth" }); };
 
   const handleSubmit = async () => {
     setSubmitting(true); setError("");
-    const res = await submitEnrollmentForm(values);
+    const res = await submitEnrollmentForm(values, {
+      invite_token: token,
+      pair_id: invite?.pair_id || null,
+      parent_role: invite?.parent_role || "parent1",
+    });
+    if (!res.ok) { setSubmitting(false); setError("אירעה שגיאה בשליחת הטופס. נסו שוב בעוד רגע."); return; }
+    if (token) await markInviteSubmitted(token, res.id || null);
+    localStorage.removeItem(token ? `${DRAFT_KEY}_${token}` : DRAFT_KEY);
     setSubmitting(false);
-    if (!res.ok) { setError("אירעה שגיאה בשליחת הטופס. נסו שוב בעוד רגע."); return; }
-    localStorage.removeItem(DRAFT_KEY);
     setDone(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  /* ---------- field renderer ---------- */
   const renderField = (f: FormField) => {
     if (!visible(f)) return null;
     const v = values[f.key];
 
     if (f.type === "note") {
       return (
-        <div key={f.key} className="sm:col-span-2 rounded-xl bg-muted/40 border border-border p-4">
+        <div key={f.key} className="sm:col-span-2 rounded-2xl bg-muted/40 border border-border p-4">
           <ol className="list-decimal pr-5 space-y-2 text-sm leading-relaxed">
             {SCHOOL_RULES.map((r, i) => <li key={i}>{r}</li>)}
           </ol>
@@ -80,9 +130,16 @@ const Enrollment = () => {
     }
 
     if (f.type === "checkbox") {
+      const on = v === true;
       return (
-        <label key={f.key} className="sm:col-span-2 flex items-start gap-3 p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition-colors">
-          <input type="checkbox" className="mt-1 w-4 h-4 accent-primary" checked={v === true} onChange={() => set(f.key, v !== true)} />
+        <label key={f.key}
+          className={`sm:col-span-2 flex items-start gap-3 p-3.5 rounded-2xl border-2 cursor-pointer transition-all ${
+            on ? "border-primary/60 bg-primary/5" : "border-border bg-card hover:border-primary/30"
+          }`}>
+          <span className={`mt-0.5 w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 border-2 transition-all ${
+            on ? "bg-primary border-primary text-primary-foreground" : "border-input bg-background"
+          }`}>{on && <Check className="w-3.5 h-3.5" />}</span>
+          <input type="checkbox" className="sr-only" checked={on} onChange={() => set(f.key, !on)} />
           <span className="text-sm leading-relaxed">{f.label} {f.required && <span className="text-destructive">*</span>}</span>
         </label>
       );
@@ -93,7 +150,7 @@ const Enrollment = () => {
       return (
         <div key={f.key} className="sm:col-span-2">
           <p className="text-sm font-medium mb-2 leading-relaxed">{f.label} {f.required && <span className="text-destructive">*</span>}</p>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {opts.map((o) => (
               <button key={o} type="button" onClick={() => set(f.key, o)}
                 className={`px-4 py-2 rounded-xl text-sm font-medium border-2 transition-all ${
@@ -172,64 +229,115 @@ const Enrollment = () => {
     );
   };
 
+  /* ---------- states ---------- */
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="w-7 h-7 animate-spin text-primary" /></div>;
+  }
+
   if (done) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+      <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background flex items-center justify-center px-4">
         <div className="intake-card-soft max-w-md w-full text-center py-10">
-          <CheckCircle2 className="w-14 h-14 text-success mx-auto mb-4" />
+          <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-4">
+            <CheckCircle2 className="w-9 h-9 text-success" />
+          </div>
           <h1 className="text-xl font-heading font-bold mb-2">הטופס נשלח בהצלחה</h1>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            תודה רבה! טופס הקליטה התקבל במזכירות בית הספר.
-            <br />ניצור אתכם קשר בהמשך לצורך השלמת התהליך.
+          <p className="text-sm text-muted-foreground leading-relaxed mb-5">
+            תודה רבה! טופס הקליטה של {studentName || "התלמיד/ה"} התקבל במזכירות בית הספר.
+            <br />ניצור אתכם קשר בהמשך להשלמת התהליך.
           </p>
+          <button onClick={() => generateEnrollmentPDF(values, studentName, invite ? `מולא על ידי ${invite.parent_name}` : "")}
+            className="btn-intake bg-primary text-primary-foreground shadow-md inline-flex items-center gap-2 mx-auto">
+            <Download className="w-4 h-4" /> הורדת עותק PDF
+          </button>
         </div>
       </div>
     );
   }
 
   const StepIcon = ICONS[currentStep.icon];
+  const pct = ((step + 1) / FORM_STEPS.length) * 100;
 
   return (
-    <div className="min-h-screen bg-background pb-12">
-      <div className="bg-card border-b border-border px-4 py-3 sticky top-0 z-20 shadow-sm">
+    <div className="min-h-screen bg-gradient-to-b from-primary/5 via-background to-background pb-14">
+      {/* header */}
+      <div className="bg-card/95 backdrop-blur border-b border-border px-4 py-3 sticky top-0 z-20 shadow-sm">
         <div className="max-w-3xl mx-auto flex items-center gap-3">
           <img src={logo} alt="מרום בית אקשטיין" className="h-10 rounded-xl shadow-sm" />
-          <div>
-            <h1 className="text-base sm:text-lg font-heading font-bold">טופס קליטה לתלמיד/ה חדש/ה</h1>
-            <p className="text-[11px] text-muted-foreground">בית ספר מרום — בית אקשטיין יבנה</p>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-base sm:text-lg font-heading font-bold truncate">טופס קליטה לתלמיד/ה חדש/ה</h1>
+            <p className="text-[11px] text-muted-foreground truncate">
+              בית ספר מרום — בית אקשטיין יבנה
+              {invite && ` · ${invite.parent_name} (${PARENT_ROLE_LABELS[invite.parent_role]})`}
+            </p>
           </div>
+          {token && (
+            <span className="hidden sm:flex items-center gap-1 text-[11px] text-muted-foreground">
+              {saving === "saving" ? <><Loader2 className="w-3 h-3 animate-spin" /> שומר…</> : <><Cloud className="w-3 h-3 text-success" /> נשמר</>}
+            </span>
+          )}
         </div>
       </div>
 
       <div className="max-w-3xl mx-auto px-4 pt-5">
-        <div className="flex items-center gap-1.5 mb-4 overflow-x-auto pb-1">
-          {FORM_STEPS.map((s, i) => {
-            const Icon = ICONS[s.icon];
-            return (
-              <button key={s.key} onClick={() => i < step && setStep(i)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
-                  i === step ? "bg-primary text-primary-foreground shadow-md"
-                    : i < step ? "bg-success/10 text-success" : "bg-muted/50 text-muted-foreground"
-                }`}>
-                <Icon className="w-3.5 h-3.5" /> {s.label}
-              </button>
-            );
-          })}
+        {invite && (
+          <div className="intake-card-soft mb-4 py-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+            <span className="font-semibold text-sm">{invite.student_name}</span>
+            {invite.grade && <span className="text-muted-foreground">כיתה {invite.grade}</span>}
+            {invite.family_status === "divorced" && (
+              <span className="px-2 py-0.5 rounded-lg bg-accent/15 text-accent-foreground">טופס נפרד לכל הורה</span>
+            )}
+            <span className="text-muted-foreground mr-auto">התשובות נשמרות אוטומטית — אפשר לעצור ולחזור בהמשך</span>
+          </div>
+        )}
+
+        {/* progress tracker */}
+        <div className="intake-card-soft mb-5">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-semibold">עמוד {step + 1} מתוך {FORM_STEPS.length} — {currentStep.label}</p>
+            <span className="text-xs font-bold text-primary">{Math.round(pct)}%</span>
+          </div>
+
+          <div className="relative">
+            <div className="absolute top-4 right-4 left-4 h-1 bg-muted rounded-full" />
+            <div className="absolute top-4 right-4 h-1 bg-primary rounded-full transition-all duration-500"
+              style={{ width: `calc((100% - 2rem) * ${step / (FORM_STEPS.length - 1)})` }} />
+            <div className="relative flex justify-between">
+              {FORM_STEPS.map((s, i) => {
+                const Icon = ICONS[s.icon];
+                const state = i < step ? "done" : i === step ? "active" : "todo";
+                return (
+                  <button key={s.key} onClick={() => i < step && goTo(i)} disabled={i > step}
+                    className="flex flex-col items-center gap-1.5 w-[16%]">
+                    <span className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all ${
+                      state === "done" ? "bg-success text-success-foreground border-success"
+                        : state === "active" ? "bg-primary text-primary-foreground border-primary scale-110 shadow-md"
+                        : "bg-card text-muted-foreground border-border"
+                    }`}>
+                      {state === "done" ? <Check className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
+                    </span>
+                    <span className={`text-[10px] leading-tight text-center ${
+                      state === "active" ? "text-primary font-bold" : "text-muted-foreground"
+                    }`}>{s.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
-        <div className="h-2 bg-muted rounded-full overflow-hidden mb-5">
-          <div className="h-full bg-primary rounded-full transition-all duration-500"
-            style={{ width: `${((step + 1) / FORM_STEPS.length) * 100}%` }} />
-        </div>
-
-        <div className="space-y-4 animate-fade-in">
+        {/* step content */}
+        <div className="space-y-4 animate-fade-in" key={currentStep.key}>
           {currentStep.groups.map((group) => (
             <div key={group.key} className="intake-card-soft">
               <h2 className="flex items-center gap-2 text-base font-heading font-semibold mb-1">
-                <StepIcon className="w-4 h-4 text-primary" /> {group.title}
+                <span className="w-7 h-7 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <StepIcon className="w-4 h-4 text-primary" />
+                </span>
+                {group.title}
               </h2>
               {group.description && (
-                <p className="text-xs text-muted-foreground mb-4 leading-relaxed">{group.description}</p>
+                <p className="text-xs text-muted-foreground mb-3 leading-relaxed">{group.description}</p>
               )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
                 {group.fields.map(renderField)}
@@ -242,19 +350,19 @@ const Enrollment = () => {
 
         <div className="flex gap-3 mt-5">
           {step > 0 && (
-            <button onClick={() => { setStep((s) => s - 1); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+            <button onClick={() => goTo(step - 1)}
               className="btn-intake bg-secondary text-secondary-foreground flex-1 flex items-center justify-center gap-1">
               <ChevronRight className="w-4 h-4" /> חזרה
             </button>
           )}
           {step < FORM_STEPS.length - 1 ? (
-            <button onClick={() => { setStep((s) => s + 1); window.scrollTo({ top: 0, behavior: "smooth" }); }} disabled={!stepValid}
-              className={`btn-intake flex-1 flex items-center justify-center gap-1 ${stepValid ? "bg-primary text-primary-foreground shadow-md" : "bg-muted text-muted-foreground cursor-not-allowed"}`}>
+            <button onClick={() => goTo(step + 1)} disabled={!stepValid}
+              className={`btn-intake flex-[2] flex items-center justify-center gap-1 ${stepValid ? "bg-primary text-primary-foreground shadow-md" : "bg-muted text-muted-foreground cursor-not-allowed"}`}>
               המשך <ChevronLeft className="w-4 h-4" />
             </button>
           ) : (
             <button onClick={handleSubmit} disabled={!stepValid || submitting}
-              className={`btn-intake flex-1 flex items-center justify-center gap-2 ${stepValid && !submitting ? "bg-primary text-primary-foreground shadow-md" : "bg-muted text-muted-foreground cursor-not-allowed"}`}>
+              className={`btn-intake flex-[2] flex items-center justify-center gap-2 ${stepValid && !submitting ? "bg-primary text-primary-foreground shadow-md" : "bg-muted text-muted-foreground cursor-not-allowed"}`}>
               {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> שולח...</> : <><Send className="w-4 h-4" /> שליחת הטופס</>}
             </button>
           )}
@@ -262,7 +370,8 @@ const Enrollment = () => {
 
         {!stepValid && <p className="text-center text-xs text-muted-foreground mt-2">יש למלא את שדות החובה כדי להמשיך</p>}
         <p className="text-center text-[11px] text-muted-foreground mt-3">
-          הפרטים נשמרים אצלכם במכשיר עד לשליחה, כך שניתן להשלים את הטופס בהמשך.
+          {token ? "הטופס נשמר בענן — אפשר לסגור ולחזור מאוחר יותר מאותו קישור ומכל מכשיר."
+                 : "הפרטים נשמרים במכשיר עד לשליחה, כך שניתן להשלים את הטופס בהמשך."}
         </p>
       </div>
     </div>

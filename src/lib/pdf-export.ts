@@ -466,7 +466,7 @@ function buildPersonalPlanHTML(session: IntakeSession, planData: PersonalPlanDat
   return html;
 }
 
-async function renderHTMLToPDF(html: string, filename: string, options?: { grayscale?: boolean }) {
+export async function renderHTMLToPDF(html: string, filename: string, options?: { grayscale?: boolean }) {
   const grayscale = options?.grayscale === true;
   const container = document.createElement("div");
   container.style.position = "fixed";
