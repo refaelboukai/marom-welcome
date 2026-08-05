@@ -301,9 +301,13 @@ const EnrollmentFormsAdmin = () => {
                             <GitCompare className="w-3 h-3" /> אינטגרציה
                           </button>
                         )}
+                        <button onClick={() => generateEnrollmentPDF(flattenForm(f), `${f.student_first_name} ${f.student_last_name}`, `מולא על ידי ${f.parent1_name || f.parent2_name || ""}`, { compact: true })}
+                          className="px-2 py-1.5 rounded-lg hover:bg-muted text-muted-foreground text-[11px] font-medium inline-flex items-center gap-1" title="הורדת PDF מוקטן ומהיר">
+                          <Download className="w-3.5 h-3.5" /> מוקטן
+                        </button>
                         <button onClick={() => generateEnrollmentPDF(flattenForm(f), `${f.student_first_name} ${f.student_last_name}`, `מולא על ידי ${f.parent1_name || f.parent2_name || ""}`)}
-                          className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground" title="הורדת PDF">
-                          <Download className="w-4 h-4" />
+                          className="px-2 py-1.5 rounded-lg hover:bg-muted text-muted-foreground text-[11px] font-medium inline-flex items-center gap-1" title="הורדת PDF מלא באיכות גבוהה">
+                          <Download className="w-3.5 h-3.5" /> מלא
                         </button>
                         <button onClick={() => handleDelete(f)}
                           className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10">
@@ -328,8 +332,10 @@ const EnrollmentFormsAdmin = () => {
                 טופס קליטה — {selected.student_first_name} {selected.student_last_name}
               </h3>
               <div className="flex items-center gap-1">
+                <button onClick={() => generateEnrollmentPDF(values, `${selected.student_first_name} ${selected.student_last_name}`, "", { compact: true })}
+                  className="px-2 py-1.5 rounded-lg hover:bg-muted text-[11px] font-medium inline-flex items-center gap-1" title="הורדת PDF מוקטן ומהיר"><Download className="w-3.5 h-3.5" /> מוקטן</button>
                 <button onClick={() => generateEnrollmentPDF(values, `${selected.student_first_name} ${selected.student_last_name}`)}
-                  className="p-1.5 rounded-lg hover:bg-muted" title="הורדת PDF"><Download className="w-4 h-4" /></button>
+                  className="px-2 py-1.5 rounded-lg hover:bg-muted text-[11px] font-medium inline-flex items-center gap-1" title="הורדת PDF מלא"><Download className="w-3.5 h-3.5" /> מלא</button>
                 <button onClick={() => window.print()} className="p-1.5 rounded-lg hover:bg-muted" title="הדפסה"><Printer className="w-4 h-4" /></button>
                 <button onClick={() => setSelected(null)} className="p-1.5 rounded-lg hover:bg-muted"><X className="w-4 h-4" /></button>
               </div>
@@ -423,10 +429,16 @@ const EnrollmentFormsAdmin = () => {
               </table>
             </div>
 
-            <button onClick={() => generateCombinedEnrollmentPDF(compareData.a, compareData.b)}
-              className="btn-intake bg-primary text-primary-foreground shadow-md w-full mt-4 inline-flex items-center justify-center gap-2">
-              <Download className="w-4 h-4" /> הורדת PDF מאוחד לשני ההורים
-            </button>
+            <div className="grid grid-cols-2 gap-2 mt-4">
+              <button onClick={() => generateCombinedEnrollmentPDF(compareData.a, compareData.b, { compact: true })}
+                className="btn-intake bg-primary text-primary-foreground shadow-md inline-flex items-center justify-center gap-2">
+                <Download className="w-4 h-4" /> מאוחד — מוקטן ומהיר
+              </button>
+              <button onClick={() => generateCombinedEnrollmentPDF(compareData.a, compareData.b)}
+                className="btn-intake bg-muted text-foreground inline-flex items-center justify-center gap-2">
+                <Download className="w-4 h-4" /> מאוחד — מלא
+              </button>
+            </div>
           </div>
         </div>
       )}

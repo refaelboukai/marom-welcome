@@ -216,7 +216,7 @@ const Enrollment = () => {
     (/iP(hone|ad|od)/.test(navigator.userAgent) ||
       (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
 
-  const handleDownloadPDF = async () => {
+  const handleDownloadPDF = async (compact = false) => {
     if (pdfBusy) return;
     setPdfBusy(true); setPdfError("");
     // The tab must be opened synchronously inside the click for iOS Safari.
@@ -226,7 +226,7 @@ const Enrollment = () => {
         values,
         studentName,
         invite ? `מולא על ידי ${invite.parent_name}` : "",
-        { targetWindow: win },
+        { targetWindow: win, compact },
       );
     } catch (e) {
       console.error("enrollment pdf failed", e);
@@ -402,12 +402,18 @@ const Enrollment = () => {
             תודה רבה! טופס הקליטה של {studentName || "התלמיד/ה"} התקבל במזכירות בית הספר.
             <br />ניצור אתכם קשר בהמשך להשלמת התהליך.
           </p>
-          <button onClick={handleDownloadPDF} disabled={pdfBusy}
-            className="btn-intake bg-primary text-primary-foreground shadow-md inline-flex items-center gap-2 mx-auto disabled:opacity-60">
-            {pdfBusy
-              ? <><Loader2 className="w-4 h-4 animate-spin" /> מכין את הקובץ…</>
-              : <><Download className="w-4 h-4" /> הורדת עותק PDF</>}
-          </button>
+          <div className="flex flex-col items-center gap-2">
+            <button onClick={() => handleDownloadPDF(true)} disabled={pdfBusy}
+              className="btn-intake bg-primary text-primary-foreground shadow-md inline-flex items-center gap-2 mx-auto disabled:opacity-60">
+              {pdfBusy
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> מכין את הקובץ…</>
+                : <><Download className="w-4 h-4" /> הורדה מהירה (קובץ מוקטן)</>}
+            </button>
+            <button onClick={() => handleDownloadPDF(false)} disabled={pdfBusy}
+              className="text-xs font-medium text-primary underline underline-offset-4 disabled:opacity-60">
+              הורדת הקובץ המלא באיכות גבוהה
+            </button>
+          </div>
           {pdfError && <p className="text-xs text-destructive mt-3">{pdfError}</p>}
           {isIOS && !pdfError && (
             <p className="text-[11px] text-muted-foreground mt-3">הקובץ ייפתח בלשונית חדשה — משם אפשר לשמור או לשתף.</p>

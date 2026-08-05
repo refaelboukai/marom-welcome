@@ -569,9 +569,10 @@ export async function renderHTMLToPDF(html: string, filename: string, options?: 
 export async function renderPagedHTMLToPDF(
   pages: string[],
   filename: string,
-  opts?: { targetWindow?: Window | null },
+  opts?: { targetWindow?: Window | null; compact?: boolean },
 ) {
-  const pdf = new jsPDF("p", "mm", "a4");
+  const compact = !!opts?.compact;
+  const pdf = new jsPDF({ orientation: "p", unit: "mm", format: "a4", compress: true });
   const pw = pdf.internal.pageSize.getWidth();
   const ph = pdf.internal.pageSize.getHeight();
   const margin = 8;
@@ -589,7 +590,7 @@ export async function renderPagedHTMLToPDF(
 
     try {
       const canvas = await html2canvas(container, {
-        scale: 2, useCORS: true, logging: false, backgroundColor: "#ffffff",
+        scale: compact ? 1.15 : 2, useCORS: true, logging: false, backgroundColor: "#ffffff",
       });
       const maxW = pw - margin * 2;
       const maxH = ph - margin * 2;
@@ -597,7 +598,10 @@ export async function renderPagedHTMLToPDF(
       let h = (canvas.height * maxW) / canvas.width;
       if (h > maxH) { h = maxH; w = (canvas.width * maxH) / canvas.height; }
       if (i > 0) pdf.addPage();
-      pdf.addImage(canvas.toDataURL("image/jpeg", 0.92), "JPEG", (pw - w) / 2, margin, w, h);
+      pdf.addImage(
+        canvas.toDataURL("image/jpeg", compact ? 0.6 : 0.92),
+        "JPEG", (pw - w) / 2, margin, w, h, undefined, "FAST",
+      );
     } finally {
       document.body.removeChild(container);
     }
