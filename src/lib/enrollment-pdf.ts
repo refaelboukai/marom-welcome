@@ -32,8 +32,31 @@ const isImagePath = (p: string) => /\.(jpe?g|png|webp|heic|gif)$/i.test(p);
 
 interface DocImage { label: string; src: string; name: string }
 
+/** Shrink a data-URL image (used by the light/fast PDF) to keep the file small. */
+async function shrinkDataUrl(data: string, maxSide = 900, quality = 0.55): Promise<string> {
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = reject;
+      el.src = data;
+    });
+    const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+    if (scale >= 1) return data;
+    const c = document.createElement("canvas");
+    c.width = Math.round(img.width * scale);
+    c.height = Math.round(img.height * scale);
+    const ctx = c.getContext("2d");
+    if (!ctx) return data;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, c.width, c.height);
+    ctx.drawImage(img, 0, 0, c.width, c.height);
+    return c.toDataURL("image/jpeg", quality);
+  } catch { return data; }
+}
+
 /** Resolve every uploaded document into an inline (colour) data-URL image. */
-async function collectDocs(values: FormValues): Promise<{ images: DocImage[]; others: string[] }> {
+async function collectDocs(values: FormValues, compact = false): Promise<{ images: DocImage[]; others: string[] }> {
   const images: DocImage[] = [];
   const others: string[] = [];
   for (const step of FORM_STEPS) {
@@ -46,7 +69,8 @@ async function collectDocs(values: FormValues): Promise<{ images: DocImage[]; ot
           const name = fileNameFromPath(p);
           if (!isImagePath(p)) { others.push(`${f.label} — ${name}`); continue; }
           const url = await getEnrollmentDocUrl(p, 600);
-          const data = url ? await toDataUrl(url) : null;
+          const raw2 = url ? await toDataUrl(url) : null;
+          const data = raw2 && compact ? await shrinkDataUrl(raw2) : raw2;
           if (data) images.push({ label: f.label, src: data, name });
           else others.push(`${f.label} — ${name}`);
         }
