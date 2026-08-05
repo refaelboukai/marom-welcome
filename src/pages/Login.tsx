@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { findSessionByCodeDB, isAdminCode, initializeSessionsDB } from "@/lib/supabase-storage";
 import { STAFF_CODE, VIEWER_CODE } from "@/data/students";
+import { getInviteByToken } from "@/lib/enrollment-invites";
 import logo from "@/assets/logo.jpeg";
 import { Loader2 } from "lucide-react";
 
@@ -33,9 +34,11 @@ const Login = () => {
         const result = await findSessionByCodeDB(trimmed);
         if (result) {
           navigate(result.role === "student" ? `/student/${result.session.id}` : `/parent/${result.session.id}`);
-        } else {
-          setError("הקוד שבקישור אינו תקין. ניתן להזין אותו ידנית.");
+          return;
         }
+        const invite = await getInviteByToken(trimmed);
+        if (invite) { navigate(`/enroll?t=${invite.token}`); return; }
+        setError("הקוד שבקישור אינו תקין. ניתן להזין אותו ידנית.");
       } catch {
         setError("שגיאה בחיבור לשרת. נסה שוב.");
       } finally {
@@ -60,9 +63,11 @@ const Login = () => {
       const result = await findSessionByCodeDB(trimmed);
       if (result) {
         navigate(result.role === "student" ? `/student/${result.session.id}` : `/parent/${result.session.id}`);
-      } else {
-        setError("הקוד שהוזן אינו תקין. נסה שוב.");
+        return;
       }
+      const invite = await getInviteByToken(trimmed);
+      if (invite) { navigate(`/enroll?t=${invite.token}`); return; }
+      setError("הקוד שהוזן אינו תקין. נסה שוב.");
     } catch {
       setError("שגיאה בחיבור לשרת. נסה שוב.");
     } finally {

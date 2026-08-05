@@ -39,14 +39,19 @@ export const INVITE_STATUS_LABELS: Record<string, string> = {
 function makeToken(): string {
   const chars = "abcdefghjkmnpqrstuvwxyz23456789";
   let out = "";
-  const arr = new Uint32Array(10);
+  const arr = new Uint32Array(6);
   crypto.getRandomValues(arr);
   arr.forEach((n) => { out += chars[n % chars.length]; });
   return out;
 }
 
 export function inviteLink(token: string): string {
-  return `${window.location.origin}/enroll?t=${token}`;
+  return `${window.location.origin}/?code=${token.toUpperCase()}`;
+}
+
+/** The access code parents type manually on the login screen. */
+export function inviteCode(token: string): string {
+  return token.toUpperCase();
 }
 
 export function inviteWhatsAppMessage(inv: EnrollmentInvite): string {
@@ -54,7 +59,8 @@ export function inviteWhatsAppMessage(inv: EnrollmentInvite): string {
 
 לקראת קליטת ${inv.student_name} בבית הספר מרום — בית אקשטיין, נשמח שתמלאו את טופס הקליטה הדיגיטלי בקישור האישי הבא:
 
-${inviteLink(inv.token)}
+קוד גישה: ${inviteCode(inv.token)}
+כניסה ישירה: ${inviteLink(inv.token)}
 
 הטופס נשמר אוטומטית — אפשר לעצור באמצע ולהמשיך מאוחר יותר מאותה נקודה.
 בסיום ניתן להוריד עותק PDF של הטופס.
@@ -112,7 +118,7 @@ export async function getInvites(): Promise<EnrollmentInvite[]> {
 
 export async function getInviteByToken(token: string): Promise<EnrollmentInvite | null> {
   const { data, error } = await (supabase as any)
-    .from("enrollment_invites").select("*").eq("token", token).maybeSingle();
+    .from("enrollment_invites").select("*").eq("token", token.trim().toLowerCase()).maybeSingle();
   if (error) { console.error("getInviteByToken", error); return null; }
   return (data as EnrollmentInvite) || null;
 }
