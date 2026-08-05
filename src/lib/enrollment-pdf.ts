@@ -274,11 +274,27 @@ export async function generateCombinedEnrollmentPDF(
           </table>`}
     </div>`;
 
-  const html = WRAP(
-    HEAD(`טופס קליטה מאוחד — ${studentName}`, `שני הורים: ${nameA} · ${nameB}`) +
-    diffTable +
-    `<div data-section><h2 style="font-size:15px;font-weight:800;color:#2f6f58;margin:0 0 8px 0;">טופס מאוחד</h2></div>` +
-    rowsHTML(mergeForms(a, b)),
-  );
-  await renderHTMLToPDF(html, `טופס-קליטה-מאוחד-${studentName || "תלמיד"}.pdf`);
+  const merged = mergeForms(a, b);
+  const src = await logoData();
+  const filled = dateStr(merged);
+  const subtitle = `שני הורים: ${nameA} · ${nameB}`;
+  const { images, others } = await collectDocs(merged);
+
+  const pages: string[] = [];
+  const push = (title: string, body: string) =>
+    pages.push(PAGE({ logoSrc: src, title, student: studentName, filled, subtitle, body }));
+
+  push("טופס קליטה מאוחד", `
+    <div style="text-align:center;padding:36px 0;">
+      <h2 style="font-size:25px;font-weight:800;margin:0 0 10px 0;">טופס קליטה מאוחד — שני הורים</h2>
+      <p style="font-size:16px;font-weight:700;color:#2f6f58;margin:0 0 6px 0;">${esc(studentName || "—")}</p>
+      <p style="font-size:12.5px;color:#666;margin:0;">${esc(subtitle)}</p>
+      <p style="font-size:12.5px;color:#666;margin:4px 0 0 0;">תאריך מילוי הטופס: ${esc(filled)}</p>
+    </div>`);
+  push("השוואה בין שני ההורים", diffTable);
+  for (const p of stepPages(merged)) push(p.title, p.body);
+  push("חתימות", signatureHTML(merged));
+  for (const body of docsPages(images, others)) push("מסמכים שצורפו", body);
+
+  await renderPagedHTMLToPDF(pages, `טופס-קליטה-מאוחד-${studentName || "תלמיד"}.pdf`);
 }
