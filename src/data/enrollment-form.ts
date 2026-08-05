@@ -135,11 +135,13 @@ export const FORM_STEPS: FormStep[] = [
       {
         key: "documents",
         title: "מסמכים לצירוף",
-        description: "יש לצלם או לסרוק את המסמכים ולהעלות אותם. הקבצים נשמרים באחסון מאובטח של בית הספר ונגישים לצוות המזכירות בלבד (עד 10MB לקובץ).",
+        description: "יש לצלם או לסרוק את המסמכים ולהעלות אותם. חובה לצלם את תעודת הזהות הדיגיטלית משני הצדדים — צד קדמי וצד אחורי. הקבצים נשמרים באחסון מאובטח של בית הספר ונגישים לצוות המזכירות בלבד (עד 10MB לקובץ).",
         fields: [
           { key: "doc_student_photo", label: "תמונת פספורט של התלמיד/ה", type: "file", accept: "image/*", full: true },
-          { key: "doc_student_id", label: "צילום תעודת זהות של התלמיד/ה (אם קיימת)", type: "file", accept: "image/*,application/pdf", multiple: true, full: true },
-          { key: "doc_parent_id", label: "צילום תעודת זהות של ההורה", type: "file", accept: "image/*,application/pdf", multiple: true, full: true },
+          { key: "doc_student_id", label: "צילום תעודת זהות של התלמיד/ה — צד קדמי (אם קיימת)", type: "file", accept: "image/*,application/pdf", multiple: true, full: true },
+          { key: "doc_student_id_back", label: "צילום תעודת זהות של התלמיד/ה — צד אחורי (אם קיימת)", type: "file", accept: "image/*,application/pdf", multiple: true, full: true },
+          { key: "doc_parent_id", label: "צילום תעודת זהות של ההורה — צד קדמי", type: "file", accept: "image/*,application/pdf", multiple: true, full: true },
+          { key: "doc_parent_id_back", label: "צילום תעודת זהות של ההורה — צד אחורי (תעודה דיגיטלית: חובה)", type: "file", accept: "image/*,application/pdf", multiple: true, full: true },
           { key: "doc_id_appendix", label: "צילום ספח תעודת הזהות (כולל פרטי הילדים)", type: "file", accept: "image/*,application/pdf", multiple: true, full: true },
         ],
       },
