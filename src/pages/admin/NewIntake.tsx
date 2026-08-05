@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createSessionDB, getWelcomeMessage } from "@/lib/supabase-storage";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowRight, Copy, CheckCircle, Loader2, Plus, MessageCircle } from "lucide-react";
+import { ArrowRight, Copy, CheckCircle, Loader2, Plus, MessageCircle, FileText } from "lucide-react";
 import { openWhatsApp, normalizePhone, WELCOME_MESSAGE } from "@/lib/whatsapp";
+import { createInvites, inviteWhatsAppMessage, inviteLink } from "@/lib/enrollment-invites";
 
 const NewIntake = () => {
   const navigate = useNavigate();
@@ -32,6 +33,25 @@ const NewIntake = () => {
   const [showNewClass, setShowNewClass] = useState(false);
   const [newClassName, setNewClassName] = useState("");
   const [welcomeMessage, setWelcomeMessage] = useState<string>(WELCOME_MESSAGE);
+  const [enrollLoading, setEnrollLoading] = useState(false);
+  const [enrollLink, setEnrollLink] = useState<string | null>(null);
+
+  const handleSendEnrollment = async () => {
+    if (!form.parentName.trim() && !form.studentName.trim()) return;
+    setEnrollLoading(true);
+    const created = await createInvites({
+      student_name: form.studentName,
+      grade: form.grade,
+      academic_year: form.academicYear,
+      family_status: "married",
+      parents: [{ name: form.parentName || "הורה", phone: form.parentPhone, role: "parent1" }],
+    });
+    setEnrollLoading(false);
+    const inv = created[0];
+    if (!inv) return;
+    setEnrollLink(inviteLink(inv.token));
+    openWhatsApp(inv.parent_phone, inviteWhatsAppMessage(inv));
+  };
 
   useEffect(() => {
     getWelcomeMessage().then(setWelcomeMessage).catch(() => {});
@@ -187,6 +207,35 @@ const NewIntake = () => {
               <p className="text-[10px] text-muted-foreground leading-relaxed">
                 ההודעה תיפתח באפליקציית הווטסאפ במכשיר. נוסח קבוע + קוד הכניסה האישי.
               </p>
+
+              {/* Digital enrollment form invite */}
+              <div className="p-3 rounded-xl border border-border bg-card/50 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-muted-foreground">טופס קליטה דיגיטלי</p>
+                    <p className="text-sm font-semibold truncate">{form.parentName || "הורה"}</p>
+                  </div>
+                  <button
+                    onClick={handleSendEnrollment}
+                    disabled={!parentPhoneValid || enrollLoading}
+                    className="btn-intake bg-primary text-primary-foreground px-3 py-2 text-xs disabled:opacity-40 disabled:cursor-not-allowed gap-1 flex-shrink-0"
+                  >
+                    {enrollLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+                    שלח טופס קליטה
+                  </button>
+                </div>
+                {enrollLink && (
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-mono text-[10px] truncate" dir="ltr">{enrollLink}</p>
+                    <button onClick={() => handleCopy(enrollLink, "enroll")} className="p-2 rounded-lg hover:bg-muted flex-shrink-0">
+                      {copied === "enroll" ? <CheckCircle className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
+                    </button>
+                  </div>
+                )}
+                <p className="text-[10px] text-muted-foreground leading-relaxed">
+                  נוצר קישור אישי לטופס הקליטה — נשמר אוטומטית וניתן לעקוב אחרי הסטטוס בלשונית "טפסי קליטה".
+                </p>
+              </div>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-2 mt-5">
