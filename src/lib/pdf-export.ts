@@ -566,7 +566,11 @@ export async function renderHTMLToPDF(html: string, filename: string, options?: 
  * Render an explicit list of page HTML strings — one A4 page per entry.
  * Guarantees no content is cut across page boundaries.
  */
-export async function renderPagedHTMLToPDF(pages: string[], filename: string) {
+export async function renderPagedHTMLToPDF(
+  pages: string[],
+  filename: string,
+  opts?: { targetWindow?: Window | null },
+) {
   const pdf = new jsPDF("p", "mm", "a4");
   const pw = pdf.internal.pageSize.getWidth();
   const ph = pdf.internal.pageSize.getHeight();
@@ -599,7 +603,25 @@ export async function renderPagedHTMLToPDF(pages: string[], filename: string) {
     }
   }
 
-  pdf.save(filename);
+  const blob = pdf.output("blob") as Blob;
+  const url = URL.createObjectURL(blob);
+  const win = opts?.targetWindow;
+
+  if (win && !win.closed) {
+    // iOS Safari blocks programmatic downloads — show the PDF in the tab opened on click.
+    win.location.href = url;
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    return;
+  }
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.rel = "noopener";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
 export async function generateStudentPDF(session: IntakeSession, target: "staff" | "parent" = "staff") {

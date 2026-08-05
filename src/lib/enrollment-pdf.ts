@@ -178,7 +178,12 @@ function docsPages(images: DocImage[], others: string[]): string[] {
 }
 
 /** PDF of a single submitted form (or an in-progress draft). */
-export async function generateEnrollmentPDF(values: FormValues, studentName: string, subtitle = "") {
+export async function generateEnrollmentPDF(
+  values: FormValues,
+  studentName: string,
+  subtitle = "",
+  opts?: { targetWindow?: Window | null },
+) {
   const src = await logoData();
   const filled = dateStr(values);
   const { images, others } = await collectDocs(values);
@@ -202,7 +207,7 @@ export async function generateEnrollmentPDF(values: FormValues, studentName: str
   push("חתימות", signatureHTML(values));
   for (const body of docsPages(images, others)) push("מסמכים שצורפו", body);
 
-  await renderPagedHTMLToPDF(pages, `טופס-קליטה-${name || "תלמיד"}.pdf`);
+  await renderPagedHTMLToPDF(pages, `טופס-קליטה-${name || "תלמיד"}.pdf`, opts);
 }
 
 export interface FieldDiff {
