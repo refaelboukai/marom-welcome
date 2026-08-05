@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { FormValues } from "@/lib/enrollment";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
+import { APP_URL } from "@/lib/app-url";
 
 export type ParentRole = "parent1" | "parent2";
 
