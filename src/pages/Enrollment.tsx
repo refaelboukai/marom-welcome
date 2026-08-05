@@ -195,6 +195,20 @@ const Enrollment = () => {
 
     if (f.type === "checkbox") {
       const on = v === true;
+      return renderCheckbox(f, on);
+    }
+
+    if (f.type === "file") {
+      const paths = Array.isArray(v) ? v : typeof v === "string" && v ? [v] : [];
+      return (
+        <FileUploadField key={f.key} field={f} paths={paths}
+          folder={token || values.student_id_number as string || "public"}
+          onChange={(next) => set(f.key, next)} />
+      );
+    }
+
+    if (false) {
+      const on = v === true;
       return (
         <label key={f.key}
           className={`sm:col-span-2 flex items-start gap-3 p-3.5 rounded-2xl border-2 cursor-pointer transition-all ${
