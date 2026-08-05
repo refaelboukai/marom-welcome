@@ -126,6 +126,131 @@ export type Database = {
           },
         ]
       }
+      enrollment_forms: {
+        Row: {
+          address: string
+          birth_date: string | null
+          city: string
+          consents: Json
+          created_at: string
+          emergency_contact_name: string
+          emergency_contact_phone: string
+          extra_notes: string
+          family_status: string
+          gender: string | null
+          grade: string
+          health_fund: string
+          id: string
+          linked_session_id: string | null
+          medical_allergies: string
+          medical_conditions: string
+          medical_diagnoses: string
+          medical_medications: string
+          medical_treatments: string
+          parent1_email: string
+          parent1_id_number: string
+          parent1_name: string
+          parent1_phone: string
+          parent2_email: string
+          parent2_name: string
+          parent2_phone: string
+          previous_school: string
+          siblings: string
+          signature_date: string | null
+          signature_name: string
+          status: string
+          student_first_name: string
+          student_id_number: string
+          student_last_name: string
+          student_phone: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string
+          birth_date?: string | null
+          city?: string
+          consents?: Json
+          created_at?: string
+          emergency_contact_name?: string
+          emergency_contact_phone?: string
+          extra_notes?: string
+          family_status?: string
+          gender?: string | null
+          grade?: string
+          health_fund?: string
+          id?: string
+          linked_session_id?: string | null
+          medical_allergies?: string
+          medical_conditions?: string
+          medical_diagnoses?: string
+          medical_medications?: string
+          medical_treatments?: string
+          parent1_email?: string
+          parent1_id_number?: string
+          parent1_name?: string
+          parent1_phone?: string
+          parent2_email?: string
+          parent2_name?: string
+          parent2_phone?: string
+          previous_school?: string
+          siblings?: string
+          signature_date?: string | null
+          signature_name?: string
+          status?: string
+          student_first_name?: string
+          student_id_number?: string
+          student_last_name?: string
+          student_phone?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          birth_date?: string | null
+          city?: string
+          consents?: Json
+          created_at?: string
+          emergency_contact_name?: string
+          emergency_contact_phone?: string
+          extra_notes?: string
+          family_status?: string
+          gender?: string | null
+          grade?: string
+          health_fund?: string
+          id?: string
+          linked_session_id?: string | null
+          medical_allergies?: string
+          medical_conditions?: string
+          medical_diagnoses?: string
+          medical_medications?: string
+          medical_treatments?: string
+          parent1_email?: string
+          parent1_id_number?: string
+          parent1_name?: string
+          parent1_phone?: string
+          parent2_email?: string
+          parent2_name?: string
+          parent2_phone?: string
+          previous_school?: string
+          siblings?: string
+          signature_date?: string | null
+          signature_name?: string
+          status?: string
+          student_first_name?: string
+          student_id_number?: string
+          student_last_name?: string
+          student_phone?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrollment_forms_linked_session_id_fkey"
+            columns: ["linked_session_id"]
+            isOneToOne: false
+            referencedRelation: "intake_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       intake_sessions: {
         Row: {
           academic_year: string
