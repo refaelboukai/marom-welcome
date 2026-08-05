@@ -40,6 +40,9 @@ export interface EnrollmentForm {
   signature_date: string | null;
   extra_notes: string;
   form_data: FormValues;
+  invite_token: string;
+  pair_id: string | null;
+  parent_role: string;
   status: string;
   created_at: string;
   updated_at: string;
@@ -63,13 +66,30 @@ export function splitValues(values: FormValues) {
   return { columns, formData };
 }
 
-export async function submitEnrollmentForm(values: FormValues): Promise<{ ok: boolean; error?: string }> {
+export interface SubmitMeta {
+  invite_token?: string;
+  pair_id?: string | null;
+  parent_role?: string;
+}
+
+export async function submitEnrollmentForm(
+  values: FormValues,
+  meta: SubmitMeta = {},
+): Promise<{ ok: boolean; error?: string; id?: string }> {
   const { columns, formData } = splitValues(values);
-  const { error } = await (supabase as any).from("enrollment_forms").insert([
-    { ...columns, form_data: formData, status: "submitted", signature_date: new Date().toISOString() },
-  ]);
+  const { data, error } = await (supabase as any).from("enrollment_forms").insert([
+    {
+      ...columns,
+      form_data: formData,
+      status: "submitted",
+      signature_date: new Date().toISOString(),
+      invite_token: meta.invite_token || "",
+      pair_id: meta.pair_id || null,
+      parent_role: meta.parent_role || "parent1",
+    },
+  ]).select("id").maybeSingle();
   if (error) return { ok: false, error: error.message };
-  return { ok: true };
+  return { ok: true, id: data?.id };
 }
 
 export async function getEnrollmentForms(): Promise<EnrollmentForm[]> {
