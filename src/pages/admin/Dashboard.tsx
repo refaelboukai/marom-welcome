@@ -10,6 +10,7 @@ import SchoolRulesEditor from "@/components/SchoolRulesEditor";
 import WelcomeMessageEditor from "@/components/WelcomeMessageEditor";
 import ReminderMessageEditor from "@/components/ReminderMessageEditor";
 import PhonesImportDialog from "@/components/PhonesImportDialog";
+import EnrollmentFormsAdmin from "@/components/EnrollmentFormsAdmin";
 import { openWhatsApp, normalizePhone, REMINDER_MESSAGE } from "@/lib/whatsapp";
 
 import logo from "@/assets/logo.jpeg";
@@ -136,7 +137,7 @@ const Dashboard = () => {
       } else {
         if (s.status === "archived") return false;
       }
-      if (tab !== "all" && tab !== "unassigned" && tab !== "archive" && tab !== "codes") {
+      if (tab !== "all" && tab !== "unassigned" && tab !== "archive" && tab !== "codes" && tab !== "enrollment") {
         if (s.classGroup !== tab) return false;
       }
       if (filter !== "all" && s.status !== filter) return false;
@@ -291,6 +292,7 @@ const Dashboard = () => {
     { key: "unassigned", label: "ללא שיוך", count: sessionsWithMeta.filter((s) => !s.classGroup && s.status !== "archived").length },
     { key: "archive", label: "ארכיון", count: sessionsWithMeta.filter((s) => s.status === "archived").length },
     { key: "codes", label: "ניהול קודים" },
+    { key: "enrollment", label: "טפסי קליטה" },
   ];
 
   return (
@@ -419,7 +421,9 @@ const Dashboard = () => {
         ))}
 
         {/* Codes Tab */}
-        {tab === "codes" ? (
+        {tab === "enrollment" ? (
+          <EnrollmentFormsAdmin />
+        ) : tab === "codes" ? (
           <CodeManagement sessions={sessions} />
         ) : (
           <>
