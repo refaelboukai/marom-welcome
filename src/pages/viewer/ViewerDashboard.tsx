@@ -177,7 +177,7 @@ const ViewerDashboard = () => {
                         <Icon className="w-6 h-6" style={{ color: `hsl(var(${space.hue}))` }} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs text-muted-foreground">כיתת</p>
+                        {f.key !== "__unassigned" && <p className="text-xs text-muted-foreground">כיתת</p>}
                         <p className="font-heading font-bold text-xl leading-tight" style={{ color: `hsl(var(${space.hue}))` }}>
                           {space.name}
                         </p>
