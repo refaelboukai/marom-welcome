@@ -5,7 +5,7 @@
 
 export type FieldType =
   | "text" | "tel" | "email" | "date" | "number"
-  | "select" | "textarea" | "checkbox" | "checkboxGroup" | "yesno" | "radio" | "note" | "file";
+  | "select" | "textarea" | "checkbox" | "checkboxGroup" | "yesno" | "radio" | "note" | "file" | "signature";
 
 export interface FormField {
   key: string;
@@ -382,7 +382,9 @@ export const FORM_STEPS: FormStep[] = [
         fields: [
           { key: "signature_name", label: "שם מלא (הורה / אפוטרופוס)", type: "text", required: true },
           { key: "signature_id_number", label: "תעודת זהות של החותם/ת", type: "text", required: true },
+          { key: "signature_draw", label: "חתימת ההורה / אפוטרופוס (חתימה ידנית)", type: "signature", required: true, full: true },
           { key: "student_signature_name", label: "שם התלמיד/ה (חתימה על כללי ההתנהגות)", type: "text" },
+          { key: "student_signature_draw", label: "חתימת התלמיד/ה (חתימה ידנית)", type: "signature", full: true },
           { key: "extra_notes", label: "הערות נוספות", type: "textarea", full: true },
           { key: "c_accuracy", label: "אנו מצהירים כי כל הפרטים שמסרנו נכונים ומלאים, ומתחייבים לעדכן את בית הספר בכל שינוי", type: "checkbox", required: true, full: true },
         ],
