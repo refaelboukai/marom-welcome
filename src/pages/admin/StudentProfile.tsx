@@ -450,7 +450,7 @@ const StudentProfile = () => {
       {/* Header */}
       <div className="bg-card border-b border-border px-4 py-3 sticky top-0 z-20 print:static shadow-sm">
         <div className="max-w-5xl mx-auto flex items-center gap-3">
-          <button onClick={() => navigate("/admin")} className="p-2 rounded-lg hover:bg-muted print:hidden">
+          <button onClick={() => navigate(viewerMode ? "/viewer" : "/admin")} className="p-2 rounded-lg hover:bg-muted print:hidden">
             <ArrowRight className="w-5 h-5" />
           </button>
           <div className="flex-1">
@@ -462,9 +462,11 @@ const StudentProfile = () => {
             </div>
           </div>
           <div className="flex items-center gap-1 print:hidden">
-            <button onClick={() => navigate(`/staff/${session.id}`)} className="p-2 rounded-lg hover:bg-muted" title="שאלון צוות">
-              <ClipboardList className="w-5 h-5 text-warning" />
-            </button>
+            {!viewerMode && (
+              <button onClick={() => navigate(`/staff/${session.id}`)} className="p-2 rounded-lg hover:bg-muted" title="שאלון צוות">
+                <ClipboardList className="w-5 h-5 text-warning" />
+              </button>
+            )}
             <button onClick={() => setShowResponses(true)} className="p-2 rounded-lg hover:bg-muted" title="צפייה בתשובות">
               <Eye className="w-5 h-5 text-info" />
             </button>
@@ -536,6 +538,7 @@ const StudentProfile = () => {
         )}
 
         {/* Codes */}
+        {!viewerMode && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 print:hidden">
           <div className={`intake-card-soft flex items-center justify-between ${session.studentCodeActive === false ? 'opacity-60' : ''}`}>
             <div>
@@ -568,6 +571,7 @@ const StudentProfile = () => {
             </div>
           </div>
         </div>
+        )}
 
         {/* Edit Student Details */}
         <div className="intake-card-soft print:hidden">
@@ -579,9 +583,11 @@ const StudentProfile = () => {
                 <div>הורה: {session.parentName || "—"} {session.parentPhone && <span dir="ltr" className="text-foreground">· {session.parentPhone}</span>}</div>
               </div>
             </div>
-            <button onClick={openEdit} className="btn-intake bg-primary text-primary-foreground gap-2">
-              <PenLine className="w-4 h-4" /> ערוך פרטים
-            </button>
+            {!viewerMode && (
+              <button onClick={openEdit} className="btn-intake bg-primary text-primary-foreground gap-2">
+                <PenLine className="w-4 h-4" /> ערוך פרטים
+              </button>
+            )}
           </div>
         </div>
 
