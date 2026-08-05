@@ -332,8 +332,10 @@ const EnrollmentFormsAdmin = () => {
                 טופס קליטה — {selected.student_first_name} {selected.student_last_name}
               </h3>
               <div className="flex items-center gap-1">
+                <button onClick={() => generateEnrollmentPDF(values, `${selected.student_first_name} ${selected.student_last_name}`, "", { compact: true })}
+                  className="px-2 py-1.5 rounded-lg hover:bg-muted text-[11px] font-medium inline-flex items-center gap-1" title="הורדת PDF מוקטן ומהיר"><Download className="w-3.5 h-3.5" /> מוקטן</button>
                 <button onClick={() => generateEnrollmentPDF(values, `${selected.student_first_name} ${selected.student_last_name}`)}
-                  className="p-1.5 rounded-lg hover:bg-muted" title="הורדת PDF"><Download className="w-4 h-4" /></button>
+                  className="px-2 py-1.5 rounded-lg hover:bg-muted text-[11px] font-medium inline-flex items-center gap-1" title="הורדת PDF מלא"><Download className="w-3.5 h-3.5" /> מלא</button>
                 <button onClick={() => window.print()} className="p-1.5 rounded-lg hover:bg-muted" title="הדפסה"><Printer className="w-4 h-4" /></button>
                 <button onClick={() => setSelected(null)} className="p-1.5 rounded-lg hover:bg-muted"><X className="w-4 h-4" /></button>
               </div>
