@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { findSessionByCodeDB, isAdminCode, initializeSessionsDB } from "@/lib/supabase-storage";
-import { STAFF_CODE } from "@/data/students";
+import { STAFF_CODE, VIEWER_CODE } from "@/data/students";
 import logo from "@/assets/logo.jpeg";
 import { Loader2 } from "lucide-react";
 
@@ -28,6 +28,7 @@ const Login = () => {
       setLoading(true);
       try {
         if (isAdminCode(trimmed)) { navigate("/admin"); return; }
+        if (trimmed === VIEWER_CODE) { navigate("/viewer"); return; }
         if (trimmed === STAFF_CODE) { navigate("/staff"); return; }
         const result = await findSessionByCodeDB(trimmed);
         if (result) {
@@ -49,6 +50,7 @@ const Login = () => {
     if (!trimmed) return;
 
     if (isAdminCode(trimmed)) { navigate("/admin"); return; }
+    if (trimmed === VIEWER_CODE) { navigate("/viewer"); return; }
     if (trimmed === STAFF_CODE) { navigate("/staff"); return; }
 
     setLoading(true);

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { getSessionDB, updateSessionDB, getAssessmentRounds, createAssessmentRound, AssessmentRound, getSessionsDB } from "@/lib/supabase-storage";
 import { deleteSessionDB } from "@/lib/supabase-storage";
 import { ADMIN_CODE } from "@/data/students";
@@ -20,6 +20,8 @@ import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Responsi
 const StudentProfile = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const viewerMode = location.pathname.startsWith("/viewer");
   const [session, setSession] = useState<IntakeSession | null>(null);
   const [notes, setNotes] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
@@ -448,7 +450,7 @@ const StudentProfile = () => {
       {/* Header */}
       <div className="bg-card border-b border-border px-4 py-3 sticky top-0 z-20 print:static shadow-sm">
         <div className="max-w-5xl mx-auto flex items-center gap-3">
-          <button onClick={() => navigate("/admin")} className="p-2 rounded-lg hover:bg-muted print:hidden">
+          <button onClick={() => navigate(viewerMode ? "/viewer" : "/admin")} className="p-2 rounded-lg hover:bg-muted print:hidden">
             <ArrowRight className="w-5 h-5" />
           </button>
           <div className="flex-1">
@@ -460,9 +462,11 @@ const StudentProfile = () => {
             </div>
           </div>
           <div className="flex items-center gap-1 print:hidden">
-            <button onClick={() => navigate(`/staff/${session.id}`)} className="p-2 rounded-lg hover:bg-muted" title="שאלון צוות">
-              <ClipboardList className="w-5 h-5 text-warning" />
-            </button>
+            {!viewerMode && (
+              <button onClick={() => navigate(`/staff/${session.id}`)} className="p-2 rounded-lg hover:bg-muted" title="שאלון צוות">
+                <ClipboardList className="w-5 h-5 text-warning" />
+              </button>
+            )}
             <button onClick={() => setShowResponses(true)} className="p-2 rounded-lg hover:bg-muted" title="צפייה בתשובות">
               <Eye className="w-5 h-5 text-info" />
             </button>
@@ -534,6 +538,7 @@ const StudentProfile = () => {
         )}
 
         {/* Codes */}
+        {!viewerMode && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 print:hidden">
           <div className={`intake-card-soft flex items-center justify-between ${session.studentCodeActive === false ? 'opacity-60' : ''}`}>
             <div>
@@ -566,6 +571,7 @@ const StudentProfile = () => {
             </div>
           </div>
         </div>
+        )}
 
         {/* Edit Student Details */}
         <div className="intake-card-soft print:hidden">
@@ -577,9 +583,11 @@ const StudentProfile = () => {
                 <div>הורה: {session.parentName || "—"} {session.parentPhone && <span dir="ltr" className="text-foreground">· {session.parentPhone}</span>}</div>
               </div>
             </div>
-            <button onClick={openEdit} className="btn-intake bg-primary text-primary-foreground gap-2">
-              <PenLine className="w-4 h-4" /> ערוך פרטים
-            </button>
+            {!viewerMode && (
+              <button onClick={openEdit} className="btn-intake bg-primary text-primary-foreground gap-2">
+                <PenLine className="w-4 h-4" /> ערוך פרטים
+              </button>
+            )}
           </div>
         </div>
 
@@ -1113,6 +1121,8 @@ const StudentProfile = () => {
           </div>
         </div>
 
+        {!viewerMode && (
+        <>
         {/* Admin Notes */}
         <div className="intake-card print:hidden">
           <h3 className="font-heading font-semibold mb-2">הערות צוות</h3>
@@ -1475,6 +1485,8 @@ const StudentProfile = () => {
             </button>
           </div>
         </div>
+        </>
+        )}
 
         {showResetDialog && (
           <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => !resetting && setShowResetDialog(false)}>
