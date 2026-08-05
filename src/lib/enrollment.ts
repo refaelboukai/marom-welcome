@@ -1,4 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
+import { COLUMN_KEYS } from "@/data/enrollment-form";
+
+export type FormValue = string | boolean | string[] | null;
+export type FormValues = Record<string, FormValue>;
 
 export interface EnrollmentForm {
   id: string;
@@ -8,6 +12,7 @@ export interface EnrollmentForm {
   birth_date: string | null;
   gender: string | null;
   grade: string;
+  academic_year: string;
   address: string;
   city: string;
   student_phone: string;
@@ -29,30 +34,39 @@ export interface EnrollmentForm {
   emergency_contact_name: string;
   emergency_contact_phone: string;
   health_fund: string;
-  consents: Record<string, boolean>;
   signature_name: string;
+  signature_id_number: string;
+  student_signature_name: string;
   signature_date: string | null;
   extra_notes: string;
+  form_data: FormValues;
   status: string;
-  linked_session_id: string | null;
   created_at: string;
   updated_at: string;
 }
 
-export type EnrollmentDraft = Partial<Omit<EnrollmentForm, "id" | "created_at" | "updated_at">>;
+const DATE_KEYS = new Set(["birth_date"]);
 
-export const CONSENT_ITEMS: { key: string; label: string; required: boolean }[] = [
-  { key: "rules", label: "קראנו ואנו מסכימים לתקנון בית הספר ולכללי ההתנהגות", required: true },
-  { key: "photos", label: "אנו מאשרים צילום התלמיד/ה לצרכים חינוכיים ופרסום פנימי", required: false },
-  { key: "trips", label: "אנו מאשרים השתתפות בטיולים ופעילויות מחוץ לבית הספר", required: false },
-  { key: "medical_care", label: "אנו מאשרים מתן טיפול רפואי ראשוני במקרה חירום", required: true },
-  { key: "info_sharing", label: "אנו מאשרים שיתוף מידע חינוכי-טיפולי בין אנשי הצוות הרלוונטיים", required: true },
-  { key: "accuracy", label: "אנו מצהירים כי כל הפרטים שמסרנו נכונים ומלאים", required: true },
-];
+/** Split flat form values into real columns + the jsonb bag. */
+export function splitValues(values: FormValues) {
+  const columns: Record<string, unknown> = {};
+  const formData: FormValues = {};
+  const columnSet = new Set<string>(COLUMN_KEYS as readonly string[]);
+  for (const [key, value] of Object.entries(values)) {
+    if (columnSet.has(key)) {
+      if (DATE_KEYS.has(key)) columns[key] = value || null;
+      else columns[key] = typeof value === "string" ? value : Array.isArray(value) ? value.join(", ") : value ? "כן" : "";
+    } else {
+      formData[key] = value;
+    }
+  }
+  return { columns, formData };
+}
 
-export async function submitEnrollmentForm(draft: EnrollmentDraft): Promise<{ ok: boolean; error?: string }> {
+export async function submitEnrollmentForm(values: FormValues): Promise<{ ok: boolean; error?: string }> {
+  const { columns, formData } = splitValues(values);
   const { error } = await (supabase as any).from("enrollment_forms").insert([
-    { ...draft, status: "submitted", signature_date: new Date().toISOString() },
+    { ...columns, form_data: formData, status: "submitted", signature_date: new Date().toISOString() },
   ]);
   if (error) return { ok: false, error: error.message };
   return { ok: true };
@@ -85,3 +99,9 @@ export const ENROLLMENT_STATUS_LABELS: Record<string, string> = {
   reviewed: "נבדק",
   approved: "אושר",
 };
+
+/** Merge columns + form_data back into one flat record for display. */
+export function flattenForm(form: EnrollmentForm): FormValues {
+  const { form_data, ...rest } = form;
+  return { ...(rest as unknown as FormValues), ...(form_data || {}) };
+}
