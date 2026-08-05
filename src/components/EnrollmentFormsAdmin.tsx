@@ -5,6 +5,7 @@ import {
   Send, Trash2, UserPlus, X,
 } from "lucide-react";
 import { FORM_STEPS, GRADES } from "@/data/enrollment-form";
+import { fileNameFromPath, openEnrollmentDoc } from "@/lib/enrollment-uploads";
 import {
   ENROLLMENT_STATUS_LABELS, EnrollmentForm, deleteEnrollmentForm,
   flattenForm, getEnrollmentForms, updateEnrollmentStatus,
