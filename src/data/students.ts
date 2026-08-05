@@ -19,6 +19,7 @@ export interface Student {
 
 export const ADMIN_CODE = "9020";
 export const STAFF_CODE = "1001";
+export const VIEWER_CODE = "9030";
 
 export const CLASS_GROUPS = {
   tali: { label: "הכיתה של טלי", key: "tali" },

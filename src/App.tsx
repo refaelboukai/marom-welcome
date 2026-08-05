@@ -17,6 +17,7 @@ import SmartPlacement from "./pages/admin/SmartPlacement";
 import ClassBoard from "./pages/admin/ClassBoard";
 import TeacherProfiles from "./pages/admin/TeacherProfiles";
 import ClassVisual from "./pages/admin/ClassVisual";
+import ViewerDashboard from "./pages/viewer/ViewerDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,8 @@ const App = () => {
           <Route path="/admin/placement/smart" element={<SmartPlacement />} />
           <Route path="/admin/placement/board" element={<ClassBoard />} />
           <Route path="/admin/teachers" element={<TeacherProfiles />} />
+          <Route path="/viewer" element={<ViewerDashboard />} />
+          <Route path="/viewer/student/:sessionId" element={<StudentProfile />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
