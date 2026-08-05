@@ -301,9 +301,13 @@ const EnrollmentFormsAdmin = () => {
                             <GitCompare className="w-3 h-3" /> אינטגרציה
                           </button>
                         )}
+                        <button onClick={() => generateEnrollmentPDF(flattenForm(f), `${f.student_first_name} ${f.student_last_name}`, `מולא על ידי ${f.parent1_name || f.parent2_name || ""}`, { compact: true })}
+                          className="px-2 py-1.5 rounded-lg hover:bg-muted text-muted-foreground text-[11px] font-medium inline-flex items-center gap-1" title="הורדת PDF מוקטן ומהיר">
+                          <Download className="w-3.5 h-3.5" /> מוקטן
+                        </button>
                         <button onClick={() => generateEnrollmentPDF(flattenForm(f), `${f.student_first_name} ${f.student_last_name}`, `מולא על ידי ${f.parent1_name || f.parent2_name || ""}`)}
-                          className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground" title="הורדת PDF">
-                          <Download className="w-4 h-4" />
+                          className="px-2 py-1.5 rounded-lg hover:bg-muted text-muted-foreground text-[11px] font-medium inline-flex items-center gap-1" title="הורדת PDF מלא באיכות גבוהה">
+                          <Download className="w-3.5 h-3.5" /> מלא
                         </button>
                         <button onClick={() => handleDelete(f)}
                           className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10">
