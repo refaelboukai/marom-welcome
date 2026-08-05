@@ -241,8 +241,6 @@ const Enrollment = () => {
     }
 
     if (f.type === "file") {
-      const paths0: string[] = [];
-      void paths0;
       const paths = Array.isArray(v) ? v : typeof v === "string" && v ? [v] : [];
       return (
         <FileUploadField key={f.key} field={f} paths={paths}
