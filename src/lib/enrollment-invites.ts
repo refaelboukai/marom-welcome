@@ -46,7 +46,7 @@ function makeToken(): string {
 }
 
 export function inviteLink(token: string): string {
-  return `${window.location.origin}/?code=${token.toUpperCase()}`;
+  return `${APP_URL}/?code=${token.toUpperCase()}`;
 }
 
 /** The access code parents type manually on the login screen. */
