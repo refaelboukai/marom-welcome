@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import SignatureCanvas from "react-signature-canvas";
 import {
   Check, CheckCircle2, ChevronLeft, ChevronRight, Cloud, Download, HeartPulse,
-  FileText, Loader2, PenLine, Send, Shield, Stethoscope, Trash2, Upload, User, Users,
+  FileText, Loader2, PenLine, RotateCcw, Send, Shield, Stethoscope, Trash2, Upload, User, Users,
 } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 import { FORM_STEPS, FormField, SCHOOL_RULES } from "@/data/enrollment-form";
@@ -24,6 +25,52 @@ const inputCls =
   "w-full bg-background border border-input rounded-xl p-2.5 text-sm transition-shadow focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary";
 
 /* ---------- file upload field ---------- */
+const SignatureField = ({
+  field, value, onChange,
+}: {
+  field: FormField;
+  value: string;
+  onChange: (dataUrl: string) => void;
+}) => {
+  const ref = useRef<SignatureCanvas | null>(null);
+
+  return (
+    <div className="sm:col-span-2">
+      <div className="flex items-center justify-between mb-1.5">
+        <label className="block text-sm font-medium">
+          {field.label} {field.required && <span className="text-destructive">*</span>}
+        </label>
+        <button type="button"
+          onClick={() => { ref.current?.clear(); onChange(""); }}
+          className="text-xs text-muted-foreground flex items-center gap-1 hover:text-foreground">
+          <RotateCcw className="w-3 h-3" /> נקה
+        </button>
+      </div>
+
+      {value ? (
+        <div className="border-2 border-border rounded-xl bg-card p-2">
+          <img src={value} alt="חתימה" className="w-full h-[150px] object-contain" />
+        </div>
+      ) : (
+        <div className="border-2 border-dashed border-border rounded-xl bg-card overflow-hidden" style={{ touchAction: "none" }}>
+          <SignatureCanvas
+            ref={ref}
+            penColor="#1a1a2e"
+            canvasProps={{ width: 500, height: 150, className: "w-full", style: { width: "100%", height: "150px" } }}
+            onEnd={() => {
+              const c = ref.current;
+              if (c && !c.isEmpty()) onChange(c.toDataURL("image/png"));
+            }}
+          />
+        </div>
+      )}
+      {value
+        ? <p className="text-xs text-success flex items-center gap-1 mt-1.5"><Check className="w-3 h-3" /> חתימה התקבלה</p>
+        : <p className="text-xs text-muted-foreground mt-1.5">חתמו באצבע או בעכבר בתוך המסגרת</p>}
+    </div>
+  );
+};
+
 const FileUploadField = ({
   field, paths, folder, onChange,
 }: {
@@ -165,7 +212,9 @@ const Enrollment = () => {
 
   const handleSubmit = async () => {
     setSubmitting(true); setError("");
-    const res = await submitEnrollmentForm(values, {
+    const filled: FormValues = { ...values, filled_at: new Date().toISOString() };
+    setValues(filled);
+    const res = await submitEnrollmentForm(filled, {
       invite_token: token,
       pair_id: invite?.pair_id || null,
       parent_role: invite?.parent_role || "parent1",
@@ -190,6 +239,13 @@ const Enrollment = () => {
             {SCHOOL_RULES.map((r, i) => <li key={i}>{r}</li>)}
           </ol>
         </div>
+      );
+    }
+
+    if (f.type === "signature") {
+      return (
+        <SignatureField key={f.key} field={f} value={typeof v === "string" ? v : ""}
+          onChange={(d) => set(f.key, d)} />
       );
     }
 
