@@ -5,7 +5,7 @@
 
 export type FieldType =
   | "text" | "tel" | "email" | "date" | "number"
-  | "select" | "textarea" | "checkbox" | "checkboxGroup" | "yesno" | "radio" | "note";
+  | "select" | "textarea" | "checkbox" | "checkboxGroup" | "yesno" | "radio" | "note" | "file";
 
 export interface FormField {
   key: string;
@@ -15,6 +15,10 @@ export interface FormField {
   required?: boolean;
   placeholder?: string;
   full?: boolean;
+  /** allow several files (type: "file") */
+  multiple?: boolean;
+  /** accept attribute for uploads (type: "file") */
+  accept?: string;
   /** show only when another field has this value */
   showIf?: { key: string; equals: string | boolean };
   /** static explanatory text (type: "note") */
