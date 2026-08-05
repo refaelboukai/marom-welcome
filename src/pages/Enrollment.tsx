@@ -2,12 +2,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   Check, CheckCircle2, ChevronLeft, ChevronRight, Cloud, Download, HeartPulse,
-  Loader2, PenLine, Send, Shield, Stethoscope, User, Users,
+  FileText, Loader2, PenLine, Send, Shield, Stethoscope, Trash2, Upload, User, Users,
 } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 import { FORM_STEPS, FormField, SCHOOL_RULES } from "@/data/enrollment-form";
 import { FormValues, submitEnrollmentForm } from "@/lib/enrollment";
 import { generateEnrollmentPDF } from "@/lib/enrollment-pdf";
+import { MAX_UPLOAD_MB, fileNameFromPath, openEnrollmentDoc, uploadEnrollmentDoc } from "@/lib/enrollment-uploads";
 import {
   EnrollmentInvite, PARENT_ROLE_LABELS, getInviteByToken, markInviteSubmitted, saveInviteDraft,
 } from "@/lib/enrollment-invites";
@@ -21,6 +22,69 @@ const ICONS = {
 
 const inputCls =
   "w-full bg-background border border-input rounded-xl p-2.5 text-sm transition-shadow focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary";
+
+/* ---------- file upload field ---------- */
+const FileUploadField = ({
+  field, paths, folder, onChange,
+}: {
+  field: FormField;
+  paths: string[];
+  folder: string;
+  onChange: (paths: string[]) => void;
+}) => {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+
+  const handleFiles = async (files: FileList | null) => {
+    if (!files?.length) return;
+    setBusy(true); setErr("");
+    const next = [...paths];
+    for (const file of Array.from(files)) {
+      const res = await uploadEnrollmentDoc(file, field.key, folder);
+      if (res.ok && res.path) {
+        if (field.multiple) next.push(res.path);
+        else next.splice(0, next.length, res.path);
+      } else setErr(res.error || "העלאת הקובץ נכשלה");
+    }
+    onChange(next);
+    setBusy(false);
+  };
+
+  return (
+    <div className="sm:col-span-2">
+      <label className="block text-sm font-medium mb-1.5">
+        {field.label} {field.required && <span className="text-destructive">*</span>}
+      </label>
+
+      <label className="flex items-center justify-center gap-2 p-4 rounded-2xl border-2 border-dashed border-input bg-muted/20 text-sm text-muted-foreground cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-all">
+        {busy ? <Loader2 className="w-4 h-4 animate-spin text-primary" /> : <Upload className="w-4 h-4 text-primary" />}
+        <span>{busy ? "מעלה…" : `לחצו לצילום או בחירת קובץ (עד ${MAX_UPLOAD_MB}MB)`}</span>
+        <input type="file" className="sr-only" accept={field.accept} multiple={field.multiple}
+          disabled={busy} onChange={(e) => { handleFiles(e.target.files); e.target.value = ""; }} />
+      </label>
+
+      {err && <p className="text-xs text-destructive mt-1.5">{err}</p>}
+
+      {paths.length > 0 && (
+        <ul className="mt-2 space-y-1.5">
+          {paths.map((p) => (
+            <li key={p} className="flex items-center gap-2 text-xs bg-card border border-border rounded-xl px-3 py-2">
+              <FileText className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+              <button type="button" onClick={() => openEnrollmentDoc(p)} className="flex-1 text-right truncate hover:underline">
+                {fileNameFromPath(p)}
+              </button>
+              <span className="text-success flex items-center gap-1"><Check className="w-3 h-3" /> הועלה</span>
+              <button type="button" onClick={() => onChange(paths.filter((x) => x !== p))}
+                className="p-1 rounded-lg hover:bg-destructive/10 text-destructive" title="הסרה">
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
 
 const Enrollment = () => {
   const [params] = useSearchParams();
@@ -126,6 +190,15 @@ const Enrollment = () => {
             {SCHOOL_RULES.map((r, i) => <li key={i}>{r}</li>)}
           </ol>
         </div>
+      );
+    }
+
+    if (f.type === "file") {
+      const paths = Array.isArray(v) ? v : typeof v === "string" && v ? [v] : [];
+      return (
+        <FileUploadField key={f.key} field={f} paths={paths}
+          folder={token || values.student_id_number as string || "public"}
+          onChange={(next) => set(f.key, next)} />
       );
     }
 

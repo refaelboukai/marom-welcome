@@ -8,7 +8,12 @@ const esc = (s: unknown) =>
 export const displayValue = (v: unknown): string => {
   if (v === true) return "כן";
   if (v === false || v == null || v === "") return "—";
-  if (Array.isArray(v)) return v.length ? v.join(", ") : "—";
+  if (Array.isArray(v)) {
+    if (!v.length) return "—";
+    return v.map((x) => (typeof x === "string" && x.includes("/") && /-\d{10,}-/.test(x)
+      ? (x.split("/").pop() || x).replace(/^[\w-]+-\d{10,}-/, "")
+      : x)).join(", ");
+  }
   return String(v);
 };
 

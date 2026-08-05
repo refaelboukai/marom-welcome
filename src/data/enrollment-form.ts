@@ -5,7 +5,7 @@
 
 export type FieldType =
   | "text" | "tel" | "email" | "date" | "number"
-  | "select" | "textarea" | "checkbox" | "checkboxGroup" | "yesno" | "radio" | "note";
+  | "select" | "textarea" | "checkbox" | "checkboxGroup" | "yesno" | "radio" | "note" | "file";
 
 export interface FormField {
   key: string;
@@ -15,6 +15,10 @@ export interface FormField {
   required?: boolean;
   placeholder?: string;
   full?: boolean;
+  /** allow several files (type: "file") */
+  multiple?: boolean;
+  /** accept attribute for uploads (type: "file") */
+  accept?: string;
   /** show only when another field has this value */
   showIf?: { key: string; equals: string | boolean };
   /** static explanatory text (type: "note") */
@@ -126,6 +130,17 @@ export const FORM_STEPS: FormStep[] = [
           { key: "student_phone", label: "נייד התלמיד/ה", type: "tel" },
           { key: "student_email", label: "דוא״ל התלמיד/ה", type: "email" },
           { key: "previous_school", label: "בית ספר קודם", type: "text" },
+        ],
+      },
+      {
+        key: "documents",
+        title: "מסמכים לצירוף",
+        description: "יש לצלם או לסרוק את המסמכים ולהעלות אותם. הקבצים נשמרים באחסון מאובטח של בית הספר ונגישים לצוות המזכירות בלבד (עד 10MB לקובץ).",
+        fields: [
+          { key: "doc_student_photo", label: "תמונת פספורט של התלמיד/ה", type: "file", accept: "image/*", full: true },
+          { key: "doc_student_id", label: "צילום תעודת זהות של התלמיד/ה (אם קיימת)", type: "file", accept: "image/*,application/pdf", multiple: true, full: true },
+          { key: "doc_parent_id", label: "צילום תעודת זהות של ההורה", type: "file", accept: "image/*,application/pdf", multiple: true, full: true },
+          { key: "doc_id_appendix", label: "צילום ספח תעודת הזהות (כולל פרטי הילדים)", type: "file", accept: "image/*,application/pdf", multiple: true, full: true },
         ],
       },
     ],
