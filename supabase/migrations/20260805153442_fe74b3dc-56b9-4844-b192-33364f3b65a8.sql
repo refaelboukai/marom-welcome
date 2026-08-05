@@ -1,0 +1,2 @@
+CREATE POLICY "Enrollment docs upload" ON storage.objects FOR INSERT TO anon, authenticated WITH CHECK (bucket_id = 'enrollment-docs');
+CREATE POLICY "Enrollment docs read" ON storage.objects FOR SELECT TO anon, authenticated USING (bucket_id = 'enrollment-docs');
