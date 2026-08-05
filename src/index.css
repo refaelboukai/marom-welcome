@@ -49,6 +49,13 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Class space hues (מרחבי הכיתות) */
+    --class-sprout: 105 35% 40%;
+    --class-pine: 160 30% 35%;
+    --class-oak: 25 35% 38%;
+    --class-palm: 35 55% 42%;
+    --class-pomegranate: 350 55% 45%;
   }
 
   .dark {
