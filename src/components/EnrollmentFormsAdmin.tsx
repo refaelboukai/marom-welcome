@@ -1,3 +1,4 @@
+import { APP_URL } from "@/lib/app-url";
 import { useEffect, useMemo, useState } from "react";
 import {
   Copy, Download, FileText, GitCompare, Link2, Loader2, Plus, Printer,
@@ -37,7 +38,7 @@ const EnrollmentFormsAdmin = () => {
   };
   useEffect(() => { reload(); }, []);
 
-  const openLink = `${window.location.origin}/enroll`;
+  const openLink = `${APP_URL}/enroll`;
   const copy = (text: string, id: string) => {
     navigator.clipboard.writeText(text); setCopied(id); setTimeout(() => setCopied(""), 1500);
   };

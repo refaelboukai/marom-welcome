@@ -1,3 +1,4 @@
+import { APP_URL } from "@/lib/app-url";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createSessionDB, getWelcomeMessage } from "@/lib/supabase-storage";
@@ -110,7 +111,6 @@ const NewIntake = () => {
   };
 
   if (created) {
-    const APP_URL = "https://marom-welcome.vercel.app";
     const parentMessage = `${welcomeMessage}\n\nקוד הורה: ${created.parentCode}\nכניסה ישירה: ${APP_URL}/?code=${created.parentCode}`;
     const studentMessage = `${welcomeMessage}\n\nקוד תלמיד: ${created.studentCode}\nכניסה ישירה: ${APP_URL}/?code=${created.studentCode}`;
     const parentPhoneValid = !!normalizePhone(form.parentPhone);

@@ -1,3 +1,4 @@
+import { APP_URL } from "@/lib/app-url";
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { getSessionsDB, resetAllSessionsDB, createSessionDB, getReminderMessage, updateSessionDB, getClassGroups, saveClassGroups, DEFAULT_CLASS_GROUPS, ClassGroupsMap } from "@/lib/supabase-storage";
@@ -49,7 +50,6 @@ const Dashboard = () => {
   const [showPhonesImport, setShowPhonesImport] = useState(false);
   const [reminderMessage, setReminderMessage] = useState<string>(REMINDER_MESSAGE);
   const [classGroups, setClassGroups] = useState<ClassGroupsMap>(DEFAULT_CLASS_GROUPS);
-  const APP_URL = "https://marom-welcome.vercel.app";
 
   useEffect(() => {
     getSessionsDB().then((data) => { setSessions(data); setLoading(false); });
