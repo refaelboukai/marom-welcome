@@ -1121,6 +1121,8 @@ const StudentProfile = () => {
           </div>
         </div>
 
+        {!viewerMode && (
+        <>
         {/* Admin Notes */}
         <div className="intake-card print:hidden">
           <h3 className="font-heading font-semibold mb-2">הערות צוות</h3>
