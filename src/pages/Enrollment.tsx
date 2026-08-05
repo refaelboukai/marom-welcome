@@ -240,6 +240,13 @@ const Enrollment = () => {
       );
     }
 
+    if (f.type === "signature") {
+      return (
+        <SignatureField key={f.key} field={f} value={typeof v === "string" ? v : ""}
+          onChange={(d) => set(f.key, d)} />
+      );
+    }
+
     if (f.type === "file") {
       const paths = Array.isArray(v) ? v : typeof v === "string" && v ? [v] : [];
       return (
