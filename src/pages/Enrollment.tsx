@@ -204,8 +204,6 @@ const Enrollment = () => {
     }
 
     if (f.type === "checkbox") {
-      const on0 = v === true;
-      void on0;
       const on = v === true;
       return (
         <label key={f.key}
