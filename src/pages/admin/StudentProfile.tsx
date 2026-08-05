@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { getSessionDB, updateSessionDB, getAssessmentRounds, createAssessmentRound, AssessmentRound, getSessionsDB } from "@/lib/supabase-storage";
 import { deleteSessionDB } from "@/lib/supabase-storage";
 import { ADMIN_CODE } from "@/data/students";
@@ -20,6 +20,8 @@ import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Responsi
 const StudentProfile = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const viewerMode = location.pathname.startsWith("/viewer");
   const [session, setSession] = useState<IntakeSession | null>(null);
   const [notes, setNotes] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
