@@ -357,10 +357,9 @@ const Dashboard = () => {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
           {[
             { icon: Users, label: "תלמידים פעילים", value: stats.active, color: "text-primary", bg: "bg-primary/5" },
-            { icon: Clock, label: "לא הושלמו", value: stats.incomplete, color: "text-info", bg: "bg-info/5" },
             { icon: CheckCircle, label: "הושלמו", value: stats.completed, color: "text-success", bg: "bg-success/5" },
             { icon: AlertTriangle, label: "דגלי תשומת לב", value: stats.withRisk, color: "text-warning", bg: "bg-warning/5" },
           ].map((stat, i) => {
