@@ -212,7 +212,9 @@ const Enrollment = () => {
 
   const handleSubmit = async () => {
     setSubmitting(true); setError("");
-    const res = await submitEnrollmentForm(values, {
+    const filled: FormValues = { ...values, filled_at: new Date().toISOString() };
+    setValues(filled);
+    const res = await submitEnrollmentForm(filled, {
       invite_token: token,
       pair_id: invite?.pair_id || null,
       parent_role: invite?.parent_role || "parent1",
