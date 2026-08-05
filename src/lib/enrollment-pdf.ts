@@ -206,11 +206,12 @@ export async function generateEnrollmentPDF(
   values: FormValues,
   studentName: string,
   subtitle = "",
-  opts?: { targetWindow?: Window | null },
+  opts?: { targetWindow?: Window | null; compact?: boolean },
 ) {
+  const compact = !!opts?.compact;
   const src = await logoData();
   const filled = dateStr(values);
-  const { images, others } = await collectDocs(values);
+  const { images, others } = await collectDocs(values, compact);
   const name = studentName || `${values.student_first_name || ""} ${values.student_last_name || ""}`.trim();
 
   const pages: string[] = [];
@@ -231,7 +232,11 @@ export async function generateEnrollmentPDF(
   push("חתימות", signatureHTML(values));
   for (const body of docsPages(images, others)) push("מסמכים שצורפו", body);
 
-  await renderPagedHTMLToPDF(pages, `טופס-קליטה-${name || "תלמיד"}.pdf`, opts);
+  await renderPagedHTMLToPDF(
+    pages,
+    `טופס-קליטה${compact ? "-מוקטן" : ""}-${name || "תלמיד"}.pdf`,
+    opts,
+  );
 }
 
 export interface FieldDiff {
@@ -273,7 +278,9 @@ export function mergeForms(a: FormValues, b: FormValues): FormValues {
 export async function generateCombinedEnrollmentPDF(
   formA: EnrollmentForm,
   formB: EnrollmentForm,
+  opts?: { compact?: boolean },
 ) {
+  const compact = !!opts?.compact;
   const a = flattenForm(formA);
   const b = flattenForm(formB);
   const diffs = compareForms(a, b);
@@ -308,7 +315,7 @@ export async function generateCombinedEnrollmentPDF(
   const src = await logoData();
   const filled = dateStr(merged);
   const subtitle = `שני הורים: ${nameA} · ${nameB}`;
-  const { images, others } = await collectDocs(merged);
+  const { images, others } = await collectDocs(merged, compact);
 
   const pages: string[] = [];
   const push = (title: string, body: string) =>
@@ -326,5 +333,9 @@ export async function generateCombinedEnrollmentPDF(
   push("חתימות", signatureHTML(merged));
   for (const body of docsPages(images, others)) push("מסמכים שצורפו", body);
 
-  await renderPagedHTMLToPDF(pages, `טופס-קליטה-מאוחד-${studentName || "תלמיד"}.pdf`);
+  await renderPagedHTMLToPDF(
+    pages,
+    `טופס-קליטה-מאוחד${compact ? "-מוקטן" : ""}-${studentName || "תלמיד"}.pdf`,
+    { compact },
+  );
 }
