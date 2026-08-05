@@ -345,7 +345,12 @@ const EnrollmentFormsAdmin = () => {
                       {g.fields.filter((f) => f.type !== "note").map((f) => (
                         <div key={f.key} className="flex gap-2 text-sm py-1 border-b border-border/50">
                           <span className="text-muted-foreground w-64 flex-shrink-0 text-xs">{f.label}</span>
-                          {f.type === "file" ? (
+                          {f.type === "signature" ? (
+                            typeof values[f.key] === "string" && String(values[f.key]).startsWith("data:") ? (
+                              <img src={String(values[f.key])} alt={f.label}
+                                className="h-16 bg-card border border-border rounded-lg object-contain" />
+                            ) : <span className="text-xs text-muted-foreground">—</span>
+                          ) : f.type === "file" ? (
                             <span className="flex flex-wrap gap-2">
                               {(Array.isArray(values[f.key]) ? values[f.key] as string[] : values[f.key] ? [values[f.key] as string] : []).map((p) => (
                                 <button key={p} onClick={() => openEnrollmentDoc(p)}
