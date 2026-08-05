@@ -429,10 +429,16 @@ const EnrollmentFormsAdmin = () => {
               </table>
             </div>
 
-            <button onClick={() => generateCombinedEnrollmentPDF(compareData.a, compareData.b)}
-              className="btn-intake bg-primary text-primary-foreground shadow-md w-full mt-4 inline-flex items-center justify-center gap-2">
-              <Download className="w-4 h-4" /> הורדת PDF מאוחד לשני ההורים
-            </button>
+            <div className="grid grid-cols-2 gap-2 mt-4">
+              <button onClick={() => generateCombinedEnrollmentPDF(compareData.a, compareData.b, { compact: true })}
+                className="btn-intake bg-primary text-primary-foreground shadow-md inline-flex items-center justify-center gap-2">
+                <Download className="w-4 h-4" /> מאוחד — מוקטן ומהיר
+              </button>
+              <button onClick={() => generateCombinedEnrollmentPDF(compareData.a, compareData.b)}
+                className="btn-intake bg-muted text-foreground inline-flex items-center justify-center gap-2">
+                <Download className="w-4 h-4" /> מאוחד — מלא
+              </button>
+            </div>
           </div>
         </div>
       )}
