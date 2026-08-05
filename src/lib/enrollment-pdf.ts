@@ -59,6 +59,7 @@ async function collectDocs(values: FormValues): Promise<{ images: DocImage[]; ot
 export const displayValue = (v: unknown): string => {
   if (v === true) return "כן";
   if (v === false || v == null || v === "") return "—";
+  if (typeof v === "string" && v.startsWith("data:image")) return "חתימה ידנית";
   if (Array.isArray(v)) {
     if (!v.length) return "—";
     return v.map((x) => (typeof x === "string" && x.includes("/") && /-\d{10,}-/.test(x)
