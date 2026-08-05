@@ -193,11 +193,6 @@ const Enrollment = () => {
       );
     }
 
-    if (f.type === "checkbox") {
-      const on = v === true;
-      return renderCheckbox(f, on);
-    }
-
     if (f.type === "file") {
       const paths = Array.isArray(v) ? v : typeof v === "string" && v ? [v] : [];
       return (
@@ -207,7 +202,7 @@ const Enrollment = () => {
       );
     }
 
-    if (false) {
+    if (f.type === "checkbox") {
       const on = v === true;
       return (
         <label key={f.key}
