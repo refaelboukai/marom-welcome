@@ -53,11 +53,13 @@ function generateCode(length = 8): string {
 }
 
 export async function initializeSessionsDB(): Promise<void> {
-  const { count } = await supabase
+  const { count, error: countError } = await supabase
     .from("intake_sessions")
     .select("*", { count: "exact", head: true });
 
-  if (count && count > 0) return;
+  // Never seed when the count query failed (network/API error) — that would duplicate students.
+  if (countError || count === null || count === undefined) return;
+  if (count > 0) return;
 
   const sessions = studentCodes.map((sc) => {
     const nameParts = sc.name.split(" ");
