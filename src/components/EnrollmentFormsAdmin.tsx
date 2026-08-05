@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
-import { Copy, FileText, Loader2, Trash2, X } from "lucide-react";
+import { Copy, FileText, Loader2, Printer, Trash2, X } from "lucide-react";
+import { FORM_STEPS } from "@/data/enrollment-form";
 import {
-  CONSENT_ITEMS, ENROLLMENT_STATUS_LABELS, EnrollmentForm,
-  deleteEnrollmentForm, getEnrollmentForms, updateEnrollmentStatus,
+  ENROLLMENT_STATUS_LABELS, EnrollmentForm, deleteEnrollmentForm,
+  flattenForm, getEnrollmentForms, updateEnrollmentStatus,
 } from "@/lib/enrollment";
 
-const Row = ({ label, value }: { label: string; value?: string | null }) => (
-  <div className="flex gap-2 text-sm py-1 border-b border-border/50">
-    <span className="text-muted-foreground w-44 flex-shrink-0">{label}</span>
-    <span className="font-medium break-words">{value?.trim() ? value : "—"}</span>
-  </div>
-);
+const display = (v: unknown): string => {
+  if (v === true) return "כן";
+  if (v === false || v == null || v === "") return "—";
+  if (Array.isArray(v)) return v.length ? v.join(", ") : "—";
+  return String(v);
+};
 
 const EnrollmentFormsAdmin = () => {
   const [forms, setForms] = useState<EnrollmentForm[]>([]);
@@ -18,8 +19,7 @@ const EnrollmentFormsAdmin = () => {
   const [selected, setSelected] = useState<EnrollmentForm | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const load = async () => { setForms(await getEnrollmentForms()); setLoading(false); };
-  useEffect(() => { load(); }, []);
+  useEffect(() => { getEnrollmentForms().then((d) => { setForms(d); setLoading(false); }); }, []);
 
   const link = `${window.location.origin}/enroll`;
 
@@ -40,6 +40,8 @@ const EnrollmentFormsAdmin = () => {
     return <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
   }
 
+  const values = selected ? flattenForm(selected) : {};
+
   return (
     <div className="space-y-4">
       <div className="intake-card-soft flex flex-wrap items-center gap-3">
@@ -55,9 +57,7 @@ const EnrollmentFormsAdmin = () => {
       </div>
 
       {forms.length === 0 ? (
-        <div className="intake-card-soft text-center py-10 text-sm text-muted-foreground">
-          עדיין לא התקבלו טפסי קליטה.
-        </div>
+        <div className="intake-card-soft text-center py-10 text-sm text-muted-foreground">עדיין לא התקבלו טפסי קליטה.</div>
       ) : (
         <div className="intake-card-soft overflow-x-auto p-0">
           <table className="w-full text-sm">
@@ -65,6 +65,7 @@ const EnrollmentFormsAdmin = () => {
               <tr>
                 <th className="text-right p-3">תלמיד/ה</th>
                 <th className="text-right p-3">כיתה</th>
+                <th className="text-right p-3">שנה"ל</th>
                 <th className="text-right p-3">הורה</th>
                 <th className="text-right p-3">טלפון</th>
                 <th className="text-right p-3">תאריך</th>
@@ -77,6 +78,7 @@ const EnrollmentFormsAdmin = () => {
                 <tr key={f.id} className="border-t border-border/60 hover:bg-muted/20 cursor-pointer" onClick={() => setSelected(f)}>
                   <td className="p-3 font-medium">{f.student_first_name} {f.student_last_name}</td>
                   <td className="p-3">{f.grade || "—"}</td>
+                  <td className="p-3">{f.academic_year || "—"}</td>
                   <td className="p-3">{f.parent1_name || "—"}</td>
                   <td className="p-3" dir="ltr">{f.parent1_phone || "—"}</td>
                   <td className="p-3 text-xs text-muted-foreground">{new Date(f.created_at).toLocaleDateString("he-IL")}</td>
@@ -100,64 +102,40 @@ const EnrollmentFormsAdmin = () => {
 
       {selected && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-start justify-center p-4 overflow-y-auto" onClick={() => setSelected(null)}>
-          <div className="bg-card rounded-2xl shadow-xl max-w-2xl w-full my-8 p-5" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-card rounded-2xl shadow-xl max-w-3xl w-full my-8 p-5" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-heading font-bold">
                 טופס קליטה — {selected.student_first_name} {selected.student_last_name}
               </h3>
-              <button onClick={() => setSelected(null)} className="p-1.5 rounded-lg hover:bg-muted"><X className="w-4 h-4" /></button>
+              <div className="flex items-center gap-1">
+                <button onClick={() => window.print()} className="p-1.5 rounded-lg hover:bg-muted" title="הדפסה"><Printer className="w-4 h-4" /></button>
+                <button onClick={() => setSelected(null)} className="p-1.5 rounded-lg hover:bg-muted"><X className="w-4 h-4" /></button>
+              </div>
             </div>
 
-            <div className="space-y-4 max-h-[65vh] overflow-y-auto pl-1">
-              <section>
-                <h4 className="text-sm font-semibold text-primary mb-1">פרטי התלמיד/ה</h4>
-                <Row label="תעודת זהות" value={selected.student_id_number} />
-                <Row label="תאריך לידה" value={selected.birth_date} />
-                <Row label="מין" value={selected.gender === "female" ? "בת" : selected.gender === "male" ? "בן" : ""} />
-                <Row label="כיתה" value={selected.grade} />
-                <Row label="כתובת" value={[selected.address, selected.city].filter(Boolean).join(", ")} />
-                <Row label="טלפון התלמיד/ה" value={selected.student_phone} />
-                <Row label="בית ספר קודם" value={selected.previous_school} />
-              </section>
-
-              <section>
-                <h4 className="text-sm font-semibold text-primary mb-1">פרטי ההורים</h4>
-                <Row label="הורה 1" value={selected.parent1_name} />
-                <Row label="טלפון הורה 1" value={selected.parent1_phone} />
-                <Row label="דוא״ל הורה 1" value={selected.parent1_email} />
-                <Row label="ת״ז הורה 1" value={selected.parent1_id_number} />
-                <Row label="הורה 2" value={selected.parent2_name} />
-                <Row label="טלפון הורה 2" value={selected.parent2_phone} />
-                <Row label="דוא״ל הורה 2" value={selected.parent2_email} />
-                <Row label="מצב משפחתי" value={selected.family_status} />
-                <Row label="אחים ואחיות" value={selected.siblings} />
-              </section>
-
-              <section>
-                <h4 className="text-sm font-semibold text-primary mb-1">רקע רפואי</h4>
-                <Row label="אלרגיות" value={selected.medical_allergies} />
-                <Row label="תרופות" value={selected.medical_medications} />
-                <Row label="מצבים רפואיים" value={selected.medical_conditions} />
-                <Row label="אבחונים" value={selected.medical_diagnoses} />
-                <Row label="טיפולים" value={selected.medical_treatments} />
-                <Row label="איש קשר לחירום" value={`${selected.emergency_contact_name} ${selected.emergency_contact_phone}`} />
-                <Row label="קופת חולים" value={selected.health_fund} />
-              </section>
-
-              <section>
-                <h4 className="text-sm font-semibold text-primary mb-1">הצהרות והסכמות</h4>
-                {CONSENT_ITEMS.map((c) => (
-                  <div key={c.key} className="flex gap-2 text-sm py-1 border-b border-border/50">
-                    <span className={(selected.consents || {})[c.key] ? "text-success" : "text-muted-foreground"}>
-                      {(selected.consents || {})[c.key] ? "✓" : "✗"}
-                    </span>
-                    <span>{c.label}</span>
-                  </div>
-                ))}
-                <Row label="חתימה" value={selected.signature_name} />
-                <Row label="תאריך חתימה" value={selected.signature_date ? new Date(selected.signature_date).toLocaleString("he-IL") : ""} />
-                <Row label="הערות" value={selected.extra_notes} />
-              </section>
+            <div className="space-y-5 max-h-[68vh] overflow-y-auto pl-1">
+              {FORM_STEPS.map((s) => (
+                <div key={s.key}>
+                  <h4 className="text-sm font-heading font-bold text-primary mb-2">{s.label}</h4>
+                  {s.groups.map((g) => (
+                    <div key={g.key} className="mb-3">
+                      <p className="text-xs font-semibold text-muted-foreground mb-1">{g.title}</p>
+                      {g.fields.filter((f) => f.type !== "note").map((f) => (
+                        <div key={f.key} className="flex gap-2 text-sm py-1 border-b border-border/50">
+                          <span className="text-muted-foreground w-64 flex-shrink-0 text-xs">{f.label}</span>
+                          <span className="font-medium break-words">{display(values[f.key])}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              ))}
+              <div className="flex gap-2 text-sm py-1">
+                <span className="text-muted-foreground w-64 flex-shrink-0 text-xs">תאריך חתימה</span>
+                <span className="font-medium">
+                  {selected.signature_date ? new Date(selected.signature_date).toLocaleString("he-IL") : "—"}
+                </span>
+              </div>
             </div>
 
             <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-border">

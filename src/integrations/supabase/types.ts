@@ -128,6 +128,7 @@ export type Database = {
       }
       enrollment_forms: {
         Row: {
+          academic_year: string
           address: string
           birth_date: string | null
           city: string
@@ -137,6 +138,7 @@ export type Database = {
           emergency_contact_phone: string
           extra_notes: string
           family_status: string
+          form_data: Json
           gender: string | null
           grade: string
           health_fund: string
@@ -157,15 +159,18 @@ export type Database = {
           previous_school: string
           siblings: string
           signature_date: string | null
+          signature_id_number: string
           signature_name: string
           status: string
           student_first_name: string
           student_id_number: string
           student_last_name: string
           student_phone: string
+          student_signature_name: string
           updated_at: string
         }
         Insert: {
+          academic_year?: string
           address?: string
           birth_date?: string | null
           city?: string
@@ -175,6 +180,7 @@ export type Database = {
           emergency_contact_phone?: string
           extra_notes?: string
           family_status?: string
+          form_data?: Json
           gender?: string | null
           grade?: string
           health_fund?: string
@@ -195,15 +201,18 @@ export type Database = {
           previous_school?: string
           siblings?: string
           signature_date?: string | null
+          signature_id_number?: string
           signature_name?: string
           status?: string
           student_first_name?: string
           student_id_number?: string
           student_last_name?: string
           student_phone?: string
+          student_signature_name?: string
           updated_at?: string
         }
         Update: {
+          academic_year?: string
           address?: string
           birth_date?: string | null
           city?: string
@@ -213,6 +222,7 @@ export type Database = {
           emergency_contact_phone?: string
           extra_notes?: string
           family_status?: string
+          form_data?: Json
           gender?: string | null
           grade?: string
           health_fund?: string
@@ -233,12 +243,14 @@ export type Database = {
           previous_school?: string
           siblings?: string
           signature_date?: string | null
+          signature_id_number?: string
           signature_name?: string
           status?: string
           student_first_name?: string
           student_id_number?: string
           student_last_name?: string
           student_phone?: string
+          student_signature_name?: string
           updated_at?: string
         }
         Relationships: [
