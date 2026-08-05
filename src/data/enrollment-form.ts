@@ -280,6 +280,21 @@ export const FORM_STEPS: FormStep[] = [
           { key: "h_declaration", label: "אני מאשר/ת מתן מידע והעברת הצהרת הבריאות לצוות החינוכי ולצוות בריאות התלמיד, ומתחייב/ת להודיע למחנך/ת על כל שינוי במצב הבריאותי", type: "checkbox", required: true, full: true },
         ],
       },
+      {
+        key: "vaccines",
+        title: "חיסונים ובדיקות סקר (טופס 4)",
+        description: "החיסונים ובדיקות הסקר ניתנים במסגרת שירותי הבריאות לתלמיד, בהתאם לשכבת הגיל ולתוכנית משרד הבריאות.",
+        fields: [
+          { key: "v_consent", label: "אני מאשר/ת מתן חיסונים לבני/בתי במסגרת שירותי הבריאות לתלמיד", type: "yesno", full: true },
+          { key: "v_vaccines_list", label: "החיסונים שאני מאשר/ת (לפי שכבת הגיל)", type: "checkboxGroup", options: VACCINES, full: true, showIf: { key: "v_consent", equals: "כן" } },
+          { key: "v_refusal_reason", label: "נימוק לאי-הסכמה למתן חיסונים", type: "textarea", full: true, showIf: { key: "v_consent", equals: "לא" } },
+          { key: "v_screening_consent", label: "אני מאשר/ת ביצוע בדיקות סקר", type: "yesno", full: true },
+          { key: "v_screening_list", label: "בדיקות הסקר שאני מאשר/ת", type: "checkboxGroup", options: SCREENING_TESTS, full: true, showIf: { key: "v_screening_consent", equals: "כן" } },
+          { key: "v_past_reaction", label: "האם הייתה בעבר תגובה חריגה לחיסון?", type: "yesno", full: true },
+          { key: "v_past_reaction_details", label: "פירוט התגובה החריגה", type: "textarea", full: true, showIf: { key: "v_past_reaction", equals: "כן" } },
+          { key: "v_booklet_commit", label: "אני מתחייב/ת להעביר לבית הספר צילום של פנקס החיסונים", type: "checkbox", full: true },
+        ],
+      },
     ],
   },
   {
