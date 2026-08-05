@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { getSessionsDB, getClassGroups, DEFAULT_CLASS_GROUPS, ClassGroupsMap } from "@/lib/supabase-storage";
 import { IntakeSession } from "@/lib/types";
 import { ChevronLeft, Folder, FolderOpen, Loader2, Search, Users, ArrowRight, List, LayoutGrid, Columns3 } from "lucide-react";
+import { getClassSpace } from "@/lib/class-spaces";
 
 type ViewMode = "list" | "grid" | "columns";
 
@@ -14,7 +15,7 @@ const ViewerDashboard = () => {
   const [open, setOpen] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>(
-    () => (localStorage.getItem("viewer_view_mode") as ViewMode) || "list"
+    () => (localStorage.getItem("viewer_view_mode") as ViewMode) || "grid"
   );
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
 
@@ -149,44 +150,89 @@ const ViewerDashboard = () => {
         )}
 
         {viewMode === "grid" && !selectedFolder && (
-          <div className="grid gap-3 grid-cols-2 md:grid-cols-3">
-            {folders.map((f) => (
-              <button
-                key={f.key}
-                onClick={() => setSelectedFolder(f.key)}
-                className="intake-card-soft flex flex-col items-center justify-center gap-2 py-8 hover:border-primary/40 hover:bg-primary/5 transition-colors"
-              >
-                <Folder className="w-9 h-9 text-primary" />
-                <span className="font-heading font-semibold text-sm text-center">{f.label}</span>
-                <span className="text-xs text-muted-foreground">{f.students.length} תלמידים</span>
-              </button>
-            ))}
+          <div className="space-y-4">
+            <div className="text-right">
+              <h2 className="font-heading font-bold text-lg">מרחבי הכיתות</h2>
+              <p className="text-sm text-muted-foreground">בחר כיתה כדי להיכנס למרחב שלה</p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {folders.map((f, i) => {
+                const space = getClassSpace(f.label, i);
+                const Icon = space.icon;
+                return (
+                  <button
+                    key={f.key}
+                    onClick={() => setSelectedFolder(f.key)}
+                    className="rounded-2xl border p-5 text-right transition-all hover:shadow-md hover:-translate-y-0.5"
+                    style={{
+                      borderColor: `hsl(var(${space.hue}) / 0.25)`,
+                      background: `linear-gradient(135deg, hsl(var(${space.hue}) / 0.10), hsl(var(${space.hue}) / 0.03))`,
+                    }}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div
+                        className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 bg-card"
+                        style={{ border: `1px solid hsl(var(${space.hue}) / 0.3)` }}
+                      >
+                        <Icon className="w-6 h-6" style={{ color: `hsl(var(${space.hue}))` }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        {f.key !== "__unassigned" && <p className="text-xs text-muted-foreground">כיתת</p>}
+                        <p className="font-heading font-bold text-xl leading-tight" style={{ color: `hsl(var(${space.hue}))` }}>
+                          {space.name}
+                        </p>
+                        {space.motto && <p className="text-xs text-muted-foreground mt-0.5">{space.motto}</p>}
+                        {space.teachers && <p className="text-xs font-medium mt-1">{space.teachers}</p>}
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-3">{f.students.length} תלמידים</p>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
 
-        {viewMode === "grid" && selectedFolder && (
+        {viewMode === "grid" && selectedFolder && (() => {
+          const folder = folders.find((f) => f.key === selectedFolder);
+          const idx = folders.findIndex((f) => f.key === selectedFolder);
+          const space = getClassSpace(folder?.label || "", Math.max(idx, 0));
+          const Icon = space.icon;
+          return (
           <div className="space-y-3 animate-fade-in">
             <button
               onClick={() => setSelectedFolder(null)}
               className="flex items-center gap-2 text-sm text-primary font-medium"
             >
-              <ArrowRight className="w-4 h-4" /> חזרה לתיקיות
+              <ArrowRight className="w-4 h-4" /> חזרה למרחבי הכיתות
             </button>
-            <div className="intake-card-soft">
-              <div className="flex items-center gap-2 pb-3 mb-3 border-b border-border">
-                <FolderOpen className="w-5 h-5 text-primary" />
-                <span className="flex-1 font-heading font-semibold text-sm">
-                  {folders.find((f) => f.key === selectedFolder)?.label}
-                </span>
+            <div
+              className="rounded-2xl border p-5"
+              style={{
+                borderColor: `hsl(var(${space.hue}) / 0.25)`,
+                background: `linear-gradient(135deg, hsl(var(${space.hue}) / 0.10), hsl(var(${space.hue}) / 0.03))`,
+              }}
+            >
+              <div className="flex items-center gap-4 pb-4 mb-4 border-b" style={{ borderColor: `hsl(var(${space.hue}) / 0.2)` }}>
+                <div className="w-12 h-12 rounded-full bg-card flex items-center justify-center" style={{ border: `1px solid hsl(var(${space.hue}) / 0.3)` }}>
+                  <Icon className="w-5 h-5" style={{ color: `hsl(var(${space.hue}))` }} />
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs text-muted-foreground">כיתת</p>
+                  <p className="font-heading font-bold text-lg" style={{ color: `hsl(var(${space.hue}))` }}>{space.name}</p>
+                  {space.teachers && <p className="text-xs font-medium">{space.teachers}</p>}
+                </div>
+                <span className="text-xs text-muted-foreground">{folder?.students.length || 0} תלמידים</span>
               </div>
               <div className="grid gap-1.5 sm:grid-cols-2">
-                {(folders.find((f) => f.key === selectedFolder)?.students || []).map((s) => (
+                {(folder?.students || []).map((s) => (
                   <StudentRow key={s.id} s={s} />
                 ))}
               </div>
             </div>
           </div>
-        )}
+          );
+        })()}
 
         {viewMode === "list" && folders.map((f) => {
           const isOpen = open === f.key || open === "__all__";
