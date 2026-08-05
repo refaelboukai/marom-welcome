@@ -143,12 +143,15 @@ export type Database = {
           grade: string
           health_fund: string
           id: string
+          invite_token: string
           linked_session_id: string | null
           medical_allergies: string
           medical_conditions: string
           medical_diagnoses: string
           medical_medications: string
           medical_treatments: string
+          pair_id: string | null
+          parent_role: string
           parent1_email: string
           parent1_id_number: string
           parent1_name: string
@@ -185,12 +188,15 @@ export type Database = {
           grade?: string
           health_fund?: string
           id?: string
+          invite_token?: string
           linked_session_id?: string | null
           medical_allergies?: string
           medical_conditions?: string
           medical_diagnoses?: string
           medical_medications?: string
           medical_treatments?: string
+          pair_id?: string | null
+          parent_role?: string
           parent1_email?: string
           parent1_id_number?: string
           parent1_name?: string
@@ -227,12 +233,15 @@ export type Database = {
           grade?: string
           health_fund?: string
           id?: string
+          invite_token?: string
           linked_session_id?: string | null
           medical_allergies?: string
           medical_conditions?: string
           medical_diagnoses?: string
           medical_medications?: string
           medical_treatments?: string
+          pair_id?: string | null
+          parent_role?: string
           parent1_email?: string
           parent1_id_number?: string
           parent1_name?: string
@@ -259,6 +268,77 @@ export type Database = {
             columns: ["linked_session_id"]
             isOneToOne: false
             referencedRelation: "intake_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      enrollment_invites: {
+        Row: {
+          academic_year: string
+          created_at: string
+          current_step: number
+          draft_data: Json
+          family_status: string
+          form_id: string | null
+          grade: string
+          id: string
+          pair_id: string
+          parent_name: string
+          parent_phone: string
+          parent_role: string
+          sent_at: string | null
+          status: string
+          student_name: string
+          submitted_at: string | null
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          academic_year?: string
+          created_at?: string
+          current_step?: number
+          draft_data?: Json
+          family_status?: string
+          form_id?: string | null
+          grade?: string
+          id?: string
+          pair_id?: string
+          parent_name?: string
+          parent_phone?: string
+          parent_role?: string
+          sent_at?: string | null
+          status?: string
+          student_name?: string
+          submitted_at?: string | null
+          token: string
+          updated_at?: string
+        }
+        Update: {
+          academic_year?: string
+          created_at?: string
+          current_step?: number
+          draft_data?: Json
+          family_status?: string
+          form_id?: string | null
+          grade?: string
+          id?: string
+          pair_id?: string
+          parent_name?: string
+          parent_phone?: string
+          parent_role?: string
+          sent_at?: string | null
+          status?: string
+          student_name?: string
+          submitted_at?: string | null
+          token?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrollment_invites_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "enrollment_forms"
             referencedColumns: ["id"]
           },
         ]
