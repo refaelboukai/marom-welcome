@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import SignatureCanvas from "react-signature-canvas";
 import {
   Check, CheckCircle2, ChevronLeft, ChevronRight, Cloud, Download, HeartPulse,
-  FileText, Loader2, PenLine, Send, Shield, Stethoscope, Trash2, Upload, User, Users,
+  FileText, Loader2, PenLine, RotateCcw, Send, Shield, Stethoscope, Trash2, Upload, User, Users,
 } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 import { FORM_STEPS, FormField, SCHOOL_RULES } from "@/data/enrollment-form";
