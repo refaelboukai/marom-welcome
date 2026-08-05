@@ -216,7 +216,7 @@ const Enrollment = () => {
     (/iP(hone|ad|od)/.test(navigator.userAgent) ||
       (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
 
-  const handleDownloadPDF = async () => {
+  const handleDownloadPDF = async (compact = false) => {
     if (pdfBusy) return;
     setPdfBusy(true); setPdfError("");
     // The tab must be opened synchronously inside the click for iOS Safari.
@@ -226,7 +226,7 @@ const Enrollment = () => {
         values,
         studentName,
         invite ? `מולא על ידי ${invite.parent_name}` : "",
-        { targetWindow: win },
+        { targetWindow: win, compact },
       );
     } catch (e) {
       console.error("enrollment pdf failed", e);
