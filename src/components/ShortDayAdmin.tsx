@@ -142,8 +142,10 @@ const ShortDayAdmin = () => {
           <p className="font-semibold text-sm">בקשות לקיצור יום לימודים</p>
           <p className="text-xs text-muted-foreground">קישור למילוי על ידי הורים: {APP_URL}/forms/short-day</p>
         </div>
-        <button onClick={() => copyText(`${APP_URL}/forms/short-day`)}
-          className="btn-intake bg-secondary text-secondary-foreground text-xs px-3 py-2">העתקת קישור</button>
+        <button onClick={async () => { const ok = await copyText(`${APP_URL}/forms/short-day`); setLinkCopied(ok ? "ok" : "fail"); setTimeout(() => setLinkCopied(""), 2000); }}
+          className="btn-intake bg-secondary text-secondary-foreground text-xs px-3 py-2">
+          {linkCopied === "ok" ? "הקישור הועתק ✓" : linkCopied === "fail" ? "ההעתקה נכשלה" : "העתקת קישור"}
+        </button>
       </div>
 
       {rows.length === 0 && <p className="text-sm text-muted-foreground text-center py-10">עדיין לא התקבלו בקשות.</p>}
