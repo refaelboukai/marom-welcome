@@ -1,3 +1,4 @@
+import { copyText } from "@/lib/clipboard";
 import { APP_URL } from "@/lib/app-url";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -15,7 +16,6 @@ import {
   deleteInvite, getInvites, inviteLink, inviteWhatsAppUrl,
 } from "@/lib/enrollment-invites";
 import {
-import { copyText } from "@/lib/clipboard";
   compareForms, displayValue, generateCombinedEnrollmentPDF, generateEnrollmentPDF,
 } from "@/lib/enrollment-pdf";
 

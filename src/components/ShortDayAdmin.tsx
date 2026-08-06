@@ -1,3 +1,4 @@
+import { copyText } from "@/lib/clipboard";
 import { useEffect, useState } from "react";
 import { Clock, Copy, Download, Loader2, MessageCircle, Plus, Save, Trash2 } from "lucide-react";
 import { APP_URL } from "@/lib/app-url";
@@ -6,7 +7,6 @@ import {
   generateShortDayPDF, getShortDayRequests, updateShortDayRequest,
 } from "@/lib/short-day";
 import {
-import { copyText } from "@/lib/clipboard";
   SHORT_DAY_INVITE_STATUS, ShortDayInvite, createShortDayInvite, deleteShortDayInvite,
   getShortDayInvites, shortDayInviteCode, shortDayInviteWhatsAppUrl,
 } from "@/lib/short-day-invites";
