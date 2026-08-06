@@ -19,6 +19,7 @@ const ShortDayAdmin = () => {
   const [rows, setRows] = useState<ShortDayRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [linkCopied, setLinkCopied] = useState("");
   const [busy, setBusy] = useState(false);
   const [draft, setDraft] = useState<Partial<ShortDayRequest>>({});
   const [invites, setInvites] = useState<ShortDayInvite[]>([]);
