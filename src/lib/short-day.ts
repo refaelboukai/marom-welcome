@@ -1,6 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
 import { renderPagedHTMLToPDF } from "@/lib/pdf-export";
-import logo from "@/assets/logo.jpeg";
 import moeLogo from "@/assets/moe-logo.jpeg";
 
 export const ACADEMIC_YEAR = 'תשפ"ז';
@@ -138,17 +137,17 @@ const sigBox = (label: string, name: string, img: string, date?: string | null) 
 function header(logoSrc: string | null, moeSrc: string | null, subtitle: string) {
   return `
     <div style="display:flex;align-items:center;gap:12px;border-bottom:3px solid #4a9a7a;padding-bottom:10px;margin-bottom:16px;">
-      ${logoSrc ? `<img src="${logoSrc}" style="height:52px;border-radius:8px;" />` : ""}
       <div style="flex:1;text-align:center;">
-        <h1 style="font-size:18px;font-weight:800;margin:0;color:#14213d;">בקשת הורים לקיצור יום לימודים</h1>
-        <p style="font-size:11.5px;color:#555;margin:3px 0 0 0;">בית ספר מרום — בית אקשטיין יבנה &nbsp;|&nbsp; שנת הלימודים ${esc(ACADEMIC_YEAR)}${subtitle ? ` &nbsp;|&nbsp; ${esc(subtitle)}` : ""}</p>
+        <h1 style="font-size:18px;font-weight:800;margin:0;color:#14213d;">בקשה לקיצור יום לימודים — בית ספר חינוך מיוחד</h1>
+        <p style="font-size:12.5px;font-weight:700;color:#14213d;margin:3px 0 0 0;">משרד החינוך — מחוז מרכז</p>
+        <p style="font-size:11.5px;color:#555;margin:2px 0 0 0;">שנת הלימודים ${esc(ACADEMIC_YEAR)}${subtitle ? ` &nbsp;|&nbsp; ${esc(subtitle)}` : ""}</p>
       </div>
       ${moeSrc ? `<div style="text-align:center;"><img src="${moeSrc}" style="height:62px;object-fit:contain;" /></div>` : ""}
     </div>`;
 }
 
 export async function generateShortDayPDF(r: ShortDayRequest, opts?: { targetWindow?: Window | null; compact?: boolean }) {
-  const [logoSrc, moeSrc] = await Promise.all([toDataUrl(logo), toDataUrl(moeLogo)]);
+  const moeSrc = await toDataUrl(moeLogo);
   const decided = r.decision === "approved" || r.decision === "rejected";
 
   const decisionBlock = decided ? `
@@ -192,9 +191,30 @@ export async function generateShortDayPDF(r: ShortDayRequest, opts?: { targetWin
     </div>
     ${decisionBlock}`;
 
+  const supervisorBlock = `
+    <div style="border:1px solid #cfd8d5;border-radius:8px;padding:9px 10px;margin-top:10px;">
+      <p style="font-size:11.5px;font-weight:800;margin:0 0 6px 0;color:#2f6f58;">החלטת המפקחת</p>
+      <div style="border-bottom:1px solid #b6c2c0;height:20px;margin-bottom:9px;"></div>
+      <div style="border-bottom:1px solid #b6c2c0;height:20px;margin-bottom:9px;"></div>
+      <div style="display:flex;gap:14px;align-items:flex-end;">
+        <div style="flex:1;">
+          <span style="font-size:11px;color:#4a5568;">שם המפקחת:</span>
+          <div style="border-bottom:1px solid #b6c2c0;height:20px;"></div>
+        </div>
+        <div style="flex:1;">
+          <span style="font-size:11px;color:#4a5568;">חתימת המפקחת:</span>
+          <div style="border-bottom:1px solid #b6c2c0;height:20px;"></div>
+        </div>
+        <div style="width:150px;">
+          <span style="font-size:11px;color:#4a5568;">תאריך החתימה:</span>
+          <div style="border-bottom:1px solid #b6c2c0;height:20px;"></div>
+        </div>
+      </div>
+    </div>`;
+
   const page = `
     <div style="font-family:'Heebo','Rubik',Arial,sans-serif;direction:rtl;padding:26px 30px;width:700px;box-sizing:border-box;color:#1a1a2e;line-height:1.5;background:#fff;">
-      ${header(logoSrc, moeSrc, "")}${body}
+      ${header(null, moeSrc, "")}${body}${supervisorBlock}
     </div>`;
 
   await renderPagedHTMLToPDF(
