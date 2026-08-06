@@ -191,6 +191,27 @@ export async function generateShortDayPDF(r: ShortDayRequest, opts?: { targetWin
     </div>
     ${decisionBlock}`;
 
+  const supervisorBlock = `
+    <div style="border:1px solid #cfd8d5;border-radius:8px;padding:9px 10px;margin-top:10px;">
+      <p style="font-size:11.5px;font-weight:800;margin:0 0 6px 0;color:#2f6f58;">החלטת המפקחת</p>
+      <div style="border-bottom:1px solid #b6c2c0;height:20px;margin-bottom:9px;"></div>
+      <div style="border-bottom:1px solid #b6c2c0;height:20px;margin-bottom:9px;"></div>
+      <div style="display:flex;gap:14px;align-items:flex-end;">
+        <div style="flex:1;">
+          <span style="font-size:11px;color:#4a5568;">שם המפקחת:</span>
+          <div style="border-bottom:1px solid #b6c2c0;height:20px;"></div>
+        </div>
+        <div style="flex:1;">
+          <span style="font-size:11px;color:#4a5568;">חתימת המפקחת:</span>
+          <div style="border-bottom:1px solid #b6c2c0;height:20px;"></div>
+        </div>
+        <div style="width:150px;">
+          <span style="font-size:11px;color:#4a5568;">תאריך החתימה:</span>
+          <div style="border-bottom:1px solid #b6c2c0;height:20px;"></div>
+        </div>
+      </div>
+    </div>`;
+
   const page = `
     <div style="font-family:'Heebo','Rubik',Arial,sans-serif;direction:rtl;padding:26px 30px;width:700px;box-sizing:border-box;color:#1a1a2e;line-height:1.5;background:#fff;">
       ${header(null, moeSrc, "")}${body}
