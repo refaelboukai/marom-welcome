@@ -115,14 +115,14 @@ const heDate = (d?: string | null) => {
 
 const line = (label: string, value: string, width = "auto") => `
   <div style="display:flex;align-items:flex-end;gap:6px;margin:0 0 8px 0;${width === "auto" ? "" : `width:${width};`}">
-    <span style="font-size:12px;color:#333;white-space:nowrap;">${esc(label)}</span>
-    <span style="flex:1;border-bottom:1px solid #99a;min-height:17px;font-size:12.5px;font-weight:700;padding:0 4px;">${esc(value) || "&nbsp;"}</span>
+    <span style="font-size:12px;color:#333;white-space:nowrap;line-height:18px;">${esc(label)}</span>
+    <span style="flex:1;min-width:0;border-bottom:1px solid #99a;height:18px;line-height:18px;font-size:12.5px;font-weight:700;padding:0 4px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(value) || "&nbsp;"}</span>
   </div>`;
 
 const checkbox = (checked: boolean, label: string) => `
-  <span style="display:inline-flex;align-items:center;gap:5px;margin-left:14px;font-size:12px;">
-    <span style="width:13px;height:13px;border:1.5px solid #333;display:inline-block;text-align:center;line-height:11px;font-size:11px;font-weight:800;color:#1a5e42;">${checked ? "✓" : ""}</span>
-    ${esc(label)}
+  <span style="display:inline-flex;align-items:center;gap:5px;margin-left:14px;font-size:12px;line-height:16px;vertical-align:middle;">
+    <span style="width:14px;height:14px;box-sizing:border-box;border:1.5px solid #333;display:inline-flex;align-items:center;justify-content:center;font-size:11px;line-height:1;font-weight:800;color:#1a5e42;flex:none;">${checked ? "✓" : ""}</span>
+    <span>${esc(label)}</span>
   </span>`;
 
 const sigBox = (label: string, name: string, img: string, date?: string | null) => `
