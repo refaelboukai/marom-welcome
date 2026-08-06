@@ -51,8 +51,26 @@ const Dashboard = () => {
   const [reminderMessage, setReminderMessage] = useState<string>(REMINDER_MESSAGE);
   const [classGroups, setClassGroups] = useState<ClassGroupsMap>(DEFAULT_CLASS_GROUPS);
 
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   useEffect(() => {
-    getSessionsDB().then((data) => { setSessions(data); setLoading(false); });
+    getSessionsDB()
+      .then((data) => {
+        setSessions(data);
+        setLoadError(null);
+        // Auto-select the academic year that actually contains students,
+        // so the dashboard never looks empty because of the year tab.
+        if (data.length > 0) {
+          const counts = new Map<string, number>();
+          data.forEach((s) => {
+            const y = s.academicYear || 'תשפ"ו';
+            counts.set(y, (counts.get(y) || 0) + 1);
+          });
+          setSelectedYear((prev) => (counts.get(prev) ? prev : [...counts.entries()].sort((a, b) => b[1] - a[1])[0][0]));
+        }
+      })
+      .catch((e) => setLoadError(e?.message || "שגיאת טעינה"))
+      .finally(() => setLoading(false));
     getReminderMessage().then(setReminderMessage).catch(() => {});
     getClassGroups().then(setClassGroups).catch(() => {});
   }, []);
