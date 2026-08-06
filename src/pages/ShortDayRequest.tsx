@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { CheckCircle2, ChevronRight, Clock, Download, FileText, Loader2, Send } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
-import moeLogo from "@/assets/moe-logo.jpeg";
+import moeLogo from "@/assets/moe-state.png";
 import SignaturePad from "@/components/SignaturePad";
 import {
   ACADEMIC_YEAR, DECLARATIONS, ShortDayRequest as SDR, WEEK_DAYS,

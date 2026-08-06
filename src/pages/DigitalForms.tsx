@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowLeft, Clock, FileText } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
-import moeLogo from "@/assets/moe-logo.jpeg";
+import moeLogo from "@/assets/moe-state.png";
 
 const FORMS = [
   {
