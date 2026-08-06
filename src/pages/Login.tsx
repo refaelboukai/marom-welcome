@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { findSessionByCodeDB, isAdminCode, initializeSessionsDB } from "@/lib/supabase-storage";
 import { STAFF_CODE, VIEWER_CODE } from "@/data/students";
 import { getInviteByToken } from "@/lib/enrollment-invites";
+import { getShortDayInviteByToken } from "@/lib/short-day-invites";
 import logo from "@/assets/logo.jpeg";
 import { Loader2 } from "lucide-react";
 
@@ -38,6 +39,8 @@ const Login = () => {
         }
         const invite = await getInviteByToken(trimmed);
         if (invite) { navigate(`/enroll?t=${invite.token}`); return; }
+        const sd = await getShortDayInviteByToken(trimmed);
+        if (sd) { navigate(`/forms/short-day?t=${sd.token}`); return; }
         setError("הקוד שבקישור אינו תקין. ניתן להזין אותו ידנית.");
       } catch {
         setError("שגיאה בחיבור לשרת. נסה שוב.");
@@ -67,6 +70,8 @@ const Login = () => {
       }
       const invite = await getInviteByToken(trimmed);
       if (invite) { navigate(`/enroll?t=${invite.token}`); return; }
+      const sd = await getShortDayInviteByToken(trimmed);
+      if (sd) { navigate(`/forms/short-day?t=${sd.token}`); return; }
       setError("הקוד שהוזן אינו תקין. נסה שוב.");
     } catch {
       setError("שגיאה בחיבור לשרת. נסה שוב.");

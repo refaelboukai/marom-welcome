@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
-import { Clock, Download, Loader2, Save, Trash2 } from "lucide-react";
+import { Clock, Copy, Download, Loader2, MessageCircle, Plus, Save, Trash2 } from "lucide-react";
 import { APP_URL } from "@/lib/app-url";
 import {
   DECISION_LABELS, ShortDayRequest, WEEK_DAYS, deleteShortDayRequest,
   generateShortDayPDF, getShortDayRequests, updateShortDayRequest,
 } from "@/lib/short-day";
+import {
+  SHORT_DAY_INVITE_STATUS, ShortDayInvite, createShortDayInvite, deleteShortDayInvite,
+  getShortDayInvites, shortDayInviteCode, shortDayInviteWhatsAppUrl,
+} from "@/lib/short-day-invites";
 
 const inputCls = "w-full px-3 py-2 rounded-xl border-2 border-border bg-card text-sm focus:outline-none focus:border-primary/60";
 
@@ -16,9 +20,34 @@ const ShortDayAdmin = () => {
   const [openId, setOpenId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [draft, setDraft] = useState<Partial<ShortDayRequest>>({});
+  const [invites, setInvites] = useState<ShortDayInvite[]>([]);
+  const [inv, setInv] = useState({ student_name: "", grade: "", parent_name: "", parent_phone: "" });
+  const [sending, setSending] = useState(false);
 
-  const load = async () => { setLoading(true); setRows(await getShortDayRequests()); setLoading(false); };
+  const load = async () => {
+    setLoading(true);
+    const [reqs, invs] = await Promise.all([getShortDayRequests(), getShortDayInvites()]);
+    setRows(reqs); setInvites(invs); setLoading(false);
+  };
   useEffect(() => { load(); }, []);
+
+  const sendInvite = async () => {
+    if (!inv.student_name.trim() || !inv.parent_phone.trim()) return;
+    setSending(true);
+    const created = await createShortDayInvite(inv);
+    setSending(false);
+    if (!created) return;
+    setInv({ student_name: "", grade: "", parent_name: "", parent_phone: "" });
+    setInvites((p) => [created, ...p]);
+    const url = shortDayInviteWhatsAppUrl(created);
+    if (url) window.open(url, "_blank");
+  };
+
+  const removeInvite = async (id: string) => {
+    if (!confirm("למחוק את ההזמנה?")) return;
+    await deleteShortDayInvite(id);
+    setInvites((p) => p.filter((x) => x.id !== id));
+  };
 
   const open = (r: ShortDayRequest) => {
     setOpenId(openId === r.id ? null : r.id);
@@ -52,6 +81,60 @@ const ShortDayAdmin = () => {
 
   return (
     <div className="space-y-4">
+      <div className="intake-card-soft space-y-3">
+        <div className="flex items-center gap-2">
+          <MessageCircle className="w-5 h-5 text-primary" />
+          <div className="flex-1">
+            <p className="font-semibold text-sm">שליחת הטופס להורים בוואטסאפ</p>
+            <p className="text-xs text-muted-foreground">נוצר קוד גישה אישי — ההורים ממלאים, הטופס נשמר אוטומטית ובסיום מופק PDF.</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+          <input className={inputCls} placeholder="שם התלמיד/ה" value={inv.student_name}
+            onChange={(e) => setInv({ ...inv, student_name: e.target.value })} />
+          <input className={inputCls} placeholder="כיתה" value={inv.grade}
+            onChange={(e) => setInv({ ...inv, grade: e.target.value })} />
+          <input className={inputCls} placeholder="שם ההורה" value={inv.parent_name}
+            onChange={(e) => setInv({ ...inv, parent_name: e.target.value })} />
+          <input className={inputCls} placeholder="טלפון נייד" inputMode="tel" dir="ltr" value={inv.parent_phone}
+            onChange={(e) => setInv({ ...inv, parent_phone: e.target.value })} />
+        </div>
+        <button onClick={sendInvite} disabled={sending || !inv.student_name.trim() || !inv.parent_phone.trim()}
+          className="btn-intake bg-primary text-primary-foreground text-sm px-4 py-2 inline-flex items-center gap-2 disabled:opacity-50">
+          {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} יצירת קישור ושליחה בוואטסאפ
+        </button>
+
+        {invites.length > 0 && (
+          <div className="pt-3 border-t border-border space-y-2">
+            {invites.map((iv) => (
+              <div key={iv.id} className="flex flex-wrap items-center gap-2 text-xs bg-muted/40 rounded-xl px-3 py-2">
+                <span className="font-semibold">{iv.student_name}</span>
+                {iv.grade && <span className="text-muted-foreground">כיתה {iv.grade}</span>}
+                <span className="text-muted-foreground">· {iv.parent_name || "הורה"}</span>
+                <span className="font-mono tracking-widest" dir="ltr">{shortDayInviteCode(iv.token)}</span>
+                <span className={`px-2 py-0.5 rounded-lg font-semibold ${
+                  iv.status === "submitted" ? "bg-success/15 text-success" : "bg-card text-muted-foreground"}`}>
+                  {SHORT_DAY_INVITE_STATUS[iv.status] || iv.status}
+                </span>
+                <span className="flex-1" />
+                <button onClick={() => navigator.clipboard.writeText(shortDayInviteCode(iv.token))}
+                  className="p-1.5 rounded-lg hover:text-primary hover:bg-primary/10" title="העתקת קוד">
+                  <Copy className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => { const u = shortDayInviteWhatsAppUrl(iv); if (u) window.open(u, "_blank"); }}
+                  className="p-1.5 rounded-lg hover:text-primary hover:bg-primary/10" title="שליחה בוואטסאפ">
+                  <MessageCircle className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => removeInvite(iv.id)}
+                  className="p-1.5 rounded-lg hover:text-destructive hover:bg-destructive/10" title="מחיקה">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       <div className="intake-card-soft flex flex-wrap items-center gap-3">
         <Clock className="w-5 h-5 text-primary" />
         <div className="flex-1">
