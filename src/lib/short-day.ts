@@ -1,6 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
 import { renderPagedHTMLToPDF } from "@/lib/pdf-export";
-import logo from "@/assets/logo.jpeg";
 import moeLogo from "@/assets/moe-logo.jpeg";
 
 export const ACADEMIC_YEAR = 'תשפ"ז';
