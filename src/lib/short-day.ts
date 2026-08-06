@@ -138,10 +138,10 @@ const sigBox = (label: string, name: string, img: string, date?: string | null) 
 function header(logoSrc: string | null, moeSrc: string | null, subtitle: string) {
   return `
     <div style="display:flex;align-items:center;gap:12px;border-bottom:3px solid #4a9a7a;padding-bottom:10px;margin-bottom:16px;">
-      ${logoSrc ? `<img src="${logoSrc}" style="height:52px;border-radius:8px;" />` : ""}
       <div style="flex:1;text-align:center;">
-        <h1 style="font-size:18px;font-weight:800;margin:0;color:#14213d;">בקשת הורים לקיצור יום לימודים</h1>
-        <p style="font-size:11.5px;color:#555;margin:3px 0 0 0;">בית ספר מרום — בית אקשטיין יבנה &nbsp;|&nbsp; שנת הלימודים ${esc(ACADEMIC_YEAR)}${subtitle ? ` &nbsp;|&nbsp; ${esc(subtitle)}` : ""}</p>
+        <h1 style="font-size:18px;font-weight:800;margin:0;color:#14213d;">בקשה לקיצור יום לימודים — בית ספר חינוך מיוחד</h1>
+        <p style="font-size:12.5px;font-weight:700;color:#14213d;margin:3px 0 0 0;">משרד החינוך — מחוז מרכז</p>
+        <p style="font-size:11.5px;color:#555;margin:2px 0 0 0;">שנת הלימודים ${esc(ACADEMIC_YEAR)}${subtitle ? ` &nbsp;|&nbsp; ${esc(subtitle)}` : ""}</p>
       </div>
       ${moeSrc ? `<div style="text-align:center;"><img src="${moeSrc}" style="height:62px;object-fit:contain;" /></div>` : ""}
     </div>`;
