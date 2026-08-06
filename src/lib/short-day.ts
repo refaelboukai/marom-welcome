@@ -147,7 +147,7 @@ function header(logoSrc: string | null, moeSrc: string | null, subtitle: string)
 }
 
 export async function generateShortDayPDF(r: ShortDayRequest, opts?: { targetWindow?: Window | null; compact?: boolean }) {
-  const [logoSrc, moeSrc] = await Promise.all([toDataUrl(logo), toDataUrl(moeLogo)]);
+  const moeSrc = await toDataUrl(moeLogo);
   const decided = r.decision === "approved" || r.decision === "rejected";
 
   const decisionBlock = decided ? `
@@ -193,7 +193,7 @@ export async function generateShortDayPDF(r: ShortDayRequest, opts?: { targetWin
 
   const page = `
     <div style="font-family:'Heebo','Rubik',Arial,sans-serif;direction:rtl;padding:26px 30px;width:700px;box-sizing:border-box;color:#1a1a2e;line-height:1.5;background:#fff;">
-      ${header(logoSrc, moeSrc, "")}${body}
+      ${header(null, moeSrc, "")}${body}
     </div>`;
 
   await renderPagedHTMLToPDF(
