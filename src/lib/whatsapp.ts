@@ -31,10 +31,20 @@ export function normalizePhone(raw: string): string | null {
   return p;
 }
 
+/** True on phones/tablets, where the native WhatsApp app is the better target. */
+function isMobileDevice(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent || "";
+  return /Android|iPhone|iPad|iPod|Windows Phone/i.test(ua);
+}
+
 export function buildWhatsAppUrl(phone: string, message: string = WELCOME_MESSAGE): string | null {
   const normalized = normalizePhone(phone);
   if (!normalized) return null;
-  return `https://wa.me/${normalized}?text=${encodeURIComponent(message)}`;
+  const text = encodeURIComponent(message);
+  // Desktop → WhatsApp Web directly (avoids the "open the app?" redirect page).
+  if (!isMobileDevice()) return `https://web.whatsapp.com/send?phone=${normalized}&text=${text}`;
+  return `https://wa.me/${normalized}?text=${text}`;
 }
 
 export function openWhatsApp(phone: string, message: string = WELCOME_MESSAGE): boolean {

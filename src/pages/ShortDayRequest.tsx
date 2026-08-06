@@ -138,12 +138,26 @@ const ShortDayRequestPage = () => {
 
   const submit = async () => {
     setSubmitting(true); setError("");
-    const r = record();
-    const { id: _id, created_at: _c, updated_at: _u, ...payload } = r;
-    const res = await submitShortDayRequest(payload);
-    setSubmitting(false);
-    if (!res.ok) { setError("אירעה שגיאה בשליחת הטופס. נסו שוב בעוד רגע."); return; }
-    if (token) await markShortDayInviteSubmitted(token, res.id || null);
+    try {
+      const r = record();
+      const { id: _id, created_at: _c, updated_at: _u, ...payload } = r;
+      const res = await submitShortDayRequest(payload);
+      if (!res.ok) {
+        console.error("short-day submit failed", res.error);
+        setError(`אירעה שגיאה בשליחת הטופס: ${res.error || "נסו שוב בעוד רגע"}`);
+        return;
+      }
+      if (token) {
+        try { await markShortDayInviteSubmitted(token, res.id || null); }
+        catch (e) { console.error("short-day invite update failed", e); }
+      }
+    } catch (e: any) {
+      console.error("short-day submit exception", e);
+      setError(`אירעה שגיאה בשליחת הטופס: ${e?.message || "נסו שוב בעוד רגע"}`);
+      return;
+    } finally {
+      setSubmitting(false);
+    }
     setDone(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
