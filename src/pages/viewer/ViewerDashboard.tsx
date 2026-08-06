@@ -2,8 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getSessionsDB, getClassGroups, DEFAULT_CLASS_GROUPS, ClassGroupsMap } from "@/lib/supabase-storage";
 import { IntakeSession } from "@/lib/types";
-import { ChevronLeft, Folder, FolderOpen, Loader2, Search, Users, ArrowRight, List, LayoutGrid, Columns3 } from "lucide-react";
+import { ChevronLeft, Folder, FolderOpen, Loader2, Search, Users, ArrowRight, List, LayoutGrid, Columns3, RefreshCw } from "lucide-react";
 import { getClassSpace } from "@/lib/class-spaces";
+import { Button } from "@/components/ui/button";
 
 type ViewMode = "list" | "grid" | "columns";
 
@@ -18,6 +19,7 @@ const ViewerDashboard = () => {
     () => (localStorage.getItem("viewer_view_mode") as ViewMode) || "grid"
   );
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const changeView = (mode: ViewMode) => {
     setViewMode(mode);
@@ -25,13 +27,22 @@ const ViewerDashboard = () => {
     localStorage.setItem("viewer_view_mode", mode);
   };
 
-  useEffect(() => {
-    (async () => {
+  const loadStudents = async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
       const [s, g] = await Promise.all([getSessionsDB(), getClassGroups()]);
       setSessions(s);
       setClassGroups(g);
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : "שגיאת טעינה");
+    } finally {
       setLoading(false);
-    })();
+    }
+  };
+
+  useEffect(() => {
+    loadStudents();
   }, []);
 
   const active = useMemo(
@@ -65,6 +76,16 @@ const ViewerDashboard = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background p-6 text-center" dir="rtl">
+        <p className="font-heading font-semibold">לא הצלחנו לטעון את רשימת התלמידים</p>
+        <p className="text-sm text-muted-foreground max-w-sm">החיבור לשרת נכשל זמנית. הנתונים שמורים ולא נמחקו.</p>
+        <Button onClick={loadStudents}><RefreshCw className="w-4 h-4" /> נסו שוב</Button>
       </div>
     );
   }

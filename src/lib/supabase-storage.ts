@@ -87,16 +87,25 @@ export async function initializeSessionsDB(): Promise<void> {
 }
 
 export async function getSessionsDB(): Promise<IntakeSession[]> {
-  const { data, error } = await supabase
-    .from("intake_sessions")
-    .select("*")
-    .order("created_at", { ascending: false });
+  let lastError: unknown;
 
-  if (error) {
-    console.error("Error fetching sessions:", error);
-    return [];
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const { data, error } = await supabase
+      .from("intake_sessions")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (!error) return (data || []).map(rowToSession);
+
+    lastError = error;
+    console.error(`Error fetching sessions (attempt ${attempt + 1}/3):`, error);
+    if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 700 * (attempt + 1)));
   }
-  return (data || []).map(rowToSession);
+
+  const message = lastError && typeof lastError === "object" && "message" in lastError
+    ? String(lastError.message)
+    : "שגיאת תקשורת עם השרת";
+  throw new Error(message);
 }
 
 export async function getSessionDB(id: string): Promise<IntakeSession | null> {
