@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { CheckCircle2, ChevronRight, Clock, Download, FileText, Loader2, Send } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 import moeLogo from "@/assets/moe-logo.jpeg.asset.json";
@@ -8,6 +8,9 @@ import {
   ACADEMIC_YEAR, DECLARATIONS, ShortDayRequest as SDR, WEEK_DAYS,
   generateShortDayPDF, submitShortDayRequest,
 } from "@/lib/short-day";
+import {
+  getShortDayInviteByToken, markShortDayInviteSubmitted, saveShortDayDraft,
+} from "@/lib/short-day-invites";
 
 const inputCls =
   "w-full px-3.5 py-2.5 rounded-xl border-2 border-border bg-card text-sm focus:outline-none focus:border-primary/60 transition-colors";
@@ -15,6 +18,8 @@ const inputCls =
 const today = () => new Date().toISOString().split("T")[0];
 
 const ShortDayRequestPage = () => {
+  const [params] = useSearchParams();
+  const token = (params.get("t") || "").trim().toLowerCase();
   const [v, setV] = useState({
     request_date: today(),
     student_name: "",
@@ -37,6 +42,38 @@ const ShortDayRequestPage = () => {
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
   const [pdfBusy, setPdfBusy] = useState(false);
+  const [savedAt, setSavedAt] = useState<string | null>(null);
+  const loadedRef = useRef(false);
+
+  // Load the personal invite (WhatsApp link) and any saved draft
+  useEffect(() => {
+    if (!token) { loadedRef.current = true; return; }
+    (async () => {
+      const inv = await getShortDayInviteByToken(token);
+      if (inv) {
+        const d = (inv.draft_data || {}) as Record<string, any>;
+        setV((prev) => ({
+          ...prev,
+          ...Object.fromEntries(Object.entries(d).filter(([k]) => k in prev)),
+          student_name: d.student_name || inv.student_name || prev.student_name,
+          grade: d.grade || inv.grade || prev.grade,
+        }));
+        if (Array.isArray(d.days)) setDays(d.days);
+        if (d.accepted) setAccepted(true);
+      }
+      loadedRef.current = true;
+    })();
+  }, [token]);
+
+  // Auto-save the draft so parents can pause and continue later
+  useEffect(() => {
+    if (!token || !loadedRef.current || done) return;
+    const t = setTimeout(async () => {
+      await saveShortDayDraft(token, { ...v, days, accepted });
+      setSavedAt(new Date().toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" }));
+    }, 1200);
+    return () => clearTimeout(t);
+  }, [v, days, accepted, token, done]);
 
   const set = (k: keyof typeof v, val: string) => setV((p) => ({ ...p, [k]: val }));
   const toggleDay = (d: string) => setDays((p) => (p.includes(d) ? p.filter((x) => x !== d) : [...p, d]));
@@ -84,6 +121,7 @@ const ShortDayRequestPage = () => {
     const res = await submitShortDayRequest(payload);
     setSubmitting(false);
     if (!res.ok) { setError("אירעה שגיאה בשליחת הטופס. נסו שוב בעוד רגע."); return; }
+    if (token) await markShortDayInviteSubmitted(token, res.id || null);
     setDone(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -120,6 +158,9 @@ const ShortDayRequestPage = () => {
             <h1 className="font-heading font-bold text-base leading-tight">בקשת הורים לקיצור יום לימודים</h1>
             <p className="text-[11px] text-muted-foreground">בית ספר מרום — בית אקשטיין יבנה · שנת הלימודים {ACADEMIC_YEAR}</p>
           </div>
+          {token && savedAt && (
+            <span className="hidden sm:inline text-[10px] text-muted-foreground">נשמר {savedAt}</span>
+          )}
           <img src={moeLogo.url} alt="משרד החינוך" loading="lazy" className="h-9 w-auto object-contain" />
         </div>
       </div>
