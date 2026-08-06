@@ -191,6 +191,9 @@ const ShortDayRequestPage = () => {
         <Link to="/forms" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary">
           <ChevronRight className="w-3.5 h-3.5" /> כל הטפסים הדיגיטליים
         </Link>
+        <p className="text-xs text-muted-foreground">
+          שדות המסומנים ב-<Req /> הם שדות חובה ויש למלא את כולם לפני שליחת הבקשה.
+        </p>
 
         <div className="intake-card-soft">
           <h2 className="flex items-center gap-2 text-base font-heading font-semibold mb-3">
