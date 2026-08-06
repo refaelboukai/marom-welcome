@@ -484,6 +484,114 @@ export type Database = {
         }
         Relationships: []
       }
+      short_day_requests: {
+        Row: {
+          academic_year: string
+          created_at: string
+          days: Json
+          decision: string
+          decision_date: string | null
+          decision_days: Json
+          decision_exit_time: string
+          decision_notes: string
+          declarations_accepted: boolean
+          exit_time: string
+          father_name: string
+          father_sign_date: string | null
+          father_signature: string
+          grade: string
+          homeroom_teacher: string
+          id: string
+          mother_name: string
+          mother_sign_date: string | null
+          mother_signature: string
+          principal_name: string
+          reason: string
+          request_date: string | null
+          school_name: string
+          sig_counselor: string
+          sig_principal: string
+          sig_supervisor: string
+          sig_teacher: string
+          sig_treatment_coordinator: string
+          start_date: string | null
+          status: string
+          student_id_number: string
+          student_name: string
+          updated_at: string
+        }
+        Insert: {
+          academic_year?: string
+          created_at?: string
+          days?: Json
+          decision?: string
+          decision_date?: string | null
+          decision_days?: Json
+          decision_exit_time?: string
+          decision_notes?: string
+          declarations_accepted?: boolean
+          exit_time?: string
+          father_name?: string
+          father_sign_date?: string | null
+          father_signature?: string
+          grade?: string
+          homeroom_teacher?: string
+          id?: string
+          mother_name?: string
+          mother_sign_date?: string | null
+          mother_signature?: string
+          principal_name?: string
+          reason?: string
+          request_date?: string | null
+          school_name?: string
+          sig_counselor?: string
+          sig_principal?: string
+          sig_supervisor?: string
+          sig_teacher?: string
+          sig_treatment_coordinator?: string
+          start_date?: string | null
+          status?: string
+          student_id_number?: string
+          student_name?: string
+          updated_at?: string
+        }
+        Update: {
+          academic_year?: string
+          created_at?: string
+          days?: Json
+          decision?: string
+          decision_date?: string | null
+          decision_days?: Json
+          decision_exit_time?: string
+          decision_notes?: string
+          declarations_accepted?: boolean
+          exit_time?: string
+          father_name?: string
+          father_sign_date?: string | null
+          father_signature?: string
+          grade?: string
+          homeroom_teacher?: string
+          id?: string
+          mother_name?: string
+          mother_sign_date?: string | null
+          mother_signature?: string
+          principal_name?: string
+          reason?: string
+          request_date?: string | null
+          school_name?: string
+          sig_counselor?: string
+          sig_principal?: string
+          sig_supervisor?: string
+          sig_teacher?: string
+          sig_treatment_coordinator?: string
+          start_date?: string | null
+          status?: string
+          student_id_number?: string
+          student_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       support_plans: {
         Row: {
           created_at: string
