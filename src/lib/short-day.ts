@@ -130,8 +130,8 @@ const sigBox = (label: string, name: string, img: string, date?: string | null) 
     <p style="font-size:11px;color:#666;margin:0 0 3px 0;">${esc(label)}</p>
     <p style="font-size:12.5px;font-weight:700;margin:0 0 6px 0;">${esc(name) || "—"}</p>
     ${img?.startsWith("data:")
-      ? `<img src="${img}" style="width:100%;height:80px;object-fit:contain;" />`
-      : `<div style="height:80px;border-bottom:1px dashed #aaa;"></div>`}
+      ? `<img src="${img}" style="width:100%;height:58px;object-fit:contain;" />`
+      : `<div style="height:58px;border-bottom:1px dashed #aaa;"></div>`}
     <p style="font-size:10.5px;color:#666;margin:5px 0 0 0;">תאריך: ${esc(heDate(date))}</p>
   </div>`;
 
@@ -149,56 +149,56 @@ function header(logoSrc: string | null, moeSrc: string | null, subtitle: string)
 
 export async function generateShortDayPDF(r: ShortDayRequest, opts?: { targetWindow?: Window | null; compact?: boolean }) {
   const [logoSrc, moeSrc] = await Promise.all([toDataUrl(logo), toDataUrl(moeLogo.url)]);
-  const wrap = (body: string, subtitle = "") => `
-    <div style="font-family:'Heebo','Rubik',Arial,sans-serif;direction:rtl;padding:32px;width:700px;box-sizing:border-box;color:#1a1a2e;line-height:1.6;background:#fff;">
-      ${header(logoSrc, moeSrc, subtitle)}${body}
-    </div>`;
+  const decided = r.decision === "approved" || r.decision === "rejected";
 
-  const page1 = `
-    ${line("תאריך:", heDate(r.request_date), "45%")}
-    ${line("לכבוד מחנך/ת הכיתה:", r.homeroom_teacher)}
-    ${line("מנהל/ת בית הספר:", r.principal_name)}
-    <p style="font-size:13px;font-weight:800;margin:14px 0 8px 0;">הנדון: בקשת הורים לקיצור יום הלימודים</p>
-    <p style="font-size:12.5px;margin:0 0 8px 0;">אנו, הורי/אפוטרופסי התלמיד/ה:</p>
-    ${line("שם התלמיד/ה:", r.student_name)}
-    <div style="display:flex;gap:16px;">${line("ת.ז.:", r.student_id_number, "48%")}${line("כיתה:", r.grade, "48%")}</div>
-    ${line("בבית הספר:", r.school_name)}
-    <p style="font-size:12.5px;margin:10px 0;">מבקשים לאשר קיצור קבוע של יום הלימודים עבור בננו/בתנו במהלך שנת הלימודים ${esc(ACADEMIC_YEAR)}.</p>
-    <div style="display:flex;gap:16px;">${line("שעת היציאה המבוקשת:", r.exit_time, "48%")}${line("החל מתאריך:", heDate(r.start_date), "48%")}</div>
-    <p style="font-size:12px;margin:6px 0 4px 0;font-weight:700;">הימים המבוקשים:</p>
-    <div style="margin-bottom:12px;">${WEEK_DAYS.map((d) => checkbox((r.days || []).includes(d), d)).join("")}</div>
-    <p style="font-size:12.5px;font-weight:800;color:#2f6f58;margin:0 0 4px 0;">נימוק לבקשה</p>
-    <div style="border:1px solid #cfd8d5;border-radius:8px;min-height:120px;padding:10px;font-size:12px;white-space:pre-wrap;">${esc(r.reason)}</div>`;
+  const decisionBlock = decided ? `
+    <div style="border:1px solid #cfd8d5;border-radius:8px;padding:8px 10px;margin-top:8px;background:#f7faf9;">
+      <p style="font-size:11.5px;font-weight:800;margin:0 0 4px 0;color:#2f6f58;">החלטת בית הספר</p>
+      <div style="margin-bottom:4px;">
+        ${checkbox(r.decision === "approved", "לאשר את הבקשה")}
+        ${checkbox(r.decision === "rejected", "לא לאשר את הבקשה")}
+        <span style="font-size:10.5px;color:#555;">תאריך: ${esc(heDate(r.decision_date))}</span>
+      </div>
+      <div style="display:flex;gap:12px;">
+        ${line("שעה שאושרה:", r.decision_exit_time, "48%")}
+        ${line("ימים שאושרו:", (r.decision_days || []).join(", "), "48%")}
+      </div>
+      ${r.decision_notes ? `<p style="font-size:10.8px;margin:2px 0 4px 0;white-space:pre-wrap;"><b>הערות:</b> ${esc(r.decision_notes)}</p>` : ""}
+      <div style="display:flex;flex-wrap:wrap;gap:10px;">
+        ${[["מחנך/ת", r.sig_teacher], ["רכז/ת טיפול", r.sig_treatment_coordinator], ["יועץ/ת", r.sig_counselor], ["מנהל/ת", r.sig_principal], ["מפקח/ת", r.sig_supervisor]]
+          .filter(([, v]) => String(v || "").trim())
+          .map(([l, v]) => `<span style="font-size:10.5px;">${esc(l)}: <b>${esc(v)}</b></span>`).join("")}
+      </div>
+    </div>` : "";
 
-  const page2 = `
-    <p style="font-size:13.5px;font-weight:800;margin:0 0 6px 0;">הצהרת ההורים</p>
-    <p style="font-size:12px;margin:0 0 6px 0;">ידוע לנו כי:</p>
-    <ol style="font-size:11.8px;padding-right:18px;margin:0 0 16px 0;">
-      ${DECLARATIONS.map((d) => `<li style="margin-bottom:5px;">${esc(d)}</li>`).join("")}
+  const body = `
+    <div style="display:flex;gap:14px;">${line("תאריך:", heDate(r.request_date), "34%")}${line("מחנך/ת הכיתה:", r.homeroom_teacher, "32%")}${line("מנהל/ת בית הספר:", r.principal_name, "32%")}</div>
+    <p style="font-size:12px;font-weight:800;margin:4px 0 6px 0;">הנדון: בקשת הורים לקיצור יום הלימודים</p>
+    <div style="display:flex;gap:14px;">${line("שם התלמיד/ה:", r.student_name, "40%")}${line("ת.ז.:", r.student_id_number, "30%")}${line("כיתה:", r.grade, "26%")}</div>
+    <div style="display:flex;gap:14px;">${line("בית הספר:", r.school_name, "44%")}${line("שעת היציאה המבוקשת:", r.exit_time, "28%")}${line("החל מתאריך:", heDate(r.start_date), "26%")}</div>
+    <div style="display:flex;align-items:center;gap:6px;margin:2px 0 8px 0;">
+      <span style="font-size:11.5px;font-weight:700;white-space:nowrap;">הימים המבוקשים:</span>
+      <span>${WEEK_DAYS.map((d) => checkbox((r.days || []).includes(d), d)).join("")}</span>
+    </div>
+    <p style="font-size:11.5px;font-weight:800;color:#2f6f58;margin:0 0 3px 0;">נימוק לבקשה</p>
+    <div style="border:1px solid #cfd8d5;border-radius:8px;min-height:62px;padding:8px;font-size:11px;white-space:pre-wrap;line-height:1.45;">${esc(r.reason)}</div>
+    <p style="font-size:11.5px;font-weight:800;margin:10px 0 2px 0;">הצהרת ההורים — ידוע לנו כי:</p>
+    <ol style="font-size:9.4px;padding-right:15px;margin:0 0 8px 0;line-height:1.4;">
+      ${DECLARATIONS.map((d) => `<li style="margin-bottom:2px;">${esc(d)}</li>`).join("")}
     </ol>
-    <div style="display:flex;gap:14px;">
+    <div style="display:flex;gap:12px;">
       ${sigBox("שם האם/האפוטרופוס וחתימה", r.mother_name, r.mother_signature, r.mother_sign_date)}
       ${sigBox("שם האב/האפוטרופוס וחתימה", r.father_name, r.father_signature, r.father_sign_date)}
+    </div>
+    ${decisionBlock}`;
+
+  const page = `
+    <div style="font-family:'Heebo','Rubik',Arial,sans-serif;direction:rtl;padding:26px 30px;width:700px;box-sizing:border-box;color:#1a1a2e;line-height:1.5;background:#fff;">
+      ${header(logoSrc, moeSrc, "")}${body}
     </div>`;
 
-  const page3 = `
-    <p style="font-size:13.5px;font-weight:800;margin:0 0 8px 0;">החלטת בית הספר</p>
-    ${line("שם התלמיד/ה:", r.student_name)}
-    <p style="font-size:12px;margin:8px 0 6px 0;">לאחר בחינת הבקשה הוחלט:</p>
-    <div style="margin-bottom:12px;">
-      ${checkbox(r.decision === "approved", "לאשר את הבקשה")}
-      ${checkbox(r.decision === "rejected", "לא לאשר את הבקשה")}
-    </div>
-    ${line("שעת היציאה שאושרה (במידה ואושר):", r.decision_exit_time)}
-    ${line("ימים שאושרו:", (r.decision_days || []).join(", "))}
-    <p style="font-size:12px;font-weight:700;margin:10px 0 4px 0;">הערות / נימוקים:</p>
-    <div style="border:1px solid #cfd8d5;border-radius:8px;min-height:90px;padding:10px;font-size:12px;white-space:pre-wrap;margin-bottom:14px;">${esc(r.decision_notes)}</div>
-    ${[["מחנך/ת הכיתה", r.sig_teacher], ["רכז/ת טיפול", r.sig_treatment_coordinator], ["יועץ/ת בית הספר", r.sig_counselor], ["מנהל/ת בית הספר", r.sig_principal], ["מפקח/ת חינוך מיוחד", r.sig_supervisor]]
-      .map(([l, v]) => `<div style="display:flex;gap:16px;">${line(`${l}:`, String(v || ""), "58%")}${line("חתימה:", "", "38%")}</div>`).join("")}
-    ${line("תאריך ההחלטה:", heDate(r.decision_date), "45%")}`;
-
   await renderPagedHTMLToPDF(
-    [wrap(page1), wrap(page2, "הצהרות וחתימות"), wrap(page3, "החלטת בית הספר")],
+    [page],
     `בקשה-לקיצור-יום-לימודים-${r.student_name || "תלמיד"}.pdf`,
     opts,
   );
