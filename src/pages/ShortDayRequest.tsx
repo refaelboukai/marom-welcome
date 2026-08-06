@@ -15,6 +15,9 @@ import {
 const inputCls =
   "w-full px-3.5 py-2.5 rounded-xl border-2 border-border bg-card text-sm focus:outline-none focus:border-primary/60 transition-colors";
 
+/** Red asterisk marking a mandatory field. */
+const Req = () => <span className="text-destructive font-bold">*</span>;
+
 const today = () => new Date().toISOString().split("T")[0];
 
 const ShortDayRequestPage = () => {
@@ -38,6 +41,7 @@ const ShortDayRequestPage = () => {
   });
   const [days, setDays] = useState<string[]>([]);
   const [accepted, setAccepted] = useState(false);
+  const [singleParent, setSingleParent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
@@ -78,11 +82,29 @@ const ShortDayRequestPage = () => {
   const set = (k: keyof typeof v, val: string) => setV((p) => ({ ...p, [k]: val }));
   const toggleDay = (d: string) => setDays((p) => (p.includes(d) ? p.filter((x) => x !== d) : [...p, d]));
 
-  const valid =
-    v.student_name.trim() && v.student_id_number.trim() && v.grade.trim() &&
-    v.exit_time.trim() && days.length > 0 && v.reason.trim().length > 5 &&
-    accepted && (v.mother_signature || v.father_signature) &&
-    (v.mother_name.trim() || v.father_name.trim());
+  // Every field on this form is mandatory (red asterisk) before submitting.
+  const missing: string[] = [];
+  if (!v.request_date) missing.push("תאריך");
+  if (!v.student_name.trim()) missing.push("שם התלמיד/ה");
+  if (v.student_id_number.trim().length !== 9) missing.push("ת.ז. התלמיד/ה (9 ספרות)");
+  if (!v.grade.trim()) missing.push("כיתה");
+  if (!v.school_name.trim()) missing.push("בית הספר");
+  if (!v.homeroom_teacher.trim()) missing.push("מחנך/ת הכיתה");
+  if (!v.principal_name.trim()) missing.push("מנהל/ת בית הספר");
+  if (!v.exit_time.trim()) missing.push("שעת היציאה המבוקשת");
+  if (!v.start_date) missing.push("החל מתאריך");
+  if (days.length === 0) missing.push("הימים המבוקשים");
+  if (v.reason.trim().length <= 5) missing.push("נימוק לבקשה");
+  if (!accepted) missing.push("אישור ההצהרה");
+  if (!v.mother_name.trim() && !singleParent) missing.push("שם האם/האפוטרופוס");
+  if (!v.mother_signature && !singleParent) missing.push("חתימת האם/האפוטרופוס");
+  if (!v.father_name.trim() && !singleParent) missing.push("שם האב/האפוטרופוס");
+  if (!v.father_signature && !singleParent) missing.push("חתימת האב/האפוטרופוס");
+  if (singleParent) {
+    if (!v.mother_name.trim() && !v.father_name.trim()) missing.push("שם ההורה/אפוטרופוס");
+    if (!v.mother_signature && !v.father_signature) missing.push("חתימת ההורה/אפוטרופוס");
+  }
+  const valid = missing.length === 0;
 
   const record = (): SDR => ({
     id: "", academic_year: ACADEMIC_YEAR,
@@ -169,26 +191,29 @@ const ShortDayRequestPage = () => {
         <Link to="/forms" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary">
           <ChevronRight className="w-3.5 h-3.5" /> כל הטפסים הדיגיטליים
         </Link>
+        <p className="text-xs text-muted-foreground">
+          שדות המסומנים ב-<Req /> הם שדות חובה ויש למלא את כולם לפני שליחת הבקשה.
+        </p>
 
         <div className="intake-card-soft">
           <h2 className="flex items-center gap-2 text-base font-heading font-semibold mb-3">
             <FileText className="w-4 h-4 text-primary" /> פרטי התלמיד/ה והפנייה
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div><label className="block text-sm font-medium mb-1.5">תאריך</label>
+            <div><label className="block text-sm font-medium mb-1.5">תאריך <Req /></label>
               <input type="date" className={inputCls} value={v.request_date} onChange={(e) => set("request_date", e.target.value)} /></div>
-            <div><label className="block text-sm font-medium mb-1.5">שם התלמיד/ה <span className="text-destructive">*</span></label>
+            <div><label className="block text-sm font-medium mb-1.5">שם התלמיד/ה <Req /></label>
               <input className={inputCls} value={v.student_name} onChange={(e) => set("student_name", e.target.value)} /></div>
-            <div><label className="block text-sm font-medium mb-1.5">ת.ז. התלמיד/ה <span className="text-destructive">*</span></label>
+            <div><label className="block text-sm font-medium mb-1.5">ת.ז. התלמיד/ה <Req /></label>
               <input className={inputCls} inputMode="numeric" value={v.student_id_number}
                 onChange={(e) => set("student_id_number", e.target.value.replace(/\D/g, "").slice(0, 9))} /></div>
-            <div><label className="block text-sm font-medium mb-1.5">כיתה <span className="text-destructive">*</span></label>
+            <div><label className="block text-sm font-medium mb-1.5">כיתה <Req /></label>
               <input className={inputCls} value={v.grade} onChange={(e) => set("grade", e.target.value)} /></div>
-            <div><label className="block text-sm font-medium mb-1.5">בית הספר</label>
+            <div><label className="block text-sm font-medium mb-1.5">בית הספר <Req /></label>
               <input className={inputCls} value={v.school_name} onChange={(e) => set("school_name", e.target.value)} /></div>
-            <div><label className="block text-sm font-medium mb-1.5">מחנך/ת הכיתה</label>
+            <div><label className="block text-sm font-medium mb-1.5">מחנך/ת הכיתה <Req /></label>
               <input className={inputCls} value={v.homeroom_teacher} onChange={(e) => set("homeroom_teacher", e.target.value)} /></div>
-            <div><label className="block text-sm font-medium mb-1.5">מנהל/ת בית הספר</label>
+            <div><label className="block text-sm font-medium mb-1.5">מנהל/ת בית הספר <Req /></label>
               <input className={inputCls} value={v.principal_name} onChange={(e) => set("principal_name", e.target.value)} /></div>
           </div>
         </div>
@@ -198,12 +223,12 @@ const ShortDayRequestPage = () => {
             <Clock className="w-4 h-4 text-primary" /> פרטי הבקשה
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div><label className="block text-sm font-medium mb-1.5">שעת היציאה המבוקשת <span className="text-destructive">*</span></label>
+            <div><label className="block text-sm font-medium mb-1.5">שעת היציאה המבוקשת <Req /></label>
               <input type="time" className={inputCls} value={v.exit_time} onChange={(e) => set("exit_time", e.target.value)} /></div>
-            <div><label className="block text-sm font-medium mb-1.5">החל מתאריך</label>
+            <div><label className="block text-sm font-medium mb-1.5">החל מתאריך <Req /></label>
               <input type="date" className={inputCls} value={v.start_date} onChange={(e) => set("start_date", e.target.value)} /></div>
           </div>
-          <p className="text-sm font-medium mt-4 mb-2">הימים המבוקשים <span className="text-destructive">*</span></p>
+          <p className="text-sm font-medium mt-4 mb-2">הימים המבוקשים <Req /></p>
           <div className="flex flex-wrap gap-2">
             {WEEK_DAYS.map((d) => (
               <button key={d} type="button" onClick={() => toggleDay(d)}
@@ -213,7 +238,7 @@ const ShortDayRequestPage = () => {
             ))}
           </div>
           <div className="mt-4">
-            <label className="block text-sm font-medium mb-1.5">נימוק לבקשה <span className="text-destructive">*</span></label>
+            <label className="block text-sm font-medium mb-1.5">נימוק לבקשה <Req /></label>
             <textarea className={`${inputCls} resize-none`} rows={5} maxLength={1500} value={v.reason}
               onChange={(e) => set("reason", e.target.value)}
               placeholder="פרטו את הסיבה לבקשה — שיקולים רפואיים, טיפוליים, רגשיים או משפחתיים הרלוונטיים לילד/ה" />
@@ -228,22 +253,27 @@ const ShortDayRequestPage = () => {
           <label className={`mt-4 flex items-start gap-3 p-3.5 rounded-2xl border-2 cursor-pointer transition-all ${
             accepted ? "border-primary/60 bg-primary/5" : "border-border bg-card hover:border-primary/30"}`}>
             <input type="checkbox" checked={accepted} onChange={() => setAccepted(!accepted)} className="mt-1 w-4 h-4 accent-primary" />
-            <span className="text-sm leading-relaxed">קראנו, הבנו ואנו מאשרים את כל סעיפי ההצהרה <span className="text-destructive">*</span></span>
+            <span className="text-sm leading-relaxed">קראנו, הבנו ואנו מאשרים את כל סעיפי ההצהרה <Req /></span>
           </label>
         </div>
 
         <div className="intake-card-soft">
-          <h2 className="text-base font-heading font-semibold mb-3">חתימות ההורים</h2>
+          <h2 className="text-base font-heading font-semibold mb-1">חתימות ההורים</h2>
+          <label className="flex items-center gap-2 text-xs text-muted-foreground mb-3 cursor-pointer">
+            <input type="checkbox" checked={singleParent} onChange={() => setSingleParent(!singleParent)}
+              className="w-3.5 h-3.5 accent-primary" />
+            הורה יחיד / חתימה של הורה אחד בלבד
+          </label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div className="space-y-3">
-              <div><label className="block text-sm font-medium mb-1.5">שם האם/האפוטרופוס</label>
+              <div><label className="block text-sm font-medium mb-1.5">שם האם/האפוטרופוס {!singleParent && <Req />}</label>
                 <input className={inputCls} value={v.mother_name} onChange={(e) => set("mother_name", e.target.value)} /></div>
-              <SignaturePad label="חתימת האם/האפוטרופוס" value={v.mother_signature} onChange={(d) => set("mother_signature", d)} />
+              <SignaturePad label={`חתימת האם/האפוטרופוס${singleParent ? "" : " *"}`} value={v.mother_signature} onChange={(d) => set("mother_signature", d)} />
             </div>
             <div className="space-y-3">
-              <div><label className="block text-sm font-medium mb-1.5">שם האב/האפוטרופוס</label>
+              <div><label className="block text-sm font-medium mb-1.5">שם האב/האפוטרופוס {!singleParent && <Req />}</label>
                 <input className={inputCls} value={v.father_name} onChange={(e) => set("father_name", e.target.value)} /></div>
-              <SignaturePad label="חתימת האב/האפוטרופוס" value={v.father_signature} onChange={(d) => set("father_signature", d)} />
+              <SignaturePad label={`חתימת האב/האפוטרופוס${singleParent ? "" : " *"}`} value={v.father_signature} onChange={(d) => set("father_signature", d)} />
             </div>
           </div>
           <p className="text-[11px] text-muted-foreground mt-3">
@@ -264,7 +294,14 @@ const ShortDayRequestPage = () => {
             {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> שולח…</> : <><Send className="w-4 h-4" /> שליחת הבקשה</>}
           </button>
         </div>
-        {!valid && <p className="text-center text-xs text-muted-foreground">יש למלא את שדות החובה, לסמן ימים, לאשר את ההצהרה ולחתום</p>}
+        {!valid && (
+          <div className="rounded-2xl border-2 border-destructive/30 bg-destructive/5 p-3.5">
+            <p className="text-xs font-semibold text-destructive mb-1">כל השדות המסומנים ב-<Req /> הם שדות חובה. נותר למלא:</p>
+            <ul className="text-xs text-destructive/90 list-disc pr-5 space-y-0.5">
+              {missing.map((m) => <li key={m}>{m}</li>)}
+            </ul>
+          </div>
+        )}
       </div>
     </div>
   );
