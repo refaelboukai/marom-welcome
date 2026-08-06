@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { renderPagedHTMLToPDF } from "@/lib/pdf-export";
-import moeLogo from "@/assets/moe-logo.jpeg";
+import moeState from "@/assets/moe-state.png";
+import moeDistrict from "@/assets/moe-district.png";
 
 export const ACADEMIC_YEAR = 'תשפ"ז';
 export const WEEK_DAYS = ["ראשון", "שני", "שלישי", "רביעי", "חמישי"];
@@ -134,20 +135,21 @@ const sigBox = (label: string, name: string, img: string, date?: string | null) 
     <p style="font-size:10.5px;color:#666;margin:5px 0 0 0;">תאריך: ${esc(heDate(date))}</p>
   </div>`;
 
-function header(logoSrc: string | null, moeSrc: string | null, subtitle: string) {
+function header(districtSrc: string | null, moeSrc: string | null, subtitle: string) {
   return `
     <div style="display:flex;align-items:center;gap:12px;border-bottom:3px solid #4a9a7a;padding-bottom:10px;margin-bottom:16px;">
+      ${districtSrc ? `<img src="${districtSrc}" style="height:40px;object-fit:contain;" />` : ""}
       <div style="flex:1;text-align:center;">
         <h1 style="font-size:18px;font-weight:800;margin:0;color:#14213d;">בקשה לקיצור יום לימודים — בית ספר חינוך מיוחד</h1>
         <p style="font-size:12.5px;font-weight:700;color:#14213d;margin:3px 0 0 0;">משרד החינוך — מחוז מרכז</p>
         <p style="font-size:11.5px;color:#555;margin:2px 0 0 0;">שנת הלימודים ${esc(ACADEMIC_YEAR)}${subtitle ? ` &nbsp;|&nbsp; ${esc(subtitle)}` : ""}</p>
       </div>
-      ${moeSrc ? `<div style="text-align:center;"><img src="${moeSrc}" style="height:62px;object-fit:contain;" /></div>` : ""}
+      ${moeSrc ? `<div style="text-align:center;"><img src="${moeSrc}" style="height:60px;object-fit:contain;" /></div>` : ""}
     </div>`;
 }
 
 export async function generateShortDayPDF(r: ShortDayRequest, opts?: { targetWindow?: Window | null; compact?: boolean }) {
-  const moeSrc = await toDataUrl(moeLogo);
+  const [moeSrc, districtSrc] = await Promise.all([toDataUrl(moeState), toDataUrl(moeDistrict)]);
   const decided = r.decision === "approved" || r.decision === "rejected";
 
   const decisionBlock = decided ? `
@@ -214,7 +216,7 @@ export async function generateShortDayPDF(r: ShortDayRequest, opts?: { targetWin
 
   const page = `
     <div style="font-family:'Heebo','Rubik',Arial,sans-serif;direction:rtl;padding:26px 30px;width:700px;box-sizing:border-box;color:#1a1a2e;line-height:1.5;background:#fff;">
-      ${header(null, moeSrc, "")}${body}${supervisorBlock}
+      ${header(districtSrc, moeSrc, "")}${body}${supervisorBlock}
     </div>`;
 
   await renderPagedHTMLToPDF(
