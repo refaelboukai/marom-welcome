@@ -35,7 +35,13 @@ export function normalizePhone(raw: string): string | null {
 function isMobileDevice(): boolean {
   if (typeof navigator === "undefined") return false;
   const ua = navigator.userAgent || "";
-  return /Android|iPhone|iPad|iPod|Windows Phone/i.test(ua);
+  if (/Android|iPhone|iPad|iPod|Windows Phone|Silk|Kindle|PlayBook|BB10/i.test(ua)) return true;
+  // iPadOS 13+ reports a desktop "Macintosh" UA — detect it via touch support.
+  const touchPoints = (navigator as Navigator & { maxTouchPoints?: number }).maxTouchPoints || 0;
+  if (/Macintosh/i.test(ua) && touchPoints > 1) return true;
+  // Any touch-first device (tablets in general) → native app.
+  if (touchPoints > 1 && typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches) return true;
+  return false;
 }
 
 export function buildWhatsAppUrl(phone: string, message: string = WELCOME_MESSAGE): string | null {
