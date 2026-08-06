@@ -214,7 +214,7 @@ export async function generateShortDayPDF(r: ShortDayRequest, opts?: { targetWin
 
   const page = `
     <div style="font-family:'Heebo','Rubik',Arial,sans-serif;direction:rtl;padding:26px 30px;width:700px;box-sizing:border-box;color:#1a1a2e;line-height:1.5;background:#fff;">
-      ${header(null, moeSrc, "")}${body}
+      ${header(null, moeSrc, "")}${body}${supervisorBlock}
     </div>`;
 
   await renderPagedHTMLToPDF(
