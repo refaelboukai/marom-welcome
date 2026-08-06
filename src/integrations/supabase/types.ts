@@ -484,6 +484,57 @@ export type Database = {
         }
         Relationships: []
       }
+      short_day_invites: {
+        Row: {
+          academic_year: string
+          created_at: string
+          draft_data: Json
+          grade: string
+          id: string
+          parent_name: string
+          parent_phone: string
+          request_id: string | null
+          sent_at: string | null
+          status: string
+          student_name: string
+          submitted_at: string | null
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          academic_year?: string
+          created_at?: string
+          draft_data?: Json
+          grade?: string
+          id?: string
+          parent_name?: string
+          parent_phone?: string
+          request_id?: string | null
+          sent_at?: string | null
+          status?: string
+          student_name?: string
+          submitted_at?: string | null
+          token: string
+          updated_at?: string
+        }
+        Update: {
+          academic_year?: string
+          created_at?: string
+          draft_data?: Json
+          grade?: string
+          id?: string
+          parent_name?: string
+          parent_phone?: string
+          request_id?: string | null
+          sent_at?: string | null
+          status?: string
+          student_name?: string
+          submitted_at?: string | null
+          token?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       short_day_requests: {
         Row: {
           academic_year: string
