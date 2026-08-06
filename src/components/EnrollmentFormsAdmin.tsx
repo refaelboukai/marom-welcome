@@ -15,6 +15,7 @@ import {
   deleteInvite, getInvites, inviteLink, inviteWhatsAppUrl,
 } from "@/lib/enrollment-invites";
 import {
+import { copyText } from "@/lib/clipboard";
   compareForms, displayValue, generateCombinedEnrollmentPDF, generateEnrollmentPDF,
 } from "@/lib/enrollment-pdf";
 
@@ -41,7 +42,7 @@ const EnrollmentFormsAdmin = () => {
 
   const openLink = `${APP_URL}/enroll`;
   const copy = (text: string, id: string) => {
-    navigator.clipboard.writeText(text); setCopied(id); setTimeout(() => setCopied(""), 1500);
+    copyText(text); setCopied(id); setTimeout(() => setCopied(""), 1500);
   };
 
   const handleCreate = async () => {

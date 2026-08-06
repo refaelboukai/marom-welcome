@@ -19,6 +19,7 @@ import { Plus, Users, User, AlertTriangle, CheckCircle, Clock, Search, LogOut, X
 import { calculateScores, generateRiskFlags, getCompletionPercentage } from "@/lib/scoring";
 import { exportToExcel } from "@/lib/export-utils";
 import { generateStudentPDF } from "@/lib/pdf-export";
+import { copyText } from "@/lib/clipboard";
 
 type Tab = string; // "all" | "unassigned" | "codes" | "archive" | any classGroup key
 
@@ -158,7 +159,7 @@ const Dashboard = () => {
   }), [sessionsWithMeta]);
 
   const handleCopy = (text: string, key: string) => {
-    navigator.clipboard.writeText(text);
+    copyText(text);
     setCopied(key);
     setTimeout(() => setCopied(null), 1500);
   };

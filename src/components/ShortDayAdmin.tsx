@@ -6,6 +6,7 @@ import {
   generateShortDayPDF, getShortDayRequests, updateShortDayRequest,
 } from "@/lib/short-day";
 import {
+import { copyText } from "@/lib/clipboard";
   SHORT_DAY_INVITE_STATUS, ShortDayInvite, createShortDayInvite, deleteShortDayInvite,
   getShortDayInvites, shortDayInviteCode, shortDayInviteWhatsAppUrl,
 } from "@/lib/short-day-invites";
@@ -117,7 +118,7 @@ const ShortDayAdmin = () => {
                   {SHORT_DAY_INVITE_STATUS[iv.status] || iv.status}
                 </span>
                 <span className="flex-1" />
-                <button onClick={() => navigator.clipboard.writeText(shortDayInviteCode(iv.token))}
+                <button onClick={() => copyText(shortDayInviteCode(iv.token))}
                   className="p-1.5 rounded-lg hover:text-primary hover:bg-primary/10" title="העתקת קוד">
                   <Copy className="w-3.5 h-3.5" />
                 </button>
@@ -141,7 +142,7 @@ const ShortDayAdmin = () => {
           <p className="font-semibold text-sm">בקשות לקיצור יום לימודים</p>
           <p className="text-xs text-muted-foreground">קישור למילוי על ידי הורים: {APP_URL}/forms/short-day</p>
         </div>
-        <button onClick={() => navigator.clipboard.writeText(`${APP_URL}/forms/short-day`)}
+        <button onClick={() => copyText(`${APP_URL}/forms/short-day`)}
           className="btn-intake bg-secondary text-secondary-foreground text-xs px-3 py-2">העתקת קישור</button>
       </div>
 

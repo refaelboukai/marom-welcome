@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ArrowRight, Copy, CheckCircle, Loader2, Plus, MessageCircle, FileText } from "lucide-react";
 import { openWhatsApp, normalizePhone, WELCOME_MESSAGE } from "@/lib/whatsapp";
 import { createInvites, inviteWhatsAppMessage, inviteLink } from "@/lib/enrollment-invites";
+import { copyText } from "@/lib/clipboard";
 
 const NewIntake = () => {
   const navigate = useNavigate();
@@ -101,7 +102,7 @@ const NewIntake = () => {
   };
 
   const handleCopy = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
+    copyText(text);
     setCopied(label);
     setTimeout(() => setCopied(null), 2000);
   };

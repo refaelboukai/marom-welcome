@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { IntakeSession } from "@/lib/types";
 import { Copy, CheckCircle, Download, Search, Key } from "lucide-react";
 import { exportCodesExcel } from "@/lib/export-utils";
+import { copyText } from "@/lib/clipboard";
 
 interface CodeManagementProps {
   sessions: IntakeSession[];
@@ -18,7 +19,7 @@ const CodeManagement = ({ sessions }: CodeManagementProps) => {
   }, [sessions, search]);
 
   const handleCopy = (text: string, key: string) => {
-    navigator.clipboard.writeText(text);
+    copyText(text);
     setCopied(key);
     setTimeout(() => setCopied(null), 1500);
   };
