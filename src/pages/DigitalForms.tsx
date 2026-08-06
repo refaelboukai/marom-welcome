@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowLeft, Clock, FileText } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
-import moeLogo from "@/assets/moe-logo.jpeg.asset.json";
+import moeLogo from "@/assets/moe-logo.jpeg";
 
 const FORMS = [
   {
@@ -29,7 +29,7 @@ const DigitalForms = () => (
           <h1 className="font-heading font-bold text-lg leading-tight">טפסים דיגיטליים</h1>
           <p className="text-[11px] text-muted-foreground">בית ספר מרום — בית אקשטיין יבנה</p>
         </div>
-        <img src={moeLogo.url} alt="משרד החינוך" loading="lazy" className="h-10 w-auto object-contain" />
+        <img src={moeLogo} alt="משרד החינוך" loading="lazy" className="h-10 w-auto object-contain" />
       </div>
     </div>
 

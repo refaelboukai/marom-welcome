@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { CheckCircle2, ChevronRight, Clock, Download, FileText, Loader2, Send } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
-import moeLogo from "@/assets/moe-logo.jpeg.asset.json";
+import moeLogo from "@/assets/moe-logo.jpeg";
 import SignaturePad from "@/components/SignaturePad";
 import {
   ACADEMIC_YEAR, DECLARATIONS, ShortDayRequest as SDR, WEEK_DAYS,
@@ -161,7 +161,7 @@ const ShortDayRequestPage = () => {
           {token && savedAt && (
             <span className="hidden sm:inline text-[10px] text-muted-foreground">נשמר {savedAt}</span>
           )}
-          <img src={moeLogo.url} alt="משרד החינוך" loading="lazy" className="h-9 w-auto object-contain" />
+          <img src={moeLogo} alt="משרד החינוך" loading="lazy" className="h-9 w-auto object-contain" />
         </div>
       </div>
 

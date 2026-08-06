@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { renderPagedHTMLToPDF } from "@/lib/pdf-export";
 import logo from "@/assets/logo.jpeg";
-import moeLogo from "@/assets/moe-logo.jpeg.asset.json";
+import moeLogo from "@/assets/moe-logo.jpeg";
 
 export const ACADEMIC_YEAR = 'תשפ"ז';
 export const WEEK_DAYS = ["ראשון", "שני", "שלישי", "רביעי", "חמישי"];
@@ -148,7 +148,7 @@ function header(logoSrc: string | null, moeSrc: string | null, subtitle: string)
 }
 
 export async function generateShortDayPDF(r: ShortDayRequest, opts?: { targetWindow?: Window | null; compact?: boolean }) {
-  const [logoSrc, moeSrc] = await Promise.all([toDataUrl(logo), toDataUrl(moeLogo.url)]);
+  const [logoSrc, moeSrc] = await Promise.all([toDataUrl(logo), toDataUrl(moeLogo)]);
   const decided = r.decision === "approved" || r.decision === "rejected";
 
   const decisionBlock = decided ? `
