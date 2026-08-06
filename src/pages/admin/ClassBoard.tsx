@@ -110,7 +110,6 @@ const ClassBoard = () => {
   const [order, setOrder] = useState<string[]>([]);
   const [teachers, setTeachers] = useState<TeacherProfilesMap>({});
   const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
 
@@ -187,11 +186,8 @@ const ClassBoard = () => {
   const [newClassOpen, setNewClassOpen] = useState(false);
   const [newClassName, setNewClassName] = useState("");
 
-  const loadBoard = async () => {
-    setLoading(true);
-    setLoadError(null);
-    try {
-      const [s, g, t] = await Promise.all([getSessionsDB(), getClassGroups(), getTeacherProfiles()]);
+  useEffect(() => {
+    Promise.all([getSessionsDB(), getClassGroups(), getTeacherProfiles()]).then(([s, g, t]) => {
       const active = s.filter((x) => x.status !== "archived");
       setSessions(active);
       setClassGroups(g);
@@ -201,15 +197,8 @@ const ClassBoard = () => {
       active.forEach((x) => { map[x.id] = x.classGroup || ""; });
       setAssign(map);
       setBaseline(map);
-    } catch (error) {
-      setLoadError(error instanceof Error ? error.message : "שגיאת טעינה");
-    } finally {
       setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadBoard();
+    });
   }, []);
 
   const sessionsById = useMemo(() => {
@@ -593,17 +582,6 @@ const ClassBoard = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-6 h-6 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-
-  if (loadError) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background p-6 text-center" dir="rtl">
-        <p className="font-heading font-semibold">לא הצלחנו לטעון את לוח השיבוצים</p>
-        <p className="text-sm text-muted-foreground max-w-sm">החיבור לשרת נכשל זמנית. הנתונים שמורים ולא נמחקו.</p>
-        <button onClick={loadBoard} className="btn-intake bg-primary text-primary-foreground px-4 py-2">נסו שוב</button>
       </div>
     );
   }
