@@ -124,8 +124,9 @@ const ShortDayAdmin = () => {
                   <Copy className="w-3.5 h-3.5" />
                 </button>
                 <button onClick={() => { const u = shortDayInviteWhatsAppUrl(iv); if (u) window.open(u, "_blank"); }}
-                  className="p-1.5 rounded-lg hover:text-primary hover:bg-primary/10" title="שליחה בוואטסאפ">
-                  <MessageCircle className="w-3.5 h-3.5" />
+                  className="btn-intake bg-success/15 text-success text-[11px] font-semibold px-2.5 py-1.5 inline-flex items-center gap-1.5 hover:bg-success/25"
+                  title="שליחה בוואטסאפ">
+                  <MessageCircle className="w-3.5 h-3.5" /> שליחה בוואטסאפ
                 </button>
                 <button onClick={() => removeInvite(iv.id)}
                   className="p-1.5 rounded-lg hover:text-destructive hover:bg-destructive/10" title="מחיקה">
