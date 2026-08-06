@@ -9,6 +9,8 @@ import StudentFlow from "./pages/StudentFlow";
 import ParentFlow from "./pages/ParentFlow";
 import StaffFlow from "./pages/StaffFlow";
 import Enrollment from "./pages/Enrollment";
+import DigitalForms from "./pages/DigitalForms";
+import ShortDayRequest from "./pages/ShortDayRequest";
 import Dashboard from "./pages/admin/Dashboard";
 import StudentProfile from "./pages/admin/StudentProfile";
 import NewIntake from "./pages/admin/NewIntake";
@@ -38,6 +40,8 @@ const App = () => {
           <Route path="/parent/:sessionId" element={<ParentFlow />} />
           <Route path="/staff" element={<StaffFlow />} />
           <Route path="/enroll" element={<Enrollment />} />
+          <Route path="/forms" element={<DigitalForms />} />
+          <Route path="/forms/short-day" element={<ShortDayRequest />} />
           <Route path="/staff/:sessionId" element={<StaffFlow />} />
           <Route path="/admin" element={<Dashboard />} />
           <Route path="/admin/student/:sessionId" element={<StudentProfile />} />
