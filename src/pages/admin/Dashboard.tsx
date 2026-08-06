@@ -11,7 +11,7 @@ import SchoolRulesEditor from "@/components/SchoolRulesEditor";
 import WelcomeMessageEditor from "@/components/WelcomeMessageEditor";
 import ReminderMessageEditor from "@/components/ReminderMessageEditor";
 import PhonesImportDialog from "@/components/PhonesImportDialog";
-import EnrollmentFormsAdmin from "@/components/EnrollmentFormsAdmin";
+import DigitalFormsAdmin from "@/components/DigitalFormsAdmin";
 import { openWhatsApp, normalizePhone, REMINDER_MESSAGE } from "@/lib/whatsapp";
 
 import logo from "@/assets/logo.jpeg";
