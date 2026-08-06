@@ -1,3 +1,4 @@
+import { copyText } from "@/lib/clipboard";
 import { useEffect, useState } from "react";
 import { Clock, Copy, Download, Loader2, MessageCircle, Plus, Save, Trash2 } from "lucide-react";
 import { APP_URL } from "@/lib/app-url";
@@ -18,6 +19,7 @@ const ShortDayAdmin = () => {
   const [rows, setRows] = useState<ShortDayRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [linkCopied, setLinkCopied] = useState("");
   const [busy, setBusy] = useState(false);
   const [draft, setDraft] = useState<Partial<ShortDayRequest>>({});
   const [invites, setInvites] = useState<ShortDayInvite[]>([]);
@@ -117,7 +119,7 @@ const ShortDayAdmin = () => {
                   {SHORT_DAY_INVITE_STATUS[iv.status] || iv.status}
                 </span>
                 <span className="flex-1" />
-                <button onClick={() => navigator.clipboard.writeText(shortDayInviteCode(iv.token))}
+                <button onClick={() => copyText(shortDayInviteCode(iv.token))}
                   className="p-1.5 rounded-lg hover:text-primary hover:bg-primary/10" title="העתקת קוד">
                   <Copy className="w-3.5 h-3.5" />
                 </button>
@@ -141,8 +143,10 @@ const ShortDayAdmin = () => {
           <p className="font-semibold text-sm">בקשות לקיצור יום לימודים</p>
           <p className="text-xs text-muted-foreground">קישור למילוי על ידי הורים: {APP_URL}/forms/short-day</p>
         </div>
-        <button onClick={() => navigator.clipboard.writeText(`${APP_URL}/forms/short-day`)}
-          className="btn-intake bg-secondary text-secondary-foreground text-xs px-3 py-2">העתקת קישור</button>
+        <button onClick={async () => { const ok = await copyText(`${APP_URL}/forms/short-day`); setLinkCopied(ok ? "ok" : "fail"); setTimeout(() => setLinkCopied(""), 2000); }}
+          className="btn-intake bg-secondary text-secondary-foreground text-xs px-3 py-2">
+          {linkCopied === "ok" ? "הקישור הועתק ✓" : linkCopied === "fail" ? "ההעתקה נכשלה" : "העתקת קישור"}
+        </button>
       </div>
 
       {rows.length === 0 && <p className="text-sm text-muted-foreground text-center py-10">עדיין לא התקבלו בקשות.</p>}

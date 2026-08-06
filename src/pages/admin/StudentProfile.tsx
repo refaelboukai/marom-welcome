@@ -16,6 +16,7 @@ import { generateStudentPDF, generatePersonalPlanPDF, generateEmpoweringPlanPDF,
 import { supabase } from "@/integrations/supabase/client";
 import { questionnaireItems, studentParentItems, allQuestionnaireItems } from "@/data/questionnaires";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line } from "recharts";
+import { copyText } from "@/lib/clipboard";
 
 const StudentProfile = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -359,7 +360,7 @@ const StudentProfile = () => {
   };
 
   const handleCopy = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
+    copyText(text);
     setCopied(label);
     setTimeout(() => setCopied(null), 2000);
   };
@@ -416,7 +417,7 @@ const StudentProfile = () => {
   };
 
   const handleCopySummary = () => {
-    navigator.clipboard.writeText(summaryText);
+    copyText(summaryText);
     setSummaryCopied(true);
     setTimeout(() => setSummaryCopied(false), 2000);
   };

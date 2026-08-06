@@ -1,3 +1,4 @@
+import { copyText } from "@/lib/clipboard";
 import { APP_URL } from "@/lib/app-url";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -41,7 +42,7 @@ const EnrollmentFormsAdmin = () => {
 
   const openLink = `${APP_URL}/enroll`;
   const copy = (text: string, id: string) => {
-    navigator.clipboard.writeText(text); setCopied(id); setTimeout(() => setCopied(""), 1500);
+    copyText(text); setCopied(id); setTimeout(() => setCopied(""), 1500);
   };
 
   const handleCreate = async () => {
