@@ -292,7 +292,7 @@ const Dashboard = () => {
     { key: "unassigned", label: "ללא שיוך", count: sessionsWithMeta.filter((s) => !s.classGroup && s.status !== "archived").length },
     { key: "archive", label: "ארכיון", count: sessionsWithMeta.filter((s) => s.status === "archived").length },
     { key: "codes", label: "ניהול קודים" },
-    { key: "enrollment", label: "טפסי קליטה" },
+    { key: "enrollment", label: "טפסים דיגיטליים" },
   ];
 
   return (
@@ -422,7 +422,7 @@ const Dashboard = () => {
 
         {/* Codes Tab */}
         {tab === "enrollment" ? (
-          <EnrollmentFormsAdmin />
+          <DigitalFormsAdmin />
         ) : tab === "codes" ? (
           <CodeManagement sessions={sessions} />
         ) : (
