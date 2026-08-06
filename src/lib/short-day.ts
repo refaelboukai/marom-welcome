@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { renderPagedHTMLToPDF } from "@/lib/pdf-export";
 import logo from "@/assets/logo.jpeg";
-import moeEmblem from "@/assets/moe-emblem.png";
+import moeLogo from "@/assets/moe-logo.jpeg.asset.json";
 
 export const ACADEMIC_YEAR = 'תשפ"ז';
 export const WEEK_DAYS = ["ראשון", "שני", "שלישי", "רביעי", "חמישי"];
@@ -55,6 +55,7 @@ export const DECLARATIONS = [
   "האחריות לאיסוף התלמיד/ה במועד המבוקש תחול על ההורים/האפוטרופוסים בלבד.",
   "ככל שהבקשה תאושר, אנו מתחייבים להוציא את ילדנו באופן קבוע בשעה ובימים שאושרו, אלא אם התקבל אישור מראש ובכתב לשינוי.",
   "ידוע לנו כי לקיצור יום הלימודים עשויות להיות השלכות לימודיות, חברתיות, טיפוליות ורגשיות, ואנו מקבלים אחריות על כך.",
+  "ידוע לנו כי ככל שתצורף לבקשה חוות דעת או אישור מרופא/ה פסיכיאטר/ית, הממליצים על קיצור יום הלימודים מטעמים רפואיים, תפקודיים או נפשיים, רשאית הרשות המקומית לבחון את התאמת מערך ההסעות בהתאם להוראות משרד החינוך, לנהליה ולסמכויותיה. מובהר כי כל החלטה בעניין ההסעה נתונה לשיקול דעתה של הרשות המקומית והגורמים המוסמכים, ובכפוף לקבלת כלל האישורים הנדרשים.",
 ];
 
 export type ShortDayInput = Partial<Omit<ShortDayRequest, "id" | "created_at" | "updated_at">>;
@@ -142,12 +143,12 @@ function header(logoSrc: string | null, moeSrc: string | null, subtitle: string)
         <h1 style="font-size:18px;font-weight:800;margin:0;color:#14213d;">בקשת הורים לקיצור יום לימודים</h1>
         <p style="font-size:11.5px;color:#555;margin:3px 0 0 0;">בית ספר מרום — בית אקשטיין יבנה &nbsp;|&nbsp; שנת הלימודים ${esc(ACADEMIC_YEAR)}${subtitle ? ` &nbsp;|&nbsp; ${esc(subtitle)}` : ""}</p>
       </div>
-      ${moeSrc ? `<div style="text-align:center;"><img src="${moeSrc}" style="height:46px;" /><p style="font-size:8.5px;color:#14213d;margin:2px 0 0 0;font-weight:700;">מדינת ישראל<br/>משרד החינוך</p></div>` : ""}
+      ${moeSrc ? `<div style="text-align:center;"><img src="${moeSrc}" style="height:62px;object-fit:contain;" /></div>` : ""}
     </div>`;
 }
 
 export async function generateShortDayPDF(r: ShortDayRequest, opts?: { targetWindow?: Window | null; compact?: boolean }) {
-  const [logoSrc, moeSrc] = await Promise.all([toDataUrl(logo), toDataUrl(moeEmblem)]);
+  const [logoSrc, moeSrc] = await Promise.all([toDataUrl(logo), toDataUrl(moeLogo.url)]);
   const wrap = (body: string, subtitle = "") => `
     <div style="font-family:'Heebo','Rubik',Arial,sans-serif;direction:rtl;padding:32px;width:700px;box-sizing:border-box;color:#1a1a2e;line-height:1.6;background:#fff;">
       ${header(logoSrc, moeSrc, subtitle)}${body}

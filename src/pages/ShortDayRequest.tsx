@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { CheckCircle2, ChevronRight, Clock, Download, FileText, Loader2, Send } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
-import moeEmblem from "@/assets/moe-emblem.png";
+import moeLogo from "@/assets/moe-logo.jpeg.asset.json";
 import SignaturePad from "@/components/SignaturePad";
 import {
   ACADEMIC_YEAR, DECLARATIONS, ShortDayRequest as SDR, WEEK_DAYS,
@@ -120,7 +120,7 @@ const ShortDayRequestPage = () => {
             <h1 className="font-heading font-bold text-base leading-tight">בקשת הורים לקיצור יום לימודים</h1>
             <p className="text-[11px] text-muted-foreground">בית ספר מרום — בית אקשטיין יבנה · שנת הלימודים {ACADEMIC_YEAR}</p>
           </div>
-          <img src={moeEmblem} alt="משרד החינוך" width={512} height={512} loading="lazy" className="w-9 h-9 object-contain" />
+          <img src={moeLogo.url} alt="משרד החינוך" loading="lazy" className="h-9 w-auto object-contain" />
         </div>
       </div>
 
