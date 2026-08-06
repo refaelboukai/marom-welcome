@@ -114,9 +114,9 @@ const heDate = (d?: string | null) => {
 };
 
 const line = (label: string, value: string, width = "auto") => `
-  <div style="display:flex;align-items:flex-end;gap:6px;margin:0 0 8px 0;${width === "auto" ? "" : `width:${width};`}">
-    <span style="font-size:12px;color:#333;white-space:nowrap;line-height:18px;">${esc(label)}</span>
-    <span style="flex:1;min-width:0;border-bottom:1px solid #99a;height:18px;line-height:18px;font-size:12.5px;font-weight:700;padding:0 4px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(value) || "&nbsp;"}</span>
+  <div style="display:flex;align-items:flex-end;gap:6px;margin:0 0 10px 0;${width === "auto" ? "" : `width:${width};`}">
+    <span style="font-size:11.5px;color:#4a5568;white-space:nowrap;line-height:20px;">${esc(label)}</span>
+    <span style="flex:1;min-width:0;border-bottom:1px solid #b6c2c0;line-height:20px;font-size:12.5px;font-weight:700;color:#14213d;padding:0 4px 2px 4px;text-align:center;white-space:nowrap;">${esc(value) || "&nbsp;"}</span>
   </div>`;
 
 const checkbox = (checked: boolean, label: string) => `
