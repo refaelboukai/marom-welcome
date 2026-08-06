@@ -590,7 +590,7 @@ export async function renderPagedHTMLToPDF(
 
     try {
       const canvas = await html2canvas(container, {
-        scale: compact ? 1.15 : 2, useCORS: true, logging: false, backgroundColor: "#ffffff",
+        scale: compact ? 1.5 : 3, useCORS: true, logging: false, backgroundColor: "#ffffff",
       });
       const maxW = pw - margin * 2;
       const maxH = ph - margin * 2;
@@ -598,10 +598,18 @@ export async function renderPagedHTMLToPDF(
       let h = (canvas.height * maxW) / canvas.width;
       if (h > maxH) { h = maxH; w = (canvas.width * maxH) / canvas.height; }
       if (i > 0) pdf.addPage();
-      pdf.addImage(
-        canvas.toDataURL("image/jpeg", compact ? 0.6 : 0.92),
-        "JPEG", (pw - w) / 2, margin, w, h, undefined, "FAST",
-      );
+      if (compact) {
+        pdf.addImage(
+          canvas.toDataURL("image/jpeg", 0.62),
+          "JPEG", (pw - w) / 2, margin, w, h, undefined, "FAST",
+        );
+      } else {
+        // PNG keeps Hebrew text crisp (no JPEG ringing around thin glyphs)
+        pdf.addImage(
+          canvas.toDataURL("image/png"),
+          "PNG", (pw - w) / 2, margin, w, h, undefined, "SLOW",
+        );
+      }
     } finally {
       document.body.removeChild(container);
     }
