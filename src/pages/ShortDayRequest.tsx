@@ -237,21 +237,28 @@ const ShortDayRequestPage = () => {
             <FileText className="w-4 h-4 text-primary" /> פרטי התלמיד/ה והפנייה
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div><label className="block text-sm font-medium mb-1.5">תאריך <Req /></label>
+            {!hid("request_date") && <div><label className="block text-sm font-medium mb-1.5">תאריך {req("request_date") && <Req />}</label>
               <input type="date" className={inputCls} value={v.request_date} onChange={(e) => set("request_date", e.target.value)} /></div>
-            <div><label className="block text-sm font-medium mb-1.5">שם התלמיד/ה <Req /></label>
+            }
+            {!hid("student_name") && <div><label className="block text-sm font-medium mb-1.5">שם התלמיד/ה {req("student_name") && <Req />}</label>
               <input className={inputCls} value={v.student_name} onChange={(e) => set("student_name", e.target.value)} /></div>
-            <div><label className="block text-sm font-medium mb-1.5">ת.ז. התלמיד/ה <Req /></label>
+            }
+            {!hid("student_id_number") && <div><label className="block text-sm font-medium mb-1.5">ת.ז. התלמיד/ה {req("student_id_number") && <Req />}</label>
               <input className={inputCls} inputMode="numeric" value={v.student_id_number}
                 onChange={(e) => set("student_id_number", e.target.value.replace(/\D/g, "").slice(0, 9))} /></div>
-            <div><label className="block text-sm font-medium mb-1.5">כיתה <Req /></label>
+            }
+            {!hid("grade") && <div><label className="block text-sm font-medium mb-1.5">כיתה {req("grade") && <Req />}</label>
               <input className={inputCls} value={v.grade} onChange={(e) => set("grade", e.target.value)} /></div>
-            <div><label className="block text-sm font-medium mb-1.5">בית הספר <Req /></label>
+            }
+            {!hid("school_name") && <div><label className="block text-sm font-medium mb-1.5">בית הספר {req("school_name") && <Req />}</label>
               <input className={inputCls} value={v.school_name} onChange={(e) => set("school_name", e.target.value)} /></div>
-            <div><label className="block text-sm font-medium mb-1.5">מחנך/ת הכיתה <Req /></label>
+            }
+            {!hid("homeroom_teacher") && <div><label className="block text-sm font-medium mb-1.5">מחנך/ת הכיתה {req("homeroom_teacher") && <Req />}</label>
               <input className={inputCls} value={v.homeroom_teacher} onChange={(e) => set("homeroom_teacher", e.target.value)} /></div>
-            <div><label className="block text-sm font-medium mb-1.5">מנהל/ת בית הספר <Req /></label>
+            }
+            {!hid("principal_name") && <div><label className="block text-sm font-medium mb-1.5">מנהל/ת בית הספר {req("principal_name") && <Req />}</label>
               <input className={inputCls} value={v.principal_name} onChange={(e) => set("principal_name", e.target.value)} /></div>
+            }
           </div>
         </div>
 
@@ -260,12 +267,14 @@ const ShortDayRequestPage = () => {
             <Clock className="w-4 h-4 text-primary" /> פרטי הבקשה
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div><label className="block text-sm font-medium mb-1.5">שעת היציאה המבוקשת <Req /></label>
+            {!hid("exit_time") && <div><label className="block text-sm font-medium mb-1.5">שעת היציאה המבוקשת {req("exit_time") && <Req />}</label>
               <input type="time" className={inputCls} value={v.exit_time} onChange={(e) => set("exit_time", e.target.value)} /></div>
-            <div><label className="block text-sm font-medium mb-1.5">החל מתאריך <Req /></label>
+            }
+            {!hid("start_date") && <div><label className="block text-sm font-medium mb-1.5">החל מתאריך {req("start_date") && <Req />}</label>
               <input type="date" className={inputCls} value={v.start_date} onChange={(e) => set("start_date", e.target.value)} /></div>
+            }
           </div>
-          <p className="text-sm font-medium mt-4 mb-2">הימים המבוקשים <Req /></p>
+          {!hid("days") && <><p className="text-sm font-medium mt-4 mb-2">הימים המבוקשים {req("days") && <Req />}</p>
           <div className="flex flex-wrap gap-2">
             {WEEK_DAYS.map((d) => (
               <button key={d} type="button" onClick={() => toggleDay(d)}
@@ -273,28 +282,73 @@ const ShortDayRequestPage = () => {
                   days.includes(d) ? "bg-primary border-primary text-primary-foreground shadow-md" : "bg-card border-border hover:border-primary/40"
                 }`}>{d}</button>
             ))}
-          </div>
-          <div className="mt-4">
-            <label className="block text-sm font-medium mb-1.5">נימוק לבקשה <Req /></label>
+          </div></>}
+          {!hid("reason") && <div className="mt-4">
+            <label className="block text-sm font-medium mb-1.5">נימוק לבקשה {req("reason") && <Req />}</label>
             <textarea className={`${inputCls} resize-none`} rows={5} maxLength={1500} value={v.reason}
               onChange={(e) => set("reason", e.target.value)}
               placeholder="פרטו את הסיבה לבקשה — שיקולים רפואיים, טיפוליים, רגשיים או משפחתיים הרלוונטיים לילד/ה" />
-          </div>
+          </div>}
         </div>
 
-        <div className="intake-card-soft">
+        {ov.extra.filter((f) => !hid(f.key)).length > 0 && (
+          <div className="intake-card-soft">
+            <h2 className="text-base font-heading font-semibold mb-3">שאלות נוספות</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {ov.extra.filter((f) => !hid(f.key)).map((f) => {
+                const isReq = ov.required[f.key] ?? f.required;
+                const val = extra[f.label] || "";
+                const upd = (x: string) => setExtra((p) => ({ ...p, [f.label]: x }));
+                return (
+                  <div key={f.key} className={f.type === "textarea" ? "sm:col-span-2" : ""}>
+                    <label className="block text-sm font-medium mb-1.5">{f.label} {isReq && <Req />}</label>
+                    {f.type === "textarea" ? (
+                      <textarea className={`${inputCls} resize-none`} rows={3} maxLength={1000} value={val} onChange={(e) => upd(e.target.value)} />
+                    ) : f.type === "yesno" ? (
+                      <div className="flex gap-2">
+                        {["כן", "לא"].map((o) => (
+                          <button key={o} type="button" onClick={() => upd(o)}
+                            className={`px-4 py-2 rounded-xl text-sm font-medium border-2 transition-all ${
+                              val === o ? "bg-primary border-primary text-primary-foreground" : "bg-card border-border hover:border-primary/40"}`}>{o}</button>
+                        ))}
+                      </div>
+                    ) : f.type === "checkbox" ? (
+                      <label className="flex items-center gap-2 text-sm">
+                        <input type="checkbox" className="w-4 h-4 accent-primary" checked={val === "כן"} onChange={() => upd(val === "כן" ? "" : "כן")} />
+                        מאשר/ת
+                      </label>
+                    ) : (
+                      <input className={inputCls} type={f.type === "date" ? "date" : "text"} value={val} onChange={(e) => upd(e.target.value)} />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {!hid("declarations") && <div className="intake-card-soft">
           <h2 className="text-base font-heading font-semibold mb-2">הצהרת ההורים</h2>
           <ol className="list-decimal pr-5 space-y-2 text-sm leading-relaxed text-muted-foreground">
-            {DECLARATIONS.map((d, i) => <li key={i}>{d}</li>)}
+            {DECLARATIONS.filter((_, i) => !ov.declarationsHidden.includes(i)).map((d, i) => <li key={i}>{d}</li>)}
+            {ov.declarationsExtra.map((d, i) => <li key={`x${i}`}>{d}</li>)}
           </ol>
           <label className={`mt-4 flex items-start gap-3 p-3.5 rounded-2xl border-2 cursor-pointer transition-all ${
             accepted ? "border-primary/60 bg-primary/5" : "border-border bg-card hover:border-primary/30"}`}>
             <input type="checkbox" checked={accepted} onChange={() => setAccepted(!accepted)} className="mt-1 w-4 h-4 accent-primary" />
-            <span className="text-sm leading-relaxed">קראנו, הבנו ואנו מאשרים את כל סעיפי ההצהרה <Req /></span>
+            <span className="text-sm leading-relaxed">קראנו, הבנו ואנו מאשרים את כל סעיפי ההצהרה {req("declarations") && <Req />}</span>
           </label>
-        </div>
+        </div>}
 
-        <div className="intake-card-soft">
+        {!hid("joint_parents") && (
+          <label className={`intake-card-soft flex items-start gap-3 cursor-pointer transition-all border-2 ${
+            jointAccepted ? "border-primary/60 bg-primary/5" : "border-border hover:border-primary/30"}`}>
+            <input type="checkbox" checked={jointAccepted} onChange={() => setJointAccepted(!jointAccepted)} className="mt-1 w-4 h-4 accent-primary" />
+            <span className="text-sm leading-relaxed">{JOINT_PARENTS_DECLARATION} {req("joint_parents") && <Req />}</span>
+          </label>
+        )}
+
+        {!hid("signatures") && <div className="intake-card-soft">
           <h2 className="text-base font-heading font-semibold mb-1">חתימות ההורים</h2>
           <label className="flex items-center gap-2 text-xs text-muted-foreground mb-3 cursor-pointer">
             <input type="checkbox" checked={singleParent} onChange={() => setSingleParent(!singleParent)}
@@ -316,7 +370,7 @@ const ShortDayRequestPage = () => {
           <p className="text-[11px] text-muted-foreground mt-3">
             מדור "החלטת בית הספר" ימולא על ידי הצוות לאחר בחינת הבקשה, ויופיע בעותק ה-PDF הסופי.
           </p>
-        </div>
+        </div>}
 
         {error && <p className="text-sm text-destructive">{error}</p>}
 
