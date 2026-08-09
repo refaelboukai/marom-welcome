@@ -1,0 +1,1 @@
+ALTER TABLE public.short_day_requests ADD COLUMN IF NOT EXISTS extra_data jsonb NOT NULL DEFAULT '{}'::jsonb;
