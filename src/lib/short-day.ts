@@ -38,6 +38,8 @@ export interface ShortDayRequest {
   sig_principal: string;
   sig_supervisor: string;
   status: string;
+  /** answers to custom questions added via the form editor */
+  extra_data?: Record<string, string>;
   created_at: string;
   updated_at: string;
 }
