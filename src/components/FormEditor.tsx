@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Check, Eye, Loader2, Plus, Save, Trash2, X } from "lucide-react";
+import { Check, Loader2, Plus, Save, Trash2 } from "lucide-react";
 import { FORM_STEPS, FieldType } from "@/data/enrollment-form";
 import { DECLARATIONS } from "@/lib/short-day";
 import {
