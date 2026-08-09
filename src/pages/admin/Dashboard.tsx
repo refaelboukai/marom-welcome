@@ -308,6 +308,20 @@ const Dashboard = () => {
     return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
   }
 
+  if (loadError) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background p-6 text-center">
+        <p className="text-destructive font-medium">{loadError}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="rounded-lg bg-primary px-4 py-2 text-primary-foreground"
+        >
+          רענון
+        </button>
+      </div>
+    );
+  }
+
   const classKeys = Object.keys(classGroups);
   const tabs: { key: Tab; label: string; count?: number; deletable?: boolean }[] = [
     { key: "all", label: "כל התלמידים", count: sessionsWithMeta.filter((s) => s.status !== "archived").length },
