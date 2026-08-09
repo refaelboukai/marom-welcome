@@ -28,6 +28,7 @@ const EnrollmentFormsAdmin = () => {
   const [copied, setCopied] = useState("");
   const [creating, setCreating] = useState(false);
   const [showNew, setShowNew] = useState(false);
+  const [loadError, setLoadError] = useState("");
 
   const [draft, setDraft] = useState({
     student_name: "", grade: "", academic_year: 'תשפ"ז', divorced: false,
@@ -35,8 +36,15 @@ const EnrollmentFormsAdmin = () => {
   });
 
   const reload = async () => {
-    const [f, i] = await Promise.all([getEnrollmentForms(), getInvites()]);
-    setForms(f); setInvites(i); setLoading(false);
+    setLoading(true);
+    try {
+      const [f, i] = await Promise.all([getEnrollmentForms(), getInvites()]);
+      setForms(f); setInvites(i); setLoadError("");
+    } catch {
+      setLoadError("לא ניתן לטעון כרגע את הטפסים. הנתונים שמורים—נסו שוב.");
+    } finally {
+      setLoading(false);
+    }
   };
   useEffect(() => { reload(); }, []);
 
@@ -101,6 +109,13 @@ const EnrollmentFormsAdmin = () => {
 
   if (loading) {
     return <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
+  }
+
+  if (loadError) {
+    return <div className="intake-card-soft text-center py-10 space-y-3">
+      <p className="text-destructive font-medium">{loadError}</p>
+      <button onClick={reload} className="btn-intake bg-primary text-primary-foreground px-4 py-2">נסו שוב</button>
+    </div>;
   }
 
   const values = selected ? flattenForm(selected) : {};

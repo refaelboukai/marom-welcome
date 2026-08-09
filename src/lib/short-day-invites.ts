@@ -86,7 +86,10 @@ export async function createShortDayInvite(input: NewShortDayInvite): Promise<Sh
 export async function getShortDayInvites(): Promise<ShortDayInvite[]> {
   const { data, error } = await (supabase as any)
     .from("short_day_invites").select("*").order("created_at", { ascending: false });
-  if (error) { console.error("getShortDayInvites", error); return []; }
+  if (error) {
+    console.error("getShortDayInvites", error);
+    throw new Error(error.message || "טעינת ההזמנות נכשלה");
+  }
   return (data || []) as ShortDayInvite[];
 }
 

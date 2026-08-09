@@ -79,7 +79,10 @@ export async function submitShortDayRequest(input: ShortDayInput): Promise<{ ok:
 export async function getShortDayRequests(): Promise<ShortDayRequest[]> {
   const { data, error } = await (supabase as any)
     .from("short_day_requests").select("*").order("created_at", { ascending: false });
-  if (error) { console.error("getShortDayRequests", error); return []; }
+  if (error) {
+    console.error("getShortDayRequests", error);
+    throw new Error(error.message || "טעינת הבקשות נכשלה");
+  }
   return (data || []) as ShortDayRequest[];
 }
 

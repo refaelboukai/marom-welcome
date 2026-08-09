@@ -25,11 +25,18 @@ const ShortDayAdmin = () => {
   const [invites, setInvites] = useState<ShortDayInvite[]>([]);
   const [inv, setInv] = useState({ student_name: "", grade: "", parent_name: "", parent_phone: "" });
   const [sending, setSending] = useState(false);
+  const [loadError, setLoadError] = useState("");
 
   const load = async () => {
     setLoading(true);
-    const [reqs, invs] = await Promise.all([getShortDayRequests(), getShortDayInvites()]);
-    setRows(reqs); setInvites(invs); setLoading(false);
+    try {
+      const [reqs, invs] = await Promise.all([getShortDayRequests(), getShortDayInvites()]);
+      setRows(reqs); setInvites(invs); setLoadError("");
+    } catch {
+      setLoadError("לא ניתן לטעון כרגע את הבקשות. הנתונים שמורים—נסו שוב.");
+    } finally {
+      setLoading(false);
+    }
   };
   useEffect(() => { load(); }, []);
 
@@ -80,6 +87,11 @@ const ShortDayAdmin = () => {
   const setD = (k: keyof ShortDayRequest, v: unknown) => setDraft((p) => ({ ...p, [k]: v }));
 
   if (loading) return <div className="py-14 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
+
+  if (loadError) return <div className="intake-card-soft text-center py-10 space-y-3">
+    <p className="text-destructive font-medium">{loadError}</p>
+    <button onClick={load} className="btn-intake bg-primary text-primary-foreground px-4 py-2">נסו שוב</button>
+  </div>;
 
   return (
     <div className="space-y-4">
