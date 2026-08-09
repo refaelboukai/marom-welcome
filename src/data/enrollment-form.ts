@@ -39,6 +39,19 @@ export interface FormStep {
   groups: FormGroup[];
 }
 
+/** true when the field's conditional trigger (showIf) is satisfied. */
+export function isFieldVisible(
+  f: Pick<FormField, "showIf">,
+  values: Record<string, unknown>,
+): boolean {
+  if (!f.showIf) return true;
+  return values[f.showIf.key] === f.showIf.equals;
+}
+
+/** fields of a group that should currently be displayed. */
+export const visibleFields = (g: FormGroup, values: Record<string, unknown>) =>
+  g.fields.filter((f) => isFieldVisible(f, values));
+
 /** Keys stored as real table columns (everything else goes into form_data). */
 export const COLUMN_KEYS = [
   "student_first_name", "student_last_name", "student_id_number", "birth_date", "gender",

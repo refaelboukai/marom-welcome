@@ -1,4 +1,4 @@
-import { FORM_STEPS, FormGroup } from "@/data/enrollment-form";
+import { FORM_STEPS, FormGroup, isFieldVisible } from "@/data/enrollment-form";
 import { EnrollmentForm, FormValues, flattenForm } from "@/lib/enrollment";
 import { renderPagedHTMLToPDF } from "@/lib/pdf-export";
 import { getEnrollmentDocUrl, fileNameFromPath } from "@/lib/enrollment-uploads";
@@ -118,8 +118,11 @@ const PAGE = (opts: {
     ${opts.body}
   </div>`;
 
+const printableFields = (g: FormGroup, values: FormValues) =>
+  g.fields.filter((f) => f.type !== "note" && f.type !== "signature" && isFieldVisible(f, values));
+
 const groupHTML = (g: FormGroup, values: FormValues) => {
-  const fields = g.fields.filter((f) => f.type !== "note" && f.type !== "signature");
+  const fields = printableFields(g, values);
   if (!fields.length) return "";
   return `
     <div style="margin-bottom:14px;break-inside:avoid;">
@@ -135,7 +138,7 @@ const groupHTML = (g: FormGroup, values: FormValues) => {
 };
 
 const ROWS_PER_PAGE = 26;
-const groupRows = (g: FormGroup) => g.fields.filter((f) => f.type !== "note" && f.type !== "signature").length + 2;
+const groupRows = (g: FormGroup, values: FormValues) => printableFields(g, values).length + 2;
 
 /** Split each form step into whole pages — groups are never cut in half. */
 function stepPages(values: FormValues): { title: string; body: string }[] {
@@ -152,7 +155,7 @@ function stepPages(values: FormValues): { title: string; body: string }[] {
     for (const g of step.groups) {
       const html = groupHTML(g, values);
       if (!html) continue;
-      const r = groupRows(g);
+      const r = groupRows(g, values);
       if (rows + r > ROWS_PER_PAGE) flush();
       buf += html; rows += r;
     }
