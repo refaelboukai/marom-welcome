@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 import { FORM_STEPS, FormField, SCHOOL_RULES } from "@/data/enrollment-form";
+import { EMPTY_OVERRIDES, FormOverrides, applyOverridesToSteps, loadFormOverrides } from "@/lib/form-config";
 import { FormValues, submitEnrollmentForm } from "@/lib/enrollment";
 import { generateEnrollmentPDF } from "@/lib/enrollment-pdf";
 import { MAX_UPLOAD_MB, fileNameFromPath, openEnrollmentDoc, uploadEnrollmentDoc } from "@/lib/enrollment-uploads";
@@ -154,7 +155,12 @@ const Enrollment = () => {
   const [error, setError] = useState("");
   const [pdfBusy, setPdfBusy] = useState(false);
   const [pdfError, setPdfError] = useState("");
+  const [overrides, setOverrides] = useState<FormOverrides>(EMPTY_OVERRIDES);
   const hydrated = useRef(!token);
+
+  useEffect(() => { loadFormOverrides("enrollment").then(setOverrides); }, []);
+
+  const steps = useMemo(() => applyOverridesToSteps(FORM_STEPS, overrides), [overrides]);
 
   /* ---------- load personal invite ---------- */
   useEffect(() => {
