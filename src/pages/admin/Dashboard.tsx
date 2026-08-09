@@ -53,7 +53,17 @@ const Dashboard = () => {
   const [classGroups, setClassGroups] = useState<ClassGroupsMap>(DEFAULT_CLASS_GROUPS);
 
   useEffect(() => {
-    getSessionsDB().then((data) => { setSessions(data); setLoading(false); });
+    getSessionsDB().then((data) => {
+      setSessions(data);
+      const hasDefaultYear = data.some((session) => (session.academicYear || 'תשפ"ו') === 'תשפ"ו');
+      if (!hasDefaultYear && data.length > 0) {
+        const populatedYear = ACADEMIC_YEARS.find((year) =>
+          data.some((session) => (session.academicYear || 'תשפ"ו') === year)
+        );
+        if (populatedYear) setSelectedYear(populatedYear);
+      }
+      setLoading(false);
+    });
     getReminderMessage().then(setReminderMessage).catch(() => {});
     getClassGroups().then(setClassGroups).catch(() => {});
   }, []);
