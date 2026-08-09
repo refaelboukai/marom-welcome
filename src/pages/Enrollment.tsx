@@ -514,7 +514,9 @@ const Enrollment = () => {
 
         {/* step content */}
         <div className="space-y-4 animate-fade-in" key={currentStep.key}>
-          {currentStep.groups.map((group) => (
+          {currentStep.groups
+            .filter((group) => group.fields.some((f) => visible(f)))
+            .map((group) => (
             <div key={group.key} className="intake-card-soft">
               <h2 className="flex items-center gap-2 text-base font-heading font-semibold mb-1">
                 <span className="w-7 h-7 rounded-xl bg-primary/10 flex items-center justify-center">
