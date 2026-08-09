@@ -51,21 +51,38 @@ const Dashboard = () => {
   const [showPhonesImport, setShowPhonesImport] = useState(false);
   const [reminderMessage, setReminderMessage] = useState<string>(REMINDER_MESSAGE);
   const [classGroups, setClassGroups] = useState<ClassGroupsMap>(DEFAULT_CLASS_GROUPS);
+  const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
-    getSessionsDB().then((data) => {
-      setSessions(data);
-      const hasDefaultYear = data.some((session) => (session.academicYear || 'תשפ"ו') === 'תשפ"ו');
-      if (!hasDefaultYear && data.length > 0) {
-        const populatedYear = ACADEMIC_YEARS.find((year) =>
-          data.some((session) => (session.academicYear || 'תשפ"ו') === year)
-        );
-        if (populatedYear) setSelectedYear(populatedYear);
+    let cancelled = false;
+    const load = async (attempt = 0) => {
+      try {
+        const data = await getSessionsDB();
+        if (cancelled) return;
+        setSessions(data);
+        setLoadError("");
+        const hasDefaultYear = data.some((session) => (session.academicYear || 'תשפ"ו') === 'תשפ"ו');
+        if (!hasDefaultYear && data.length > 0) {
+          const populatedYear = ACADEMIC_YEARS.find((year) =>
+            data.some((session) => (session.academicYear || 'תשפ"ו') === year)
+          );
+          if (populatedYear) setSelectedYear(populatedYear);
+        }
+        setLoading(false);
+      } catch (e) {
+        if (cancelled) return;
+        if (attempt < 2) {
+          setTimeout(() => load(attempt + 1), 1000 * (attempt + 1));
+          return;
+        }
+        setLoadError("טעינת רשימת התלמידים נכשלה (בעיית רשת). נסו לרענן את הדף.");
+        setLoading(false);
       }
-      setLoading(false);
-    });
+    };
+    load();
     getReminderMessage().then(setReminderMessage).catch(() => {});
     getClassGroups().then(setClassGroups).catch(() => {});
+    return () => { cancelled = true; };
   }, []);
 
   const reloadSessions = async () => {
