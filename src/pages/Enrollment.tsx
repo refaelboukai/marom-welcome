@@ -193,7 +193,19 @@ const Enrollment = () => {
     return () => clearTimeout(id);
   }, [values, step, token, done]);
 
-  const set = (key: string, value: FormValues[string]) => setValues((v) => ({ ...v, [key]: value }));
+  const set = (key: string, value: FormValues[string]) =>
+    setValues((v) => {
+      const next = { ...v, [key]: value };
+      // clear answers that depend on this field once the trigger no longer matches
+      for (const s of FORM_STEPS) {
+        for (const g of s.groups) {
+          for (const f of g.fields) {
+            if (f.showIf?.key === key && f.showIf.equals !== value) delete next[f.key];
+          }
+        }
+      }
+      return next;
+    });
 
   const visible = useCallback((f: FormField) => {
     if (!f.showIf) return true;
