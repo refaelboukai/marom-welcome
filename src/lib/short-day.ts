@@ -58,6 +58,10 @@ export const DECLARATIONS = [
   "ידוע לנו כי ככל שתצורף לבקשה חוות דעת או אישור מרופא/ה פסיכיאטר/ית, הממליצים על קיצור יום הלימודים מטעמים רפואיים, תפקודיים או נפשיים, רשאית הרשות המקומית לבחון את התאמת מערך ההסעות בהתאם להוראות משרד החינוך, לנהליה ולסמכויותיה. מובהר כי כל החלטה בעניין ההסעה נתונה לשיקול דעתה של הרשות המקומית והגורמים המוסמכים, ובכפוף לקבלת כלל האישורים הנדרשים.",
 ];
 
+/** Joint declaration required when the parents are divorced / separated. */
+export const JOINT_PARENTS_DECLARATION =
+  "המסמך מולא על ידי שני ההורים ובהסכמת שני ההורים (במידה והורים גרושים/פרודים), וזו הצהרתנו.";
+
 export type ShortDayInput = Partial<Omit<ShortDayRequest, "id" | "created_at" | "updated_at">>;
 
 export async function submitShortDayRequest(input: ShortDayInput): Promise<{ ok: boolean; id?: string; error?: string }> {
