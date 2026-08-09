@@ -5,12 +5,15 @@ import logo from "@/assets/logo.jpeg";
 import moeLogo from "@/assets/moe-state.png";
 import SignaturePad from "@/components/SignaturePad";
 import {
-  ACADEMIC_YEAR, DECLARATIONS, ShortDayRequest as SDR, WEEK_DAYS,
+  ACADEMIC_YEAR, DECLARATIONS, JOINT_PARENTS_DECLARATION, ShortDayRequest as SDR, WEEK_DAYS,
   generateShortDayPDF, submitShortDayRequest,
 } from "@/lib/short-day";
 import {
   getShortDayInviteByToken, markShortDayInviteSubmitted, saveShortDayDraft,
 } from "@/lib/short-day-invites";
+import {
+  EMPTY_OVERRIDES, FormOverrides, loadFormOverrides, sdHidden, sdRequired,
+} from "@/lib/form-config";
 
 const inputCls =
   "w-full px-3.5 py-2.5 rounded-xl border-2 border-border bg-card text-sm focus:outline-none focus:border-primary/60 transition-colors";
@@ -41,6 +44,9 @@ const ShortDayRequestPage = () => {
   });
   const [days, setDays] = useState<string[]>([]);
   const [accepted, setAccepted] = useState(false);
+  const [jointAccepted, setJointAccepted] = useState(false);
+  const [extra, setExtra] = useState<Record<string, string>>({});
+  const [ov, setOv] = useState<FormOverrides>(EMPTY_OVERRIDES);
   const [singleParent, setSingleParent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
@@ -48,6 +54,8 @@ const ShortDayRequestPage = () => {
   const [pdfBusy, setPdfBusy] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const loadedRef = useRef(false);
+
+  useEffect(() => { loadFormOverrides("short-day").then(setOv); }, []);
 
   // Load the personal invite (WhatsApp link) and any saved draft
   useEffect(() => {
@@ -64,6 +72,8 @@ const ShortDayRequestPage = () => {
         }));
         if (Array.isArray(d.days)) setDays(d.days);
         if (d.accepted) setAccepted(true);
+        if (d.jointAccepted) setJointAccepted(true);
+        if (d.extra && typeof d.extra === "object") setExtra(d.extra);
       }
       loadedRef.current = true;
     })();
@@ -73,36 +83,48 @@ const ShortDayRequestPage = () => {
   useEffect(() => {
     if (!token || !loadedRef.current || done) return;
     const t = setTimeout(async () => {
-      await saveShortDayDraft(token, { ...v, days, accepted });
+      await saveShortDayDraft(token, { ...v, days, accepted, jointAccepted, extra });
       setSavedAt(new Date().toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" }));
     }, 1200);
     return () => clearTimeout(t);
-  }, [v, days, accepted, token, done]);
+  }, [v, days, accepted, jointAccepted, extra, token, done]);
 
   const set = (k: keyof typeof v, val: string) => setV((p) => ({ ...p, [k]: val }));
   const toggleDay = (d: string) => setDays((p) => (p.includes(d) ? p.filter((x) => x !== d) : [...p, d]));
 
-  // Every field on this form is mandatory (red asterisk) before submitting.
+  // The school can mark each question as mandatory / optional / hidden in the admin editor.
+  const hid = (k: string) => sdHidden(ov, k);
+  const req = (k: string) => !hid(k) && sdRequired(ov, k);
   const missing: string[] = [];
-  if (!v.request_date) missing.push("תאריך");
-  if (!v.student_name.trim()) missing.push("שם התלמיד/ה");
-  if (v.student_id_number.trim().length !== 9) missing.push("ת.ז. התלמיד/ה (9 ספרות)");
-  if (!v.grade.trim()) missing.push("כיתה");
-  if (!v.school_name.trim()) missing.push("בית הספר");
-  if (!v.homeroom_teacher.trim()) missing.push("מחנך/ת הכיתה");
-  if (!v.principal_name.trim()) missing.push("מנהל/ת בית הספר");
-  if (!v.exit_time.trim()) missing.push("שעת היציאה המבוקשת");
-  if (!v.start_date) missing.push("החל מתאריך");
-  if (days.length === 0) missing.push("הימים המבוקשים");
-  if (v.reason.trim().length <= 5) missing.push("נימוק לבקשה");
-  if (!accepted) missing.push("אישור ההצהרה");
-  if (!v.mother_name.trim() && !singleParent) missing.push("שם האם/האפוטרופוס");
-  if (!v.mother_signature && !singleParent) missing.push("חתימת האם/האפוטרופוס");
-  if (!v.father_name.trim() && !singleParent) missing.push("שם האב/האפוטרופוס");
-  if (!v.father_signature && !singleParent) missing.push("חתימת האב/האפוטרופוס");
-  if (singleParent) {
-    if (!v.mother_name.trim() && !v.father_name.trim()) missing.push("שם ההורה/אפוטרופוס");
-    if (!v.mother_signature && !v.father_signature) missing.push("חתימת ההורה/אפוטרופוס");
+  const need = (k: string, empty: boolean, label: string) => { if (req(k) && empty) missing.push(label); };
+  need("request_date", !v.request_date, "תאריך");
+  need("student_name", !v.student_name.trim(), "שם התלמיד/ה");
+  need("student_id_number", v.student_id_number.trim().length !== 9, "ת.ז. התלמיד/ה (9 ספרות)");
+  need("grade", !v.grade.trim(), "כיתה");
+  need("school_name", !v.school_name.trim(), "בית הספר");
+  need("homeroom_teacher", !v.homeroom_teacher.trim(), "מחנך/ת הכיתה");
+  need("principal_name", !v.principal_name.trim(), "מנהל/ת בית הספר");
+  need("exit_time", !v.exit_time.trim(), "שעת היציאה המבוקשת");
+  need("start_date", !v.start_date, "החל מתאריך");
+  need("days", days.length === 0, "הימים המבוקשים");
+  need("reason", v.reason.trim().length <= 5, "נימוק לבקשה");
+  need("declarations", !accepted, "אישור ההצהרה");
+  need("joint_parents", !jointAccepted, "הצהרת שני ההורים");
+  if (req("signatures")) {
+    if (singleParent) {
+      if (!v.mother_name.trim() && !v.father_name.trim()) missing.push("שם ההורה/אפוטרופוס");
+      if (!v.mother_signature && !v.father_signature) missing.push("חתימת ההורה/אפוטרופוס");
+    } else {
+      if (!v.mother_name.trim()) missing.push("שם האם/האפוטרופוס");
+      if (!v.mother_signature) missing.push("חתימת האם/האפוטרופוס");
+      if (!v.father_name.trim()) missing.push("שם האב/האפוטרופוס");
+      if (!v.father_signature) missing.push("חתימת האב/האפוטרופוס");
+    }
+  }
+  for (const f of ov.extra) {
+    if (hid(f.key)) continue;
+    const val = (extra[f.label] || "").trim();
+    if ((ov.required[f.key] ?? f.required) && !val) missing.push(f.label);
   }
   const valid = missing.length === 0;
 
@@ -115,6 +137,7 @@ const ShortDayRequestPage = () => {
     mother_name: v.mother_name, mother_signature: v.mother_signature, mother_sign_date: v.mother_signature ? today() : null,
     father_name: v.father_name, father_signature: v.father_signature, father_sign_date: v.father_signature ? today() : null,
     declarations_accepted: accepted,
+    extra_data: { ...extra, ...(jointAccepted ? { "הצהרת שני ההורים": "אושר" } : {}) },
     decision: "pending", decision_exit_time: "", decision_days: [], decision_notes: "", decision_date: null,
     sig_teacher: "", sig_treatment_coordinator: "", sig_counselor: "", sig_principal: "", sig_supervisor: "",
     status: "submitted", created_at: "", updated_at: "",
