@@ -113,7 +113,10 @@ export async function createInvites(input: NewInviteInput): Promise<EnrollmentIn
 export async function getInvites(): Promise<EnrollmentInvite[]> {
   const { data, error } = await (supabase as any)
     .from("enrollment_invites").select("*").order("created_at", { ascending: false });
-  if (error) { console.error("getInvites", error); return []; }
+  if (error) {
+    console.error("getInvites", error);
+    throw new Error(error.message || "טעינת ההזמנות נכשלה");
+  }
   return (data || []) as EnrollmentInvite[];
 }
 

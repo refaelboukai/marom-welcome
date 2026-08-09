@@ -97,7 +97,10 @@ export async function getEnrollmentForms(): Promise<EnrollmentForm[]> {
     .from("enrollment_forms")
     .select("*")
     .order("created_at", { ascending: false });
-  if (error) { console.error("Error loading enrollment forms:", error); return []; }
+  if (error) {
+    console.error("Error loading enrollment forms:", error);
+    throw new Error(error.message || "טעינת טפסי הקליטה נכשלה");
+  }
   return (data || []) as EnrollmentForm[];
 }
 

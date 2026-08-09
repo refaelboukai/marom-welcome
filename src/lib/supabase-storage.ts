@@ -94,7 +94,7 @@ export async function getSessionsDB(): Promise<IntakeSession[]> {
 
   if (error) {
     console.error("Error fetching sessions:", error);
-    return [];
+    throw new Error(error.message || "טעינת התלמידים נכשלה");
   }
   return (data || []).map(rowToSession);
 }
