@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 import { FORM_STEPS, FormField, SCHOOL_RULES } from "@/data/enrollment-form";
+import { EMPTY_OVERRIDES, FormOverrides, applyOverridesToSteps, loadFormOverrides } from "@/lib/form-config";
 import { FormValues, submitEnrollmentForm } from "@/lib/enrollment";
 import { generateEnrollmentPDF } from "@/lib/enrollment-pdf";
 import { MAX_UPLOAD_MB, fileNameFromPath, openEnrollmentDoc, uploadEnrollmentDoc } from "@/lib/enrollment-uploads";
@@ -154,7 +155,12 @@ const Enrollment = () => {
   const [error, setError] = useState("");
   const [pdfBusy, setPdfBusy] = useState(false);
   const [pdfError, setPdfError] = useState("");
+  const [overrides, setOverrides] = useState<FormOverrides>(EMPTY_OVERRIDES);
   const hydrated = useRef(!token);
+
+  useEffect(() => { loadFormOverrides("enrollment").then(setOverrides); }, []);
+
+  const steps = useMemo(() => applyOverridesToSteps(FORM_STEPS, overrides), [overrides]);
 
   /* ---------- load personal invite ---------- */
   useEffect(() => {
@@ -165,7 +171,7 @@ const Enrollment = () => {
       if (inv) {
         setInvite(inv);
         setValues(inv.draft_data || {});
-        setStep(Math.min(inv.current_step || 0, FORM_STEPS.length - 1));
+        setStep(Math.min(inv.current_step || 0, steps.length - 1));
         if (inv.status === "submitted") setDone(true);
       }
       hydrated.current = true;
@@ -194,7 +200,7 @@ const Enrollment = () => {
     return values[f.showIf.key] === f.showIf.equals;
   }, [values]);
 
-  const currentStep = FORM_STEPS[step];
+  const currentStep = steps[step];
 
   const stepValid = useMemo(() => {
     for (const group of currentStep.groups) {
@@ -424,7 +430,7 @@ const Enrollment = () => {
   }
 
   const StepIcon = ICONS[currentStep.icon];
-  const pct = ((step + 1) / FORM_STEPS.length) * 100;
+  const pct = ((step + 1) / steps.length) * 100;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary/5 via-background to-background pb-14">
@@ -462,16 +468,16 @@ const Enrollment = () => {
         {/* progress tracker */}
         <div className="intake-card-soft mb-5">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-semibold">עמוד {step + 1} מתוך {FORM_STEPS.length} — {currentStep.label}</p>
+            <p className="text-sm font-semibold">עמוד {step + 1} מתוך {steps.length} — {currentStep.label}</p>
             <span className="text-xs font-bold text-primary">{Math.round(pct)}%</span>
           </div>
 
           <div className="relative">
             <div className="absolute top-4 right-4 left-4 h-1 bg-muted rounded-full" />
             <div className="absolute top-4 right-4 h-1 bg-primary rounded-full transition-all duration-500"
-              style={{ width: `calc((100% - 2rem) * ${step / (FORM_STEPS.length - 1)})` }} />
+              style={{ width: `calc((100% - 2rem) * ${step / (steps.length - 1)})` }} />
             <div className="relative flex justify-between">
-              {FORM_STEPS.map((s, i) => {
+              {steps.map((s, i) => {
                 const Icon = ICONS[s.icon];
                 const state = i < step ? "done" : i === step ? "active" : "todo";
                 return (
@@ -523,7 +529,7 @@ const Enrollment = () => {
               <ChevronRight className="w-4 h-4" /> חזרה
             </button>
           )}
-          {step < FORM_STEPS.length - 1 ? (
+          {step < steps.length - 1 ? (
             <button onClick={() => goTo(step + 1)} disabled={!stepValid}
               className={`btn-intake flex-[2] flex items-center justify-center gap-1 ${stepValid ? "bg-primary text-primary-foreground shadow-md" : "bg-muted text-muted-foreground cursor-not-allowed"}`}>
               המשך <ChevronLeft className="w-4 h-4" />

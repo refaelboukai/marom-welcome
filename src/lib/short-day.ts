@@ -38,6 +38,8 @@ export interface ShortDayRequest {
   sig_principal: string;
   sig_supervisor: string;
   status: string;
+  /** answers to custom questions added via the form editor */
+  extra_data?: Record<string, string>;
   created_at: string;
   updated_at: string;
 }
@@ -57,6 +59,10 @@ export const DECLARATIONS = [
   "ידוע לנו כי לקיצור יום הלימודים עשויות להיות השלכות לימודיות, חברתיות, טיפוליות ורגשיות, ואנו מקבלים אחריות על כך.",
   "ידוע לנו כי ככל שתצורף לבקשה חוות דעת או אישור מרופא/ה פסיכיאטר/ית, הממליצים על קיצור יום הלימודים מטעמים רפואיים, תפקודיים או נפשיים, רשאית הרשות המקומית לבחון את התאמת מערך ההסעות בהתאם להוראות משרד החינוך, לנהליה ולסמכויותיה. מובהר כי כל החלטה בעניין ההסעה נתונה לשיקול דעתה של הרשות המקומית והגורמים המוסמכים, ובכפוף לקבלת כלל האישורים הנדרשים.",
 ];
+
+/** Joint declaration required when the parents are divorced / separated. */
+export const JOINT_PARENTS_DECLARATION =
+  "המסמך מולא על ידי שני ההורים ובהסכמת שני ההורים (במידה והורים גרושים/פרודים), וזו הצהרתנו.";
 
 export type ShortDayInput = Partial<Omit<ShortDayRequest, "id" | "created_at" | "updated_at">>;
 
@@ -187,6 +193,13 @@ export async function generateShortDayPDF(r: ShortDayRequest, opts?: { targetWin
     <ol style="font-size:9.4px;padding-right:15px;margin:0 0 8px 0;line-height:1.4;">
       ${DECLARATIONS.map((d) => `<li style="margin-bottom:2px;">${esc(d)}</li>`).join("")}
     </ol>
+    ${Object.keys(r.extra_data || {}).length ? `
+    <div style="margin:0 0 8px 0;">
+      ${Object.entries(r.extra_data || {}).map(([k, val]) => line(`${esc(k)}:`, String(val ?? ""))).join("")}
+    </div>` : ""}
+    <p style="font-size:10px;font-weight:700;margin:0 0 8px 0;border:1px solid #cfd8d5;border-radius:6px;padding:6px 8px;background:#f7faf9;">
+      ${esc(JOINT_PARENTS_DECLARATION)}
+    </p>
     <div style="display:flex;gap:12px;">
       ${sigBox("שם האם/האפוטרופוס וחתימה", r.mother_name, r.mother_signature, r.mother_sign_date)}
       ${sigBox("שם האב/האפוטרופוס וחתימה", r.father_name, r.father_signature, r.father_sign_date)}

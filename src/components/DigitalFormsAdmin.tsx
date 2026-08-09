@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { ArrowRight, Clock, FileText } from "lucide-react";
+import { ArrowRight, Clock, Eye, FileText, ListChecks, Settings2 } from "lucide-react";
 import EnrollmentFormsAdmin from "@/components/EnrollmentFormsAdmin";
 import ShortDayAdmin from "@/components/ShortDayAdmin";
+import FormEditor from "@/components/FormEditor";
 import { APP_URL } from "@/lib/app-url";
 
 type FormKey = "enrollment" | "short-day" | null;
+type Tab = "manage" | "edit" | "preview";
 
 const CARDS = [
   { key: "enrollment" as const, icon: FileText, title: "טופס קליטה לתלמיד/ה חדש/ה", desc: "שליחת הזמנות להורים, מעקב אחר מילוי הטופס, צפייה במסמכים והפקת PDF.", link: `${APP_URL}/enroll` },
@@ -13,17 +15,34 @@ const CARDS = [
 
 const DigitalFormsAdmin = () => {
   const [open, setOpen] = useState<FormKey>(null);
+  const [tab, setTab] = useState<Tab>("manage");
 
   if (open) {
     const card = CARDS.find((c) => c.key === open)!;
+    const previewUrl = open === "enrollment" ? "/enroll" : "/forms/short-day";
     return (
       <div className="space-y-4">
-        <button onClick={() => setOpen(null)}
+        <button onClick={() => { setOpen(null); setTab("manage"); }}
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary">
           <ArrowRight className="w-4 h-4" /> חזרה לטפסים הדיגיטליים
         </button>
         <h2 className="font-heading font-bold text-lg">{card.title}</h2>
-        {open === "enrollment" ? <EnrollmentFormsAdmin /> : <ShortDayAdmin />}
+        <div className="flex flex-wrap gap-2">
+          {([["manage", "ניהול ושליחה", ListChecks], ["edit", "עריכת הטופס", Settings2], ["preview", "תצוגה מקדימה", Eye]] as const).map(([k, l, Icon]) => (
+            <button key={k} onClick={() => setTab(k)}
+              className={`px-3.5 py-2 rounded-xl text-sm font-medium border-2 transition-all inline-flex items-center gap-1.5 ${
+                tab === k ? "bg-primary text-primary-foreground border-primary shadow-md" : "bg-card border-border hover:border-primary/40"}`}>
+              <Icon className="w-4 h-4" /> {l}
+            </button>
+          ))}
+        </div>
+        {tab === "manage" && (open === "enrollment" ? <EnrollmentFormsAdmin /> : <ShortDayAdmin />)}
+        {tab === "edit" && <FormEditor form={open} />}
+        {tab === "preview" && (
+          <div className="rounded-2xl border-2 border-border overflow-hidden bg-card">
+            <iframe title="תצוגה מקדימה" src={previewUrl} className="w-full h-[75vh]" />
+          </div>
+        )}
       </div>
     );
   }

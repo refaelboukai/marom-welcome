@@ -547,6 +547,7 @@ export type Database = {
           decision_notes: string
           declarations_accepted: boolean
           exit_time: string
+          extra_data: Json
           father_name: string
           father_sign_date: string | null
           father_signature: string
@@ -582,6 +583,7 @@ export type Database = {
           decision_notes?: string
           declarations_accepted?: boolean
           exit_time?: string
+          extra_data?: Json
           father_name?: string
           father_sign_date?: string | null
           father_signature?: string
@@ -617,6 +619,7 @@ export type Database = {
           decision_notes?: string
           declarations_accepted?: boolean
           exit_time?: string
+          extra_data?: Json
           father_name?: string
           father_sign_date?: string | null
           father_signature?: string
