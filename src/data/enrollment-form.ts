@@ -388,6 +388,7 @@ export const FORM_STEPS: FormStep[] = [
           { key: "student_signature_name", label: "שם התלמיד/ה (חתימה על כללי ההתנהגות)", type: "text" },
           { key: "student_signature_draw", label: "חתימת התלמיד/ה (חתימה ידנית)", type: "signature", full: true },
           { key: "extra_notes", label: "הערות נוספות", type: "textarea", full: true },
+          { key: "c_both_parents", label: "המסמך מולא על ידי שני ההורים ובהסכמת שני ההורים (במידה והורים גרושים/פרודים), וזו הצהרתנו", type: "checkbox", required: true, full: true },
           { key: "c_accuracy", label: "אנו מצהירים כי כל הפרטים שמסרנו נכונים ומלאים, ומתחייבים לעדכן את בית הספר בכל שינוי", type: "checkbox", required: true, full: true },
         ],
       },
