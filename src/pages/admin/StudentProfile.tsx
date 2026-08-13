@@ -12,7 +12,7 @@ import { generateSemesterSummary, SEMESTER_LABELS, type SemesterType } from "@/l
 import SupportPlans from "@/components/SupportPlans";
 import AIRecommendations from "@/components/AIRecommendations";
 import ResponsesViewer from "@/components/ResponsesViewer";
-import { generateStudentPDF, generatePersonalPlanPDF, generateEmpoweringPlanPDF, generateEmpoweringPlanDOC, PersonalPlanData } from "@/lib/pdf-export";
+import { generateStudentPDF, generatePersonalPlanPDF, generateEmpoweringPlanPDF, generateEmpoweringPlanDOC, generatePerspectivePDF, PersonalPlanData } from "@/lib/pdf-export";
 import { supabase } from "@/integrations/supabase/client";
 import { questionnaireItems, studentParentItems, allQuestionnaireItems } from "@/data/questionnaires";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line } from "recharts";
@@ -1118,6 +1118,32 @@ const StudentProfile = () => {
               className="btn-intake bg-accent/10 text-accent-foreground text-sm flex items-center justify-center gap-2 hover:bg-accent/20 transition-colors w-full border border-accent/30"
               title="הורדת דף העבודה כמסמך Word לעריכה">
               <ScrollText className="w-4 h-4" /> דף עבודה משותף — הורדה כ־Word (ניתן לעריכה)
+            </button>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-2">
+            <button onClick={() => generatePerspectivePDF(session, "parent")}
+              disabled={Object.keys(session.parentResponses || {}).length === 0}
+              className="btn-intake bg-info/10 text-info text-sm flex items-center justify-center gap-2 hover:bg-info/20 transition-colors w-full disabled:opacity-40"
+              title="תמונת מצב המבוססת רק על תשובות ההורה">
+              <ScrollText className="w-4 h-4" /> תמונת מצב — מצד ההורה בלבד
+            </button>
+            <button onClick={() => generatePerspectivePDF(session, "staff")}
+              disabled={Object.keys(session.staffResponses || {}).length === 0}
+              className="btn-intake bg-warning/10 text-warning text-sm flex items-center justify-center gap-2 hover:bg-warning/20 transition-colors w-full disabled:opacity-40"
+              title="תמונת מצב המבוססת רק על תשובות הצוות">
+              <ScrollText className="w-4 h-4" /> תמונת מצב — מצד הצוות בלבד
+            </button>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-2">
+            <button onClick={() => generatePerspectivePDF(session, "parent", { grayscale: true })}
+              disabled={Object.keys(session.parentResponses || {}).length === 0}
+              className="btn-intake bg-muted text-foreground text-sm flex items-center justify-center gap-2 hover:bg-muted/80 transition-colors w-full disabled:opacity-40">
+              <ScrollText className="w-4 h-4" /> תמונת מצב הורה — שחור לבן
+            </button>
+            <button onClick={() => generatePerspectivePDF(session, "staff", { grayscale: true })}
+              disabled={Object.keys(session.staffResponses || {}).length === 0}
+              className="btn-intake bg-muted text-foreground text-sm flex items-center justify-center gap-2 hover:bg-muted/80 transition-colors w-full disabled:opacity-40">
+              <ScrollText className="w-4 h-4" /> תמונת מצב צוות — שחור לבן
             </button>
           </div>
         </div>

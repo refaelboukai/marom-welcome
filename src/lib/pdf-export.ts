@@ -1,13 +1,29 @@
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { IntakeSession, SECTION_LABELS, QOL_SUBDOMAIN_LABELS, LC_SUBDOMAIN_LABELS } from "@/lib/types";
+import { allQuestionnaireItems } from "@/data/questionnaires";
 import { calculateScores, calculateQoLSubdomains, calculateLearningSubdomains, generateRiskFlags, generateInsights, generateGASGoals, getScoreLabel, getTopFocusAreas } from "@/lib/scoring";
 import { DOMAIN_DESCRIPTIONS, QOL_SUBDOMAIN_DESCRIPTIONS, LC_SUBDOMAIN_DESCRIPTIONS, getScoreInterpretation } from "@/lib/domain-descriptions";
 
-function buildReportHTML(session: IntakeSession, target: "staff" | "parent"): string {
-  const scores = calculateScores(session.studentResponses, session.parentResponses);
-  const qolSubs = calculateQoLSubdomains(session.studentResponses, session.parentResponses);
-  const lcSubs = calculateLearningSubdomains(session.studentResponses, session.parentResponses);
+export type ReportPerspective = "all" | "parent" | "staff";
+
+const PERSPECTIVE_LABELS: Record<ReportPerspective, string> = {
+  all: "מבט משולב (תלמיד/ה + הורה)",
+  parent: "תמונת מצב — מנקודת מבט ההורה",
+  staff: "תמונת מצב — מנקודת מבט הצוות",
+};
+
+function buildReportHTML(session: IntakeSession, target: "staff" | "parent", perspective: ReportPerspective = "all"): string {
+  const single = perspective !== "all";
+  const src: Record<string, number> =
+    perspective === "parent" ? (session.parentResponses || {})
+    : perspective === "staff" ? (session.staffResponses || {})
+    : {};
+  const primary = single ? src : session.studentResponses;
+  const secondary = single ? {} : session.parentResponses;
+  const scores = calculateScores(primary, secondary);
+  const qolSubs = calculateQoLSubdomains(primary, secondary);
+  const lcSubs = calculateLearningSubdomains(primary, secondary);
   const riskFlags = generateRiskFlags(scores);
   const insights = generateInsights(scores);
   const focusAreas = getTopFocusAreas(scores);
@@ -25,11 +41,12 @@ function buildReportHTML(session: IntakeSession, target: "staff" | "parent"): st
   let html = `
     <div style="font-family: 'Heebo', 'Rubik', 'Arial', sans-serif; direction: rtl; padding: 40px; max-width: 700px; margin: 0 auto; color: #1a1a2e; line-height: 1.6;">
       <div data-section style="border-bottom: 3px solid #4a9a7a; padding-bottom: 16px; margin-bottom: 24px;">
-        <h1 style="font-size: 22px; font-weight: 700; color: #1a1a2e; margin: 0 0 8px 0;">מרום בית אקשטיין — סיכום ${target === "parent" ? "להורים" : "לצוות"}</h1>
+        <h1 style="font-size: 22px; font-weight: 700; color: #1a1a2e; margin: 0 0 8px 0;">מרום בית אקשטיין — ${single ? PERSPECTIVE_LABELS[perspective] : `סיכום ${target === "parent" ? "להורים" : "לצוות"}`}</h1>
         <p style="font-size: 16px; font-weight: 600; margin: 0 0 4px 0;">תלמיד/ה: ${session.studentName}</p>
         <p style="font-size: 12px; color: #666; margin: 0;">כיתה: ${session.grade || "—"} &nbsp;|&nbsp; ת.ז.: ${session.studentIdNumber || "—"}</p>
         <p style="font-size: 12px; color: #666; margin: 0;">תאריך: ${new Date(session.createdAt).toLocaleDateString("he-IL")}</p>
         <p style="font-size: 11px; color: #888; margin: 8px 0 0 0;">סולם הציונים: 1–5 (1 = נמוך, 5 = גבוה). כל ציון מלווה בפרשנות מילולית.</p>
+        ${single ? `<p style="font-size: 11px; color: #4a9a7a; font-weight: 600; margin: 4px 0 0 0;">הדוח מבוסס אך ורק על התשובות שמילא/ה ${perspective === "parent" ? "ההורה" : "הצוות החינוכי"}.</p>` : ""}
       </div>
 
       <div data-section style="margin-bottom: 20px;">
@@ -44,7 +61,7 @@ function buildReportHTML(session: IntakeSession, target: "staff" | "parent"): st
             <p style="font-size: 11px; font-weight: 600; margin: 0 0 4px 0; color: ${s.normalized >= 4 ? '#276749' : s.normalized >= 3 ? '#4a9a7a' : s.normalized >= 2 ? '#d69e2e' : s.normalized >= 0 ? '#e53e3e' : '#888'};">
               ${getScoreInterpretation(s.normalized, key)}
             </p>
-            <p style="font-size: 10px; color: #888; margin: 0;">תלמיד: ${fmt(s.studentNormalized)} | הורה: ${fmt(s.parentNormalized)} | רמה: ${getScoreLabel(s.normalized)}</p>
+            <p style="font-size: 10px; color: #888; margin: 0;">${single ? "" : `תלמיד: ${fmt(s.studentNormalized)} | הורה: ${fmt(s.parentNormalized)} | `}רמה: ${getScoreLabel(s.normalized)}</p>
           </div>
         `).join("")}
       </div>`;
@@ -64,7 +81,7 @@ function buildReportHTML(session: IntakeSession, target: "staff" | "parent"): st
           <p style="font-size: 10px; font-weight: 600; margin: 2px 0 0 0; color: ${s.normalized >= 4 ? '#276749' : s.normalized >= 3 ? '#4a9a7a' : s.normalized >= 2 ? '#d69e2e' : s.normalized >= 0 ? '#e53e3e' : '#888'};">
             ${getScoreInterpretation(s.normalized, key)}
           </p>
-          <p style="font-size: 10px; color: #888; margin: 2px 0 0 0;">ת: ${fmt(s.studentNormalized)} | ה: ${fmt(s.parentNormalized)} | ${getScoreLabel(s.normalized)}</p>
+          <p style="font-size: 10px; color: #888; margin: 2px 0 0 0;">${single ? "" : `ת: ${fmt(s.studentNormalized)} | ה: ${fmt(s.parentNormalized)} | `}${getScoreLabel(s.normalized)}</p>
         </div>
       `).join("")}
     </div>`;
@@ -82,7 +99,7 @@ function buildReportHTML(session: IntakeSession, target: "staff" | "parent"): st
             <span style="font-size: 14px; font-weight: 700; color: ${s.normalized < 2.5 ? '#e53e3e' : s.normalized < 3.0 ? '#d69e2e' : '#333'};">${fmt(s.normalized)}</span>
           </div>
           <p style="font-size: 10px; color: #666; margin: 2px 0 0 0;">${LC_SUBDOMAIN_DESCRIPTIONS[key] || ""}</p>
-          <p style="font-size: 10px; color: #888; margin: 2px 0 0 0;">ת: ${fmt(s.studentNormalized)} | ה: ${fmt(s.parentNormalized)} | ${getScoreLabel(s.normalized)}</p>
+          <p style="font-size: 10px; color: #888; margin: 2px 0 0 0;">${single ? "" : `ת: ${fmt(s.studentNormalized)} | ה: ${fmt(s.parentNormalized)} | `}${getScoreLabel(s.normalized)}</p>
         </div>
       `).join("")}
     </div>`;
@@ -140,6 +157,28 @@ function buildReportHTML(session: IntakeSession, target: "staff" | "parent"): st
     }
   }
 
+  // Behavior / authority cluster (staff-only items)
+  if (perspective === "staff") {
+    const caItems = allQuestionnaireItems.filter((i) => i.section === "conduct_authority");
+    const answered = caItems.filter((i) => src[i.id] != null);
+    if (answered.length > 0) {
+      const vals = answered.map((i) => (i.isReverse ? 6 - src[i.id] : src[i.id]));
+      const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+      html += `
+      <div data-section style="margin-bottom: 20px;">
+        <h2 style="font-size: 15px; font-weight: 700; margin: 0 0 8px 0;">🧭 ${SECTION_LABELS.conduct_authority}</h2>
+        <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; background: #fafcfd;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <strong style="font-size: 13px;">ממוצע אשכול</strong>
+            <span style="font-size: 16px; font-weight: 800;">${avg.toFixed(2)}</span>
+          </div>
+          <p style="font-size: 11px; color: #666; margin: 4px 0 0 0;">רמה: ${getScoreLabel(avg)} — מבוסס על ${answered.length} פריטים שמילא הצוות.</p>
+          ${answered.map((i) => `<p style="font-size: 11px; color: #444; margin: 3px 0;">• ${i.parentText} — <strong>${i.isReverse ? 6 - src[i.id] : src[i.id]}</strong></p>`).join("")}
+        </div>
+      </div>`;
+    }
+  }
+
   // Staff open responses
   const staffLabels: Record<string, string> = {
     staff_behavioral: "תפקוד התנהגותי",
@@ -148,7 +187,7 @@ function buildReportHTML(session: IntakeSession, target: "staff" | "parent"): st
     staff_emotional: "תפקוד רגשי",
     staff_recommendations: "המלצות הצוות",
   };
-  const staffEntries = Object.entries(session.staffOpenResponses || {}).filter(([, v]) => v);
+  const staffEntries = perspective === "parent" ? [] : Object.entries(session.staffOpenResponses || {}).filter(([, v]) => v);
   if (staffEntries.length > 0) {
     html += `
       <div data-section style="margin-bottom: 20px;">
@@ -173,7 +212,7 @@ function buildReportHTML(session: IntakeSession, target: "staff" | "parent"): st
       </div>`;
   }
 
-  const openEntries = Object.entries(session.studentOpenResponses).filter(([, v]) => v);
+  const openEntries = single ? [] : Object.entries(session.studentOpenResponses).filter(([, v]) => v);
   if (openEntries.length > 0) {
     const labels: Record<string, string> = {
       significant_figure: "דמות משמעותית בחיי",
@@ -196,7 +235,7 @@ function buildReportHTML(session: IntakeSession, target: "staff" | "parent"): st
 
   html += `
       <div data-section style="border-top: 1px solid #ddd; padding-top: 12px; margin-top: 24px; text-align: center;">
-        <p style="font-size: 10px; color: #999; margin: 0;">מרום בית אקשטיין — ${target === "parent" ? "דו\"ח להורים" : "דו\"ח לצוות"} — חסוי</p>
+        <p style="font-size: 10px; color: #999; margin: 0;">מרום בית אקשטיין — ${single ? PERSPECTIVE_LABELS[perspective] : (target === "parent" ? "דו\"ח להורים" : "דו\"ח לצוות")} — חסוי</p>
       </div>
     </div>`;
 
@@ -639,6 +678,18 @@ export async function renderPagedHTMLToPDF(
 export async function generateStudentPDF(session: IntakeSession, target: "staff" | "parent" = "staff") {
   const html = buildReportHTML(session, target);
   await renderHTMLToPDF(html, `${session.studentName}_${target === "staff" ? "staff_report" : "parent_report"}.pdf`);
+}
+
+/** Snapshot report based on a single respondent's answers only (parent or staff). */
+export async function generatePerspectivePDF(
+  session: IntakeSession,
+  perspective: "parent" | "staff",
+  options?: { grayscale?: boolean }
+) {
+  const html = buildReportHTML(session, "staff", perspective);
+  const suffix = options?.grayscale ? "_שחור_לבן" : "";
+  const who = perspective === "parent" ? "תמונת_מצב_הורה" : "תמונת_מצב_צוות";
+  await renderHTMLToPDF(html, `${session.studentName}_${who}${suffix}.pdf`, options);
 }
 
 export async function generatePersonalPlanPDF(session: IntakeSession, planData: PersonalPlanData, options?: { grayscale?: boolean }) {
