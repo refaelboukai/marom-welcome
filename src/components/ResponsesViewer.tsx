@@ -93,27 +93,34 @@ const ResponsesViewer = ({ session, open, onClose }: Props) => {
   const gapLevel = (gap: number | null) => (gap == null ? "none" : gap >= 2 ? "high" : gap === 1 ? "mid" : "low");
   const bigGaps = compareRows.filter((r) => (r.gap ?? 0) >= 2);
 
+  const respondentLabel: Record<Exclude<Respondent, "compare">, string> = {
+    student: "תלמיד/ה",
+    parent: "הורה",
+    staff: "מחנכת",
+  };
+
   const handleExportBW = async () => {
     setExporting(true);
     try {
-      const sectionsHtml = sections
-        .map(([section, items]) => {
-          const rows = items
-            .map((it) => {
-              const r = compareRows.find((c) => c.it.id === it.id)!;
-              const cell = (v: number | null) => (v == null ? "—" : String(v));
-              const gapTxt = r.gap == null ? "—" : String(r.gap);
-              const strong = (r.gap ?? 0) >= 2;
-              return `<tr style="border-bottom:1px solid #ddd;${strong ? "background:#eee;" : ""}">
+      if (isCompare) {
+        const sectionsHtml = sections
+          .map(([section, items]) => {
+            const rows = items
+              .map((it) => {
+                const r = compareRows.find((c) => c.it.id === it.id)!;
+                const cell = (v: number | null) => (v == null ? "—" : String(v));
+                const gapTxt = r.gap == null ? "—" : String(r.gap);
+                const strong = (r.gap ?? 0) >= 2;
+                return `<tr style="border-bottom:1px solid #ddd;${strong ? "background:#eee;" : ""}">
                 <td style="padding:5px 6px;font-size:11px;text-align:right;">${it.studentText}${it.isReverse ? " (הפוך)" : ""}</td>
                 <td style="padding:5px 6px;font-size:11px;text-align:center;">${cell(r.s)}</td>
                 <td style="padding:5px 6px;font-size:11px;text-align:center;">${cell(r.p)}</td>
                 <td style="padding:5px 6px;font-size:11px;text-align:center;">${cell(r.t)}</td>
                 <td style="padding:5px 6px;font-size:11px;text-align:center;font-weight:${strong ? 700 : 400};">${gapTxt}</td>
               </tr>`;
-            })
-            .join("");
-          return `<div data-section style="margin-bottom:16px;">
+              })
+              .join("");
+            return `<div data-section style="margin-bottom:16px;">
             <h3 style="font-size:13px;font-weight:700;margin:0 0 6px 0;border-bottom:2px solid #333;padding-bottom:3px;">${SECTION_LABELS[section]}</h3>
             <table style="width:100%;border-collapse:collapse;">
               <thead><tr style="background:#333;color:#fff;">
@@ -126,10 +133,10 @@ const ResponsesViewer = ({ session, open, onClose }: Props) => {
               <tbody>${rows}</tbody>
             </table>
           </div>`;
-        })
-        .join("");
+          })
+          .join("");
 
-      const html = `<div style="direction:rtl;font-family:'Assistant',Arial,sans-serif;color:#111;padding:24px;background:#fff;">
+        const html = `<div style="direction:rtl;font-family:'Assistant',Arial,sans-serif;color:#111;padding:24px;background:#fff;">
         <div data-section style="margin-bottom:16px;">
           <h1 style="font-size:20px;margin:0;">מיפוי משולב — תלמיד/ה · הורה · מחנכת</h1>
           <p style="font-size:12px;margin:4px 0 0 0;">${session.studentName} · כיתה ${session.grade || "—"} · ${new Date().toLocaleDateString("he-IL")}</p>
@@ -139,7 +146,50 @@ const ResponsesViewer = ({ session, open, onClose }: Props) => {
         ${sectionsHtml}
       </div>`;
 
-      await renderHTMLToPDF(html, `מיפוי_משולב_${session.studentName}.pdf`, { grayscale: true });
+        await renderHTMLToPDF(html, `מיפוי_משולב_${session.studentName}.pdf`, { grayscale: true });
+      } else {
+        const r = respondent as Exclude<Respondent, "compare">;
+        const resp = responsesFor(r);
+        const sectionsHtml = sections
+          .map(([section, items]) => {
+            const rows = items
+              .map((it, idx) => {
+                const raw = resp?.[it.id];
+                const pos = positiveOf(raw, it.isReverse);
+                const cell = pos == null ? "—" : String(pos);
+                const tone = pos == null ? "" : pos >= 4 ? "רקע:#fff;border-left:4px solid #555;" : pos === 3 ? "רקע:#f5f5f5;border-left:4px solid #999;" : "רקע:#eee;border-left:4px solid #333;font-weight:700;";
+                const text = r === "parent" ? it.parentText : it.studentText;
+                return `<tr style="border-bottom:1px solid #ddd;${tone}">
+                <td style="padding:5px 6px;font-size:11px;text-align:right;">${idx + 1}. ${text}${it.isReverse ? " (הפוך)" : ""}</td>
+                <td style="padding:5px 6px;font-size:12px;text-align:center;font-weight:600;width:52px;">${cell}</td>
+              </tr>`;
+              })
+              .join("");
+            return `<div data-section style="margin-bottom:16px;">
+            <h3 style="font-size:13px;font-weight:700;margin:0 0 6px 0;border-bottom:2px solid #333;padding-bottom:3px;">${SECTION_LABELS[section]}</h3>
+            <table style="width:100%;border-collapse:collapse;">
+              <thead><tr style="background:#333;color:#fff;">
+                <th style="padding:5px 6px;font-size:11px;text-align:right;">היגד</th>
+                <th style="padding:5px 6px;font-size:11px;width:52px;">ערך (1–5)</th>
+              </tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>`;
+          })
+          .join("");
+
+        const html = `<div style="direction:rtl;font-family:'Assistant',Arial,sans-serif;color:#111;padding:24px;background:#fff;">
+        <div data-section style="margin-bottom:16px;">
+          <h1 style="font-size:20px;margin:0;">שאלון ${respondentLabel[r]} — ${session.studentName}</h1>
+          <p style="font-size:12px;margin:4px 0 0 0;">${session.studentName} · כיתה ${session.grade || "—"} · ${new Date().toLocaleDateString("he-IL")}</p>
+          <p style="font-size:11px;margin:6px 0 0 0;">כל הערכים מוצגים בסולם חיובי 1–5 (5 = מיטבי). פריטים הפוכים הוסבו בהתאם. נענו ${answeredCount} מתוך ${questionnaireItems.length} פריטים.</p>
+        </div>
+        ${sectionsHtml}
+      </div>`;
+
+        const filePrefix = r === "parent" ? "שאלון_הורה" : r === "staff" ? "שאלון_מחנכת" : "שאלון_תלמיד";
+        await renderHTMLToPDF(html, `${filePrefix}_${session.studentName}.pdf`, { grayscale: true });
+      }
     } finally {
       setExporting(false);
     }
@@ -218,7 +268,9 @@ const ResponsesViewer = ({ session, open, onClose }: Props) => {
             className="mr-auto flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-border hover:bg-muted disabled:opacity-60"
           >
             {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-            הורדת מיפוי משולב (שחור־לבן)
+            {isCompare
+              ? "הורדת מיפוי משולב (שחור־לבן)"
+              : `הורדת שאלון ${respondentLabel[respondent as Exclude<Respondent, "compare">]} (שחור־לבן)`}
           </button>
         </div>
 
