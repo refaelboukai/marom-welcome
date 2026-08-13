@@ -1,13 +1,29 @@
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { IntakeSession, SECTION_LABELS, QOL_SUBDOMAIN_LABELS, LC_SUBDOMAIN_LABELS } from "@/lib/types";
+import { questionnaireItems } from "@/data/questionnaires";
 import { calculateScores, calculateQoLSubdomains, calculateLearningSubdomains, generateRiskFlags, generateInsights, generateGASGoals, getScoreLabel, getTopFocusAreas } from "@/lib/scoring";
 import { DOMAIN_DESCRIPTIONS, QOL_SUBDOMAIN_DESCRIPTIONS, LC_SUBDOMAIN_DESCRIPTIONS, getScoreInterpretation } from "@/lib/domain-descriptions";
 
-function buildReportHTML(session: IntakeSession, target: "staff" | "parent"): string {
-  const scores = calculateScores(session.studentResponses, session.parentResponses);
-  const qolSubs = calculateQoLSubdomains(session.studentResponses, session.parentResponses);
-  const lcSubs = calculateLearningSubdomains(session.studentResponses, session.parentResponses);
+export type ReportPerspective = "all" | "parent" | "staff";
+
+const PERSPECTIVE_LABELS: Record<ReportPerspective, string> = {
+  all: "מבט משולב (תלמיד/ה + הורה)",
+  parent: "תמונת מצב — מנקודת מבט ההורה",
+  staff: "תמונת מצב — מנקודת מבט הצוות",
+};
+
+function buildReportHTML(session: IntakeSession, target: "staff" | "parent", perspective: ReportPerspective = "all"): string {
+  const single = perspective !== "all";
+  const src: Record<string, number> =
+    perspective === "parent" ? (session.parentResponses || {})
+    : perspective === "staff" ? (session.staffResponses || {})
+    : {};
+  const primary = single ? src : session.studentResponses;
+  const secondary = single ? {} : session.parentResponses;
+  const scores = calculateScores(primary, secondary);
+  const qolSubs = calculateQoLSubdomains(primary, secondary);
+  const lcSubs = calculateLearningSubdomains(primary, secondary);
   const riskFlags = generateRiskFlags(scores);
   const insights = generateInsights(scores);
   const focusAreas = getTopFocusAreas(scores);
@@ -25,11 +41,12 @@ function buildReportHTML(session: IntakeSession, target: "staff" | "parent"): st
   let html = `
     <div style="font-family: 'Heebo', 'Rubik', 'Arial', sans-serif; direction: rtl; padding: 40px; max-width: 700px; margin: 0 auto; color: #1a1a2e; line-height: 1.6;">
       <div data-section style="border-bottom: 3px solid #4a9a7a; padding-bottom: 16px; margin-bottom: 24px;">
-        <h1 style="font-size: 22px; font-weight: 700; color: #1a1a2e; margin: 0 0 8px 0;">מרום בית אקשטיין — סיכום ${target === "parent" ? "להורים" : "לצוות"}</h1>
+        <h1 style="font-size: 22px; font-weight: 700; color: #1a1a2e; margin: 0 0 8px 0;">מרום בית אקשטיין — ${single ? PERSPECTIVE_LABELS[perspective] : `סיכום ${target === "parent" ? "להורים" : "לצוות"}`}</h1>
         <p style="font-size: 16px; font-weight: 600; margin: 0 0 4px 0;">תלמיד/ה: ${session.studentName}</p>
         <p style="font-size: 12px; color: #666; margin: 0;">כיתה: ${session.grade || "—"} &nbsp;|&nbsp; ת.ז.: ${session.studentIdNumber || "—"}</p>
         <p style="font-size: 12px; color: #666; margin: 0;">תאריך: ${new Date(session.createdAt).toLocaleDateString("he-IL")}</p>
         <p style="font-size: 11px; color: #888; margin: 8px 0 0 0;">סולם הציונים: 1–5 (1 = נמוך, 5 = גבוה). כל ציון מלווה בפרשנות מילולית.</p>
+        ${single ? `<p style="font-size: 11px; color: #4a9a7a; font-weight: 600; margin: 4px 0 0 0;">הדוח מבוסס אך ורק על התשובות שמילא/ה ${perspective === "parent" ? "ההורה" : "הצוות החינוכי"}.</p>` : ""}
       </div>
 
       <div data-section style="margin-bottom: 20px;">
