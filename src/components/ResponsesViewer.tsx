@@ -268,7 +268,9 @@ const ResponsesViewer = ({ session, open, onClose }: Props) => {
             className="mr-auto flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-border hover:bg-muted disabled:opacity-60"
           >
             {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-            הורדת מיפוי משולב (שחור־לבן)
+            {isCompare
+              ? "הורדת מיפוי משולב (שחור־לבן)"
+              : `הורדת שאלון ${respondentLabel[respondent as Exclude<Respondent, "compare">]} (שחור־לבן)`}
           </button>
         </div>
 
