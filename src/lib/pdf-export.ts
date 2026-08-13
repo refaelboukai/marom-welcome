@@ -157,6 +157,28 @@ function buildReportHTML(session: IntakeSession, target: "staff" | "parent", per
     }
   }
 
+  // Behavior / authority cluster (staff-only items)
+  if (perspective === "staff") {
+    const caItems = questionnaireItems.filter((i) => i.section === "conduct_authority");
+    const answered = caItems.filter((i) => src[i.id] != null);
+    if (answered.length > 0) {
+      const vals = answered.map((i) => (i.isReverse ? 6 - src[i.id] : src[i.id]));
+      const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+      html += `
+      <div data-section style="margin-bottom: 20px;">
+        <h2 style="font-size: 15px; font-weight: 700; margin: 0 0 8px 0;">🧭 ${SECTION_LABELS.conduct_authority}</h2>
+        <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; background: #fafcfd;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <strong style="font-size: 13px;">ממוצע אשכול</strong>
+            <span style="font-size: 16px; font-weight: 800;">${avg.toFixed(2)}</span>
+          </div>
+          <p style="font-size: 11px; color: #666; margin: 4px 0 0 0;">רמה: ${getScoreLabel(avg)} — מבוסס על ${answered.length} פריטים שמילא הצוות.</p>
+          ${answered.map((i) => `<p style="font-size: 11px; color: #444; margin: 3px 0;">• ${i.text} — <strong>${i.isReverse ? 6 - src[i.id] : src[i.id]}</strong></p>`).join("")}
+        </div>
+      </div>`;
+    }
+  }
+
   // Staff open responses
   const staffLabels: Record<string, string> = {
     staff_behavioral: "תפקוד התנהגותי",
@@ -165,7 +187,7 @@ function buildReportHTML(session: IntakeSession, target: "staff" | "parent", per
     staff_emotional: "תפקוד רגשי",
     staff_recommendations: "המלצות הצוות",
   };
-  const staffEntries = Object.entries(session.staffOpenResponses || {}).filter(([, v]) => v);
+  const staffEntries = perspective === "parent" ? [] : Object.entries(session.staffOpenResponses || {}).filter(([, v]) => v);
   if (staffEntries.length > 0) {
     html += `
       <div data-section style="margin-bottom: 20px;">
@@ -190,7 +212,7 @@ function buildReportHTML(session: IntakeSession, target: "staff" | "parent", per
       </div>`;
   }
 
-  const openEntries = Object.entries(session.studentOpenResponses).filter(([, v]) => v);
+  const openEntries = single ? [] : Object.entries(session.studentOpenResponses).filter(([, v]) => v);
   if (openEntries.length > 0) {
     const labels: Record<string, string> = {
       significant_figure: "דמות משמעותית בחיי",
