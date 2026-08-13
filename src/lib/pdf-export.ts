@@ -173,7 +173,7 @@ function buildReportHTML(session: IntakeSession, target: "staff" | "parent", per
             <span style="font-size: 16px; font-weight: 800;">${avg.toFixed(2)}</span>
           </div>
           <p style="font-size: 11px; color: #666; margin: 4px 0 0 0;">רמה: ${getScoreLabel(avg)} — מבוסס על ${answered.length} פריטים שמילא הצוות.</p>
-          ${answered.map((i) => `<p style="font-size: 11px; color: #444; margin: 3px 0;">• ${i.text} — <strong>${i.isReverse ? 6 - src[i.id] : src[i.id]}</strong></p>`).join("")}
+          ${answered.map((i) => `<p style="font-size: 11px; color: #444; margin: 3px 0;">• ${i.parentText} — <strong>${i.isReverse ? 6 - src[i.id] : src[i.id]}</strong></p>`).join("")}
         </div>
       </div>`;
     }
