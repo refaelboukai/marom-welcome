@@ -1,7 +1,7 @@
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { IntakeSession, SECTION_LABELS, QOL_SUBDOMAIN_LABELS, LC_SUBDOMAIN_LABELS } from "@/lib/types";
-import { questionnaireItems } from "@/data/questionnaires";
+import { allQuestionnaireItems } from "@/data/questionnaires";
 import { calculateScores, calculateQoLSubdomains, calculateLearningSubdomains, generateRiskFlags, generateInsights, generateGASGoals, getScoreLabel, getTopFocusAreas } from "@/lib/scoring";
 import { DOMAIN_DESCRIPTIONS, QOL_SUBDOMAIN_DESCRIPTIONS, LC_SUBDOMAIN_DESCRIPTIONS, getScoreInterpretation } from "@/lib/domain-descriptions";
 
@@ -159,7 +159,7 @@ function buildReportHTML(session: IntakeSession, target: "staff" | "parent", per
 
   // Behavior / authority cluster (staff-only items)
   if (perspective === "staff") {
-    const caItems = questionnaireItems.filter((i) => i.section === "conduct_authority");
+    const caItems = allQuestionnaireItems.filter((i) => i.section === "conduct_authority");
     const answered = caItems.filter((i) => src[i.id] != null);
     if (answered.length > 0) {
       const vals = answered.map((i) => (i.isReverse ? 6 - src[i.id] : src[i.id]));
