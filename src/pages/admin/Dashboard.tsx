@@ -12,6 +12,7 @@ import WelcomeMessageEditor from "@/components/WelcomeMessageEditor";
 import ReminderMessageEditor from "@/components/ReminderMessageEditor";
 import PhonesImportDialog from "@/components/PhonesImportDialog";
 import DigitalFormsAdmin from "@/components/DigitalFormsAdmin";
+import CompletionTracker from "@/components/CompletionTracker";
 import { openWhatsApp, normalizePhone, REMINDER_MESSAGE } from "@/lib/whatsapp";
 
 import logo from "@/assets/logo.jpeg";
@@ -165,7 +166,7 @@ const Dashboard = () => {
       } else {
         if (s.status === "archived") return false;
       }
-      if (tab !== "all" && tab !== "unassigned" && tab !== "archive" && tab !== "codes" && tab !== "enrollment") {
+      if (tab !== "all" && tab !== "unassigned" && tab !== "archive" && tab !== "codes" && tab !== "enrollment" && tab !== "tracking") {
         if (s.classGroup !== tab) return false;
       }
       if (filter !== "all" && s.status !== filter) return false;
@@ -333,6 +334,7 @@ const Dashboard = () => {
     })),
     { key: "unassigned", label: "ללא שיוך", count: sessionsWithMeta.filter((s) => !s.classGroup && s.status !== "archived").length },
     { key: "archive", label: "ארכיון", count: sessionsWithMeta.filter((s) => s.status === "archived").length },
+    { key: "tracking", label: "מעקב מילוי", count: sessionsWithMeta.filter((s) => s.status !== "archived").length },
     { key: "codes", label: "ניהול קודים" },
     { key: "enrollment", label: "טפסים דיגיטליים" },
   ];
@@ -463,7 +465,9 @@ const Dashboard = () => {
         ))}
 
         {/* Codes Tab */}
-        {tab === "enrollment" ? (
+        {tab === "tracking" ? (
+          <CompletionTracker sessions={sessionsForYear} classGroups={classGroups} onSendReminder={sendReminder} />
+        ) : tab === "enrollment" ? (
           <DigitalFormsAdmin />
         ) : tab === "codes" ? (
           <CodeManagement sessions={sessions} />
