@@ -12,6 +12,7 @@ import WelcomeMessageEditor from "@/components/WelcomeMessageEditor";
 import ReminderMessageEditor from "@/components/ReminderMessageEditor";
 import PhonesImportDialog from "@/components/PhonesImportDialog";
 import DigitalFormsAdmin from "@/components/DigitalFormsAdmin";
+import CompletionTracker from "@/components/CompletionTracker";
 import { openWhatsApp, normalizePhone, REMINDER_MESSAGE } from "@/lib/whatsapp";
 
 import logo from "@/assets/logo.jpeg";
@@ -20,6 +21,7 @@ import { calculateScores, generateRiskFlags, getCompletionPercentage } from "@/l
 import { exportToExcel } from "@/lib/export-utils";
 import { generateStudentPDF } from "@/lib/pdf-export";
 import { copyText } from "@/lib/clipboard";
+import { getCompletionRow } from "@/lib/completion";
 
 type Tab = string; // "all" | "unassigned" | "codes" | "archive" | any classGroup key
 
@@ -165,7 +167,7 @@ const Dashboard = () => {
       } else {
         if (s.status === "archived") return false;
       }
-      if (tab !== "all" && tab !== "unassigned" && tab !== "archive" && tab !== "codes" && tab !== "enrollment") {
+      if (tab !== "all" && tab !== "unassigned" && tab !== "archive" && tab !== "codes" && tab !== "enrollment" && tab !== "tracking") {
         if (s.classGroup !== tab) return false;
       }
       if (filter !== "all" && s.status !== filter) return false;
@@ -333,6 +335,7 @@ const Dashboard = () => {
     })),
     { key: "unassigned", label: "ללא שיוך", count: sessionsWithMeta.filter((s) => !s.classGroup && s.status !== "archived").length },
     { key: "archive", label: "ארכיון", count: sessionsWithMeta.filter((s) => s.status === "archived").length },
+    { key: "tracking", label: "מעקב מילוי", count: sessionsWithMeta.filter((s) => s.status !== "archived").length },
     { key: "codes", label: "ניהול קודים" },
     { key: "enrollment", label: "טפסים דיגיטליים" },
   ];
@@ -463,7 +466,9 @@ const Dashboard = () => {
         ))}
 
         {/* Codes Tab */}
-        {tab === "enrollment" ? (
+        {tab === "tracking" ? (
+          <CompletionTracker sessions={sessionsForYear} classGroups={classGroups} onSendReminder={sendReminder} />
+        ) : tab === "enrollment" ? (
           <DigitalFormsAdmin />
         ) : tab === "codes" ? (
           <CodeManagement sessions={sessions} />
@@ -587,7 +592,27 @@ const Dashboard = () => {
                                 </select>
                               </div>
                             </td>
-                            <td className="px-4 py-3"><StatusBadge status={session.status} /></td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2">
+                                <StatusBadge status={session.status} />
+                                {(() => {
+                                  const row = getCompletionRow(session);
+                                  const dot = (state: string, label: string) =>
+                                    state === "done"
+                                      ? <CheckCircle className="w-3.5 h-3.5 text-success" key={label} aria-label={`${label} הושלם`} />
+                                      : state === "partial"
+                                        ? <AlertTriangle className="w-3.5 h-3.5 text-warning" key={label} aria-label={`${label} בתהליך`} />
+                                        : <XCircle className="w-3.5 h-3.5 text-destructive/70" key={label} aria-label={`${label} טרם החל`} />;
+                                  return (
+                                    <span className="flex items-center gap-0.5" title={row.missingLabel}>
+                                      {dot(row.student.state, "תלמיד")}
+                                      {dot(row.parent.state, "הורה")}
+                                      {dot(row.staff.state, "צוות")}
+                                    </span>
+                                  );
+                                })()}
+                              </div>
+                            </td>
                             <td className="px-4 py-3 text-center"><span className={`text-xs font-medium ${session.studentCompletion === 100 ? "text-success" : "text-muted-foreground"}`}>{session.studentCompletion}%</span></td>
                             <td className="px-4 py-3 text-center"><span className={`text-xs font-medium ${session.parentCompletion === 100 ? "text-success" : "text-muted-foreground"}`}>{session.parentCompletion}%</span></td>
                             <td className="px-4 py-3 text-center font-bold">{overallScore >= 0 ? overallScore.toFixed(2) : "—"}</td>
