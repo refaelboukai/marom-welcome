@@ -17,6 +17,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { questionnaireItems, studentParentItems, allQuestionnaireItems } from "@/data/questionnaires";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line } from "recharts";
 import { copyText } from "@/lib/clipboard";
+import { openWhatsApp, normalizePhone } from "@/lib/whatsapp";
+import { getWelcomeMessage } from "@/lib/supabase-storage";
+import { APP_URL } from "@/lib/app-url";
+
 
 const StudentProfile = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -52,6 +56,10 @@ const StudentProfile = () => {
   const [deleting, setDeleting] = useState(false);
   const [archiving, setArchiving] = useState(false);
   const [showResponses, setShowResponses] = useState(false);
+  const [phonePrompt, setPhonePrompt] = useState<"student" | "parent" | null>(null);
+  const [phoneInput, setPhoneInput] = useState("");
+  const [phoneError, setPhoneError] = useState("");
+
 
   // Peer chemistry (relationships)
   const [allSessions, setAllSessions] = useState<IntakeSession[]>([]);
@@ -421,6 +429,37 @@ const StudentProfile = () => {
     setSession((prev) => prev ? { ...prev, [field]: !current } : null);
   };
 
+  const sendQuestionnaireWhatsApp = async (type: "student" | "parent", phoneOverride?: string) => {
+    if (!session) return;
+    const rawPhone = phoneOverride ?? (type === "student" ? session.studentPhone : session.parentPhone) ?? "";
+    if (!normalizePhone(rawPhone)) {
+      setPhonePrompt(type);
+      setPhoneInput(rawPhone);
+      setPhoneError(rawPhone ? "מספר לא תקין — הזן מספר נייד תקין" : "");
+      return;
+    }
+    const code = type === "student" ? session.studentCode : session.parentCode;
+    const base = await getWelcomeMessage();
+    const msg = `${base}\n\nקוד אישי: ${code}\nכניסה ישירה: ${APP_URL}/?code=${code}`;
+    openWhatsApp(rawPhone, msg);
+  };
+
+  const handleSavePhoneAndSend = async () => {
+    if (!session || !phonePrompt) return;
+    if (!normalizePhone(phoneInput)) {
+      setPhoneError("מספר לא תקין — לדוגמה 0541234567");
+      return;
+    }
+    const field = phonePrompt === "student" ? "studentPhone" : "parentPhone";
+    await updateSessionDB(session.id, { [field]: phoneInput });
+    setSession((prev) => prev ? { ...prev, [field]: phoneInput } : null);
+    const type = phonePrompt;
+    setPhonePrompt(null);
+    setPhoneError("");
+    await sendQuestionnaireWhatsApp(type, phoneInput);
+  };
+
+
   const handlePrint = () => { window.print(); };
 
   const handleGenerateSummary = (type: SemesterType) => {
@@ -563,6 +602,9 @@ const StudentProfile = () => {
               {session.studentCodeActive === false && <p className="text-xs text-destructive mt-0.5">מושבת</p>}
             </div>
             <div className="flex items-center gap-1">
+              <button onClick={() => sendQuestionnaireWhatsApp("student")} className="p-2 rounded-lg hover:bg-success/10" title="שליחת השאלון בווטסאפ לתלמיד">
+                <MessageSquare className="w-4 h-4 text-success" />
+              </button>
               <button onClick={() => handleCopy(session.studentCode, "student")} className="p-2 rounded-lg hover:bg-muted">
                 {copied === "student" ? <CheckCircle className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4 text-muted-foreground" />}
               </button>
@@ -578,16 +620,48 @@ const StudentProfile = () => {
               {session.parentCodeActive === false && <p className="text-xs text-destructive mt-0.5">מושבת</p>}
             </div>
             <div className="flex items-center gap-1">
+              <button onClick={() => sendQuestionnaireWhatsApp("parent")} className="p-2 rounded-lg hover:bg-success/10" title="שליחת השאלון בווטסאפ להורה">
+                <MessageSquare className="w-4 h-4 text-success" />
+              </button>
               <button onClick={() => handleCopy(session.parentCode, "parent")} className="p-2 rounded-lg hover:bg-muted">
                 {copied === "parent" ? <CheckCircle className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4 text-muted-foreground" />}
               </button>
               <button onClick={() => handleToggleCode("parent")} className="p-2 rounded-lg hover:bg-muted" title={session.parentCodeActive !== false ? "השבת קוד" : "הפעל קוד"}>
                 {session.parentCodeActive !== false ? <Unlock className="w-4 h-4 text-success" /> : <Lock className="w-4 h-4 text-destructive" />}
               </button>
+
             </div>
           </div>
         </div>
         )}
+
+        {/* Missing phone prompt */}
+        {!viewerMode && phonePrompt && (
+          <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setPhonePrompt(null)}>
+            <div className="bg-card rounded-2xl p-5 w-full max-w-sm space-y-3" onClick={(e) => e.stopPropagation()}>
+              <h3 className="font-heading font-bold text-sm">
+                {phonePrompt === "parent" ? "חסר מספר נייד של ההורה" : "חסר מספר נייד של התלמיד"}
+              </h3>
+              <p className="text-xs text-muted-foreground">הזן מספר נייד כדי לשלוח את השאלון בווטסאפ. המספר יישמר בכרטיס.</p>
+              <input
+                autoFocus
+                dir="ltr"
+                inputMode="tel"
+                value={phoneInput}
+                onChange={(e) => { setPhoneInput(e.target.value); setPhoneError(""); }}
+                onKeyDown={(e) => { if (e.key === "Enter") handleSavePhoneAndSend(); }}
+                placeholder="0541234567"
+                className="w-full bg-background border border-input rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+              {phoneError && <p className="text-xs text-destructive">{phoneError}</p>}
+              <div className="flex gap-2">
+                <button onClick={handleSavePhoneAndSend} className="btn-intake bg-success text-success-foreground text-xs px-3 py-2 flex-1">שמירה ושליחה</button>
+                <button onClick={() => { setPhonePrompt(null); setPhoneError(""); }} className="btn-intake bg-muted text-foreground text-xs px-3 py-2">ביטול</button>
+              </div>
+            </div>
+          </div>
+        )}
+
 
         {/* Edit Student Details */}
         <div className="intake-card-soft print:hidden">
