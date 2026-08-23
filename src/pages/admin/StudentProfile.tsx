@@ -635,6 +635,34 @@ const StudentProfile = () => {
         </div>
         )}
 
+        {/* Missing phone prompt */}
+        {!viewerMode && phonePrompt && (
+          <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setPhonePrompt(null)}>
+            <div className="bg-card rounded-2xl p-5 w-full max-w-sm space-y-3" onClick={(e) => e.stopPropagation()}>
+              <h3 className="font-heading font-bold text-sm">
+                {phonePrompt === "parent" ? "חסר מספר נייד של ההורה" : "חסר מספר נייד של התלמיד"}
+              </h3>
+              <p className="text-xs text-muted-foreground">הזן מספר נייד כדי לשלוח את השאלון בווטסאפ. המספר יישמר בכרטיס.</p>
+              <input
+                autoFocus
+                dir="ltr"
+                inputMode="tel"
+                value={phoneInput}
+                onChange={(e) => { setPhoneInput(e.target.value); setPhoneError(""); }}
+                onKeyDown={(e) => { if (e.key === "Enter") handleSavePhoneAndSend(); }}
+                placeholder="0541234567"
+                className="w-full bg-background border border-input rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+              {phoneError && <p className="text-xs text-destructive">{phoneError}</p>}
+              <div className="flex gap-2">
+                <button onClick={handleSavePhoneAndSend} className="btn-intake bg-success text-success-foreground text-xs px-3 py-2 flex-1">שמירה ושליחה</button>
+                <button onClick={() => { setPhonePrompt(null); setPhoneError(""); }} className="btn-intake bg-muted text-foreground text-xs px-3 py-2">ביטול</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+
         {/* Edit Student Details */}
         <div className="intake-card-soft print:hidden">
           <div className="flex items-center justify-between flex-wrap gap-3">
