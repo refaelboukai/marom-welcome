@@ -48,8 +48,7 @@ export function buildWhatsAppUrl(phone: string, message: string = WELCOME_MESSAG
   const normalized = normalizePhone(phone);
   if (!normalized) return null;
   const text = encodeURIComponent(message);
-  // Desktop → WhatsApp Web directly (avoids the "open the app?" redirect page).
-  if (!isMobileDevice()) return `https://web.whatsapp.com/send?phone=${normalized}&text=${text}`;
+  // Always use wa.me click-to-chat — opens the native WhatsApp app on every device.
   return `https://wa.me/${normalized}?text=${text}`;
 }
 
