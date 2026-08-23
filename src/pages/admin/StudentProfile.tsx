@@ -602,6 +602,9 @@ const StudentProfile = () => {
               {session.studentCodeActive === false && <p className="text-xs text-destructive mt-0.5">מושבת</p>}
             </div>
             <div className="flex items-center gap-1">
+              <button onClick={() => sendQuestionnaireWhatsApp("student")} className="p-2 rounded-lg hover:bg-success/10" title="שליחת השאלון בווטסאפ לתלמיד">
+                <MessageSquare className="w-4 h-4 text-success" />
+              </button>
               <button onClick={() => handleCopy(session.studentCode, "student")} className="p-2 rounded-lg hover:bg-muted">
                 {copied === "student" ? <CheckCircle className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4 text-muted-foreground" />}
               </button>
@@ -617,12 +620,16 @@ const StudentProfile = () => {
               {session.parentCodeActive === false && <p className="text-xs text-destructive mt-0.5">מושבת</p>}
             </div>
             <div className="flex items-center gap-1">
+              <button onClick={() => sendQuestionnaireWhatsApp("parent")} className="p-2 rounded-lg hover:bg-success/10" title="שליחת השאלון בווטסאפ להורה">
+                <MessageSquare className="w-4 h-4 text-success" />
+              </button>
               <button onClick={() => handleCopy(session.parentCode, "parent")} className="p-2 rounded-lg hover:bg-muted">
                 {copied === "parent" ? <CheckCircle className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4 text-muted-foreground" />}
               </button>
               <button onClick={() => handleToggleCode("parent")} className="p-2 rounded-lg hover:bg-muted" title={session.parentCodeActive !== false ? "השבת קוד" : "הפעל קוד"}>
                 {session.parentCodeActive !== false ? <Unlock className="w-4 h-4 text-success" /> : <Lock className="w-4 h-4 text-destructive" />}
               </button>
+
             </div>
           </div>
         </div>
