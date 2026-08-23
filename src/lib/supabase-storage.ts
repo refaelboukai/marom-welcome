@@ -86,6 +86,44 @@ export async function initializeSessionsDB(): Promise<void> {
   if (error) console.error("Failed to seed sessions:", error);
 }
 
+/** Merge responses filled inside assessment rounds into sessions that have empty base responses */
+async function mergeRoundResponses(sessions: IntakeSession[]): Promise<IntakeSession[]> {
+  const needy = sessions.filter(
+    (s) =>
+      Object.keys(s.studentResponses || {}).length === 0 ||
+      Object.keys(s.parentResponses || {}).length === 0
+  );
+  if (needy.length === 0) return sessions;
+
+  const { data, error } = await supabase
+    .from("assessment_rounds")
+    .select("session_id, student_responses, parent_responses, round_number")
+    .in("session_id", needy.map((s) => s.id))
+    .order("round_number", { ascending: true });
+
+  if (error || !data) return sessions;
+
+  const byId = new Map<string, { student: Record<string, number>; parent: Record<string, number> }>();
+  for (const r of data as any[]) {
+    const entry = byId.get(r.session_id) || { student: {}, parent: {} };
+    if (r.student_responses && Object.keys(r.student_responses).length > 0) entry.student = r.student_responses;
+    if (r.parent_responses && Object.keys(r.parent_responses).length > 0) entry.parent = r.parent_responses;
+    byId.set(r.session_id, entry);
+  }
+
+  return sessions.map((s) => {
+    const extra = byId.get(s.id);
+    if (!extra) return s;
+    return {
+      ...s,
+      studentResponses:
+        Object.keys(s.studentResponses || {}).length > 0 ? s.studentResponses : extra.student,
+      parentResponses:
+        Object.keys(s.parentResponses || {}).length > 0 ? s.parentResponses : extra.parent,
+    };
+  });
+}
+
 export async function getSessionsDB(): Promise<IntakeSession[]> {
   const { data, error } = await supabase
     .from("intake_sessions")
@@ -96,7 +134,7 @@ export async function getSessionsDB(): Promise<IntakeSession[]> {
     console.error("Error fetching sessions:", error);
     throw new Error(error.message || "טעינת התלמידים נכשלה");
   }
-  return (data || []).map(rowToSession);
+  return await mergeRoundResponses((data || []).map(rowToSession));
 }
 
 export async function getSessionDB(id: string): Promise<IntakeSession | null> {
@@ -109,6 +147,7 @@ export async function getSessionDB(id: string): Promise<IntakeSession | null> {
   if (error || !data) return null;
   return rowToSession(data);
 }
+
 
 export async function findSessionByCodeDB(code: string): Promise<{ session: IntakeSession; role: "student" | "parent" } | null> {
   // Check student code

@@ -612,19 +612,26 @@ const StudentProfile = () => {
           <div className="intake-card-soft text-center">
             <Users className="w-5 h-5 mx-auto mb-1 text-primary" />
             <p className="text-xs text-muted-foreground">השלמת תלמיד</p>
-            <p className="text-xl font-bold">{Object.keys(session.studentResponses).length}/{studentParentItems.length}</p>
+            <p className="text-xl font-bold">{Object.keys(viewerSession.studentResponses).length}/{studentParentItems.length}</p>
+            {Object.keys(session.studentResponses || {}).length === 0 && Object.keys(viewerSession.studentResponses).length > 0 && (
+              <p className="text-[10px] text-muted-foreground mt-0.5">מולא בסבב הערכה</p>
+            )}
             <div className="w-full h-1.5 bg-muted rounded-full mt-2 overflow-hidden">
-              <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${(Object.keys(session.studentResponses).length / studentParentItems.length) * 100}%` }} />
+              <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${Math.min(100, (Object.keys(viewerSession.studentResponses).length / studentParentItems.length) * 100)}%` }} />
             </div>
           </div>
           <div className="intake-card-soft text-center">
             <Users className="w-5 h-5 mx-auto mb-1 text-info" />
             <p className="text-xs text-muted-foreground">השלמת הורה</p>
-            <p className="text-xl font-bold">{Object.keys(session.parentResponses).length}/{studentParentItems.length}</p>
+            <p className="text-xl font-bold">{Object.keys(viewerSession.parentResponses).length}/{studentParentItems.length}</p>
+            {Object.keys(session.parentResponses || {}).length === 0 && Object.keys(viewerSession.parentResponses).length > 0 && (
+              <p className="text-[10px] text-muted-foreground mt-0.5">מולא בסבב הערכה</p>
+            )}
             <div className="w-full h-1.5 bg-muted rounded-full mt-2 overflow-hidden">
-              <div className="h-full bg-info rounded-full transition-all" style={{ width: `${(Object.keys(session.parentResponses).length / studentParentItems.length) * 100}%` }} />
+              <div className="h-full bg-info rounded-full transition-all" style={{ width: `${Math.min(100, (Object.keys(viewerSession.parentResponses).length / studentParentItems.length) * 100)}%` }} />
             </div>
           </div>
+
         </div>
 
         {/* Staff completion */}
