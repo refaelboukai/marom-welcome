@@ -245,6 +245,21 @@ const StudentProfile = () => {
     scores: calculateScores(r.student_responses, r.parent_responses),
   }));
 
+  // Fallback: if the base session has no responses but a round does, show the round's answers
+  const latestRoundStudent = [...completedRounds].reverse().find(r => Object.keys(r.student_responses).length > 0);
+  const latestRoundParent = [...completedRounds].reverse().find(r => Object.keys(r.parent_responses).length > 0);
+  const viewerSession = {
+    ...session,
+    studentResponses: Object.keys(session.studentResponses || {}).length > 0
+      ? session.studentResponses
+      : (latestRoundStudent?.student_responses || {}),
+    parentResponses: Object.keys(session.parentResponses || {}).length > 0
+      ? session.parentResponses
+      : (latestRoundParent?.parent_responses || {}),
+  };
+
+
+
   const radarData = [
     { subject: "איכות חיים", student: scores.qualityOfLife.studentNormalized, parent: scores.qualityOfLife.parentNormalized },
     { subject: "מסוגלות עצמית", student: scores.selfEfficacy.studentNormalized, parent: scores.selfEfficacy.parentNormalized },
@@ -1644,7 +1659,7 @@ const StudentProfile = () => {
           </div>
         </div>
       )}
-      <ResponsesViewer session={session} open={showResponses} onClose={() => setShowResponses(false)} />
+      <ResponsesViewer session={viewerSession} open={showResponses} onClose={() => setShowResponses(false)} />
     </div>
   );
 };
