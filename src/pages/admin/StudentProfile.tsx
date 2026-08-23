@@ -421,6 +421,37 @@ const StudentProfile = () => {
     setSession((prev) => prev ? { ...prev, [field]: !current } : null);
   };
 
+  const sendQuestionnaireWhatsApp = async (type: "student" | "parent", phoneOverride?: string) => {
+    if (!session) return;
+    const rawPhone = phoneOverride ?? (type === "student" ? session.studentPhone : session.parentPhone) ?? "";
+    if (!normalizePhone(rawPhone)) {
+      setPhonePrompt(type);
+      setPhoneInput(rawPhone);
+      setPhoneError(rawPhone ? "מספר לא תקין — הזן מספר נייד תקין" : "");
+      return;
+    }
+    const code = type === "student" ? session.studentCode : session.parentCode;
+    const base = await getWelcomeMessage();
+    const msg = `${base}\n\nקוד אישי: ${code}\nכניסה ישירה: ${APP_URL}/?code=${code}`;
+    openWhatsApp(rawPhone, msg);
+  };
+
+  const handleSavePhoneAndSend = async () => {
+    if (!session || !phonePrompt) return;
+    if (!normalizePhone(phoneInput)) {
+      setPhoneError("מספר לא תקין — לדוגמה 0541234567");
+      return;
+    }
+    const field = phonePrompt === "student" ? "studentPhone" : "parentPhone";
+    await updateSessionDB(session.id, { [field]: phoneInput });
+    setSession((prev) => prev ? { ...prev, [field]: phoneInput } : null);
+    const type = phonePrompt;
+    setPhonePrompt(null);
+    setPhoneError("");
+    await sendQuestionnaireWhatsApp(type, phoneInput);
+  };
+
+
   const handlePrint = () => { window.print(); };
 
   const handleGenerateSummary = (type: SemesterType) => {
