@@ -17,6 +17,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { questionnaireItems, studentParentItems, allQuestionnaireItems } from "@/data/questionnaires";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line } from "recharts";
 import { copyText } from "@/lib/clipboard";
+import { openWhatsApp, normalizePhone } from "@/lib/whatsapp";
+import { getWelcomeMessage } from "@/lib/supabase-storage";
+import { APP_URL } from "@/lib/app-url";
+
 
 const StudentProfile = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
