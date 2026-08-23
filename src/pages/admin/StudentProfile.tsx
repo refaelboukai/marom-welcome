@@ -56,6 +56,10 @@ const StudentProfile = () => {
   const [deleting, setDeleting] = useState(false);
   const [archiving, setArchiving] = useState(false);
   const [showResponses, setShowResponses] = useState(false);
+  const [phonePrompt, setPhonePrompt] = useState<"student" | "parent" | null>(null);
+  const [phoneInput, setPhoneInput] = useState("");
+  const [phoneError, setPhoneError] = useState("");
+
 
   // Peer chemistry (relationships)
   const [allSessions, setAllSessions] = useState<IntakeSession[]>([]);
