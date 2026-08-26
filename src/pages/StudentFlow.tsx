@@ -88,11 +88,15 @@ const StudentFlow = () => {
         }
       }
 
-      if (["student_completed", "parent_started", "parent_completed", "under_review", "completed"].includes(s.status)) {
+      // Only the student's own answers decide whether the student is done —
+      // a parent-completed status must not lock the student out.
+      const studentAnswered = Object.keys(s.studentResponses || {}).length;
+      if (studentAnswered > 0 && ["student_completed", "under_review", "completed"].includes(s.status)) {
         setStep("complete");
-      } else if (Object.keys(s.studentResponses).length > 0) {
+      } else if (studentAnswered > 0) {
         setStep("questionnaire");
       }
+
       setLoading(false);
     });
   }, [sessionId, navigate]);
