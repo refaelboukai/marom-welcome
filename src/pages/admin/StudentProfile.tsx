@@ -429,7 +429,7 @@ const StudentProfile = () => {
     setSession((prev) => prev ? { ...prev, [field]: !current } : null);
   };
 
-  const sendQuestionnaireWhatsApp = async (type: "student" | "parent", phoneOverride?: string) => {
+  const sendQuestionnaireWhatsApp = async (type: "student" | "parent", phoneOverride?: string, codeOverride?: string) => {
     if (!session) return;
     const rawPhone = phoneOverride ?? (type === "student" ? session.studentPhone : session.parentPhone) ?? "";
     if (!normalizePhone(rawPhone)) {
@@ -438,11 +438,30 @@ const StudentProfile = () => {
       setPhoneError(rawPhone ? "מספר לא תקין — הזן מספר נייד תקין" : "");
       return;
     }
-    const code = type === "student" ? session.studentCode : session.parentCode;
+    const code = codeOverride ?? (type === "student" ? session.studentCode : session.parentCode);
     const base = await getWelcomeMessage();
     const msg = `${base}\n\nקוד אישי: ${code}\nכניסה ישירה: ${APP_URL}/?code=${code}`;
     openWhatsApp(rawPhone, msg);
   };
+
+  const handleRegenerateCode = async (type: "student" | "parent") => {
+    if (!session) return;
+    const label = type === "student" ? "התלמיד/ה" : "ההורה";
+    if (!window.confirm(`ליצור קוד חדש עבור ${label}? הקוד הקודם יפסיק לעבוד.`)) return;
+    setRegenerating(type);
+    const newCode = await regenerateCodeDB(session.id, type);
+    setRegenerating(null);
+    if (!newCode) return;
+    setSession((prev) =>
+      prev
+        ? type === "student"
+          ? { ...prev, studentCode: newCode, studentCodeActive: true }
+          : { ...prev, parentCode: newCode, parentCodeActive: true }
+        : prev
+    );
+    await sendQuestionnaireWhatsApp(type, undefined, newCode);
+  };
+
 
   const handleSavePhoneAndSend = async () => {
     if (!session || !phonePrompt) return;
