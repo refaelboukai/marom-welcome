@@ -631,6 +631,9 @@ const StudentProfile = () => {
               <button onClick={() => handleToggleCode("student")} className="p-2 rounded-lg hover:bg-muted" title={session.studentCodeActive !== false ? "השבת קוד" : "הפעל קוד"}>
                 {session.studentCodeActive !== false ? <Unlock className="w-4 h-4 text-success" /> : <Lock className="w-4 h-4 text-destructive" />}
               </button>
+              <button onClick={() => handleRegenerateCode("student")} disabled={regenerating === "student"} className="p-2 rounded-lg hover:bg-muted disabled:opacity-50" title="יצירת קוד חדש ושליחה בווטסאפ">
+                {regenerating === "student" ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4 text-info" />}
+              </button>
             </div>
           </div>
           <div className={`intake-card-soft flex items-center justify-between ${session.parentCodeActive === false ? 'opacity-60' : ''}`}>
