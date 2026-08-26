@@ -62,24 +62,29 @@ export function openWhatsApp(
     if (preOpened && !preOpened.closed) preOpened.close();
     return false;
   }
-  // A window opened synchronously during the click survives popup blockers.
+  // On mobile the wa.me redirect chain fails inside a JS-opened tab (ERR_FAILED on iOS).
+  // Navigating the current tab lets the OS hand the universal link to the WhatsApp app.
+  if (isMobileDevice()) {
+    if (preOpened && !preOpened.closed) preOpened.close();
+    window.location.href = url;
+    return true;
+  }
   if (preOpened && !preOpened.closed) {
     preOpened.location.href = url;
     return true;
   }
   const win = window.open(url, "_blank", "noopener,noreferrer");
-  if (!win) {
-    // Popup blocked (common after awaits) — navigate in the current tab instead.
-    window.location.href = url;
-  }
+  if (!win) window.location.href = url;
   return true;
 }
 
-/** Open a blank tab synchronously inside a click handler, before any await. */
+/** Open a blank tab synchronously inside a click handler, before any await (desktop only). */
 export function preOpenTab(): Window | null {
+  if (isMobileDevice()) return null;
   try {
     return window.open("", "_blank");
   } catch {
     return null;
   }
 }
+
