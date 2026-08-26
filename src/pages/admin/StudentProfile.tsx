@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { getSessionDB, updateSessionDB, getAssessmentRounds, createAssessmentRound, AssessmentRound, getSessionsDB } from "@/lib/supabase-storage";
-import { deleteSessionDB } from "@/lib/supabase-storage";
+import { deleteSessionDB, regenerateCodeDB } from "@/lib/supabase-storage";
 import { ADMIN_CODE } from "@/data/students";
 import { IntakeSession, SECTION_LABELS, OPEN_QUESTION_LABELS, QOL_SUBDOMAIN_LABELS, LC_SUBDOMAIN_LABELS, GASGoal } from "@/lib/types";
 import { calculateScores, calculateQoLSubdomains, calculateLearningSubdomains, generateRiskFlags, generateInsights, generateGASGoals, getScoreLabel, getScoreColor, getTopFocusAreas } from "@/lib/scoring";
