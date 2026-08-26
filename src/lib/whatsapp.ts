@@ -52,9 +52,34 @@ export function buildWhatsAppUrl(phone: string, message: string = WELCOME_MESSAG
   return `https://wa.me/${normalized}?text=${text}`;
 }
 
-export function openWhatsApp(phone: string, message: string = WELCOME_MESSAGE): boolean {
+export function openWhatsApp(
+  phone: string,
+  message: string = WELCOME_MESSAGE,
+  preOpened?: Window | null
+): boolean {
   const url = buildWhatsAppUrl(phone, message);
-  if (!url) return false;
-  window.open(url, "_blank", "noopener,noreferrer");
+  if (!url) {
+    if (preOpened && !preOpened.closed) preOpened.close();
+    return false;
+  }
+  // A window opened synchronously during the click survives popup blockers.
+  if (preOpened && !preOpened.closed) {
+    preOpened.location.href = url;
+    return true;
+  }
+  const win = window.open(url, "_blank", "noopener,noreferrer");
+  if (!win) {
+    // Popup blocked (common after awaits) — navigate in the current tab instead.
+    window.location.href = url;
+  }
   return true;
+}
+
+/** Open a blank tab synchronously inside a click handler, before any await. */
+export function preOpenTab(): Window | null {
+  try {
+    return window.open("", "_blank");
+  } catch {
+    return null;
+  }
 }
