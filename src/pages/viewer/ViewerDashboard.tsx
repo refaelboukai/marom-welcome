@@ -69,19 +69,40 @@ const ViewerDashboard = () => {
     );
   }
 
-  const StudentRow = ({ s }: { s: IntakeSession }) => (
-    <button
-      onClick={() => navigate(`/viewer/student/${s.id}`)}
-      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border hover:border-primary/40 hover:bg-primary/5 transition-colors text-right"
-    >
-      <span className="w-8 h-8 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center flex-shrink-0">
-        {s.studentName.charAt(0)}
-      </span>
-      <span className="flex-1 text-sm truncate">{s.studentName}</span>
-      {s.grade && <span className="text-[11px] text-muted-foreground">כיתה {s.grade}</span>}
-      <ChevronLeft className="w-4 h-4 text-muted-foreground" />
-    </button>
-  );
+  const StudentRow = ({ s }: { s: IntakeSession }) => {
+    const staffAnswered = Object.keys(s.staffResponses || {}).length;
+    const staffPct = Math.round((staffAnswered / STAFF_TOTAL) * 100);
+    return (
+      <div className="flex items-center gap-1.5">
+        <button
+          onClick={() => navigate(`/viewer/student/${s.id}`)}
+          className="flex-1 min-w-0 flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border hover:border-primary/40 hover:bg-primary/5 transition-colors text-right"
+        >
+          <span className="w-8 h-8 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center flex-shrink-0">
+            {s.studentName.charAt(0)}
+          </span>
+          <span className="flex-1 text-sm truncate">{s.studentName}</span>
+          {s.grade && <span className="text-[11px] text-muted-foreground">כיתה {s.grade}</span>}
+          <ChevronLeft className="w-4 h-4 text-muted-foreground" />
+        </button>
+        <button
+          onClick={() => navigate(`/staff/${s.id}?from=viewer`)}
+          title="מילוי שאלון מחנך/ת"
+          className={`flex items-center gap-1 px-2.5 py-2 rounded-xl border text-[11px] font-medium transition-colors flex-shrink-0 ${
+            staffPct >= 100
+              ? "border-success/40 bg-success/10 text-success"
+              : staffPct > 0
+                ? "border-warning/40 bg-warning/10 text-warning"
+                : "border-border text-muted-foreground hover:border-primary/40 hover:text-primary"
+          }`}
+        >
+          <ClipboardList className="w-4 h-4" />
+          {staffPct > 0 && <span>{staffPct}%</span>}
+        </button>
+      </div>
+    );
+  };
+
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
