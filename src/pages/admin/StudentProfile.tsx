@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { getSessionDB, updateSessionDB, getAssessmentRounds, createAssessmentRound, AssessmentRound, getSessionsDB } from "@/lib/supabase-storage";
-import { deleteSessionDB } from "@/lib/supabase-storage";
+import { deleteSessionDB, regenerateCodeDB } from "@/lib/supabase-storage";
 import { ADMIN_CODE } from "@/data/students";
 import { IntakeSession, SECTION_LABELS, OPEN_QUESTION_LABELS, QOL_SUBDOMAIN_LABELS, LC_SUBDOMAIN_LABELS, GASGoal } from "@/lib/types";
 import { calculateScores, calculateQoLSubdomains, calculateLearningSubdomains, generateRiskFlags, generateInsights, generateGASGoals, getScoreLabel, getScoreColor, getTopFocusAreas } from "@/lib/scoring";
@@ -59,6 +59,7 @@ const StudentProfile = () => {
   const [phonePrompt, setPhonePrompt] = useState<"student" | "parent" | null>(null);
   const [phoneInput, setPhoneInput] = useState("");
   const [phoneError, setPhoneError] = useState("");
+  const [regenerating, setRegenerating] = useState<"student" | "parent" | null>(null);
 
 
   // Peer chemistry (relationships)
@@ -429,7 +430,7 @@ const StudentProfile = () => {
     setSession((prev) => prev ? { ...prev, [field]: !current } : null);
   };
 
-  const sendQuestionnaireWhatsApp = async (type: "student" | "parent", phoneOverride?: string) => {
+  const sendQuestionnaireWhatsApp = async (type: "student" | "parent", phoneOverride?: string, codeOverride?: string) => {
     if (!session) return;
     const rawPhone = phoneOverride ?? (type === "student" ? session.studentPhone : session.parentPhone) ?? "";
     if (!normalizePhone(rawPhone)) {
@@ -438,11 +439,30 @@ const StudentProfile = () => {
       setPhoneError(rawPhone ? "מספר לא תקין — הזן מספר נייד תקין" : "");
       return;
     }
-    const code = type === "student" ? session.studentCode : session.parentCode;
+    const code = codeOverride ?? (type === "student" ? session.studentCode : session.parentCode);
     const base = await getWelcomeMessage();
     const msg = `${base}\n\nקוד אישי: ${code}\nכניסה ישירה: ${APP_URL}/?code=${code}`;
     openWhatsApp(rawPhone, msg);
   };
+
+  const handleRegenerateCode = async (type: "student" | "parent") => {
+    if (!session) return;
+    const label = type === "student" ? "התלמיד/ה" : "ההורה";
+    if (!window.confirm(`ליצור קוד חדש עבור ${label}? הקוד הקודם יפסיק לעבוד.`)) return;
+    setRegenerating(type);
+    const newCode = await regenerateCodeDB(session.id, type);
+    setRegenerating(null);
+    if (!newCode) return;
+    setSession((prev) =>
+      prev
+        ? type === "student"
+          ? { ...prev, studentCode: newCode, studentCodeActive: true }
+          : { ...prev, parentCode: newCode, parentCodeActive: true }
+        : prev
+    );
+    await sendQuestionnaireWhatsApp(type, undefined, newCode);
+  };
+
 
   const handleSavePhoneAndSend = async () => {
     if (!session || !phonePrompt) return;
@@ -611,6 +631,9 @@ const StudentProfile = () => {
               <button onClick={() => handleToggleCode("student")} className="p-2 rounded-lg hover:bg-muted" title={session.studentCodeActive !== false ? "השבת קוד" : "הפעל קוד"}>
                 {session.studentCodeActive !== false ? <Unlock className="w-4 h-4 text-success" /> : <Lock className="w-4 h-4 text-destructive" />}
               </button>
+              <button onClick={() => handleRegenerateCode("student")} disabled={regenerating === "student"} className="p-2 rounded-lg hover:bg-muted disabled:opacity-50" title="יצירת קוד חדש ושליחה בווטסאפ">
+                {regenerating === "student" ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4 text-info" />}
+              </button>
             </div>
           </div>
           <div className={`intake-card-soft flex items-center justify-between ${session.parentCodeActive === false ? 'opacity-60' : ''}`}>
@@ -628,6 +651,9 @@ const StudentProfile = () => {
               </button>
               <button onClick={() => handleToggleCode("parent")} className="p-2 rounded-lg hover:bg-muted" title={session.parentCodeActive !== false ? "השבת קוד" : "הפעל קוד"}>
                 {session.parentCodeActive !== false ? <Unlock className="w-4 h-4 text-success" /> : <Lock className="w-4 h-4 text-destructive" />}
+              </button>
+              <button onClick={() => handleRegenerateCode("parent")} disabled={regenerating === "parent"} className="p-2 rounded-lg hover:bg-muted disabled:opacity-50" title="יצירת קוד חדש ושליחה בווטסאפ">
+                {regenerating === "parent" ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4 text-info" />}
               </button>
 
             </div>

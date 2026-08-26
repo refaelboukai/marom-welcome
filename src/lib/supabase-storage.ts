@@ -228,6 +228,25 @@ export async function updateSessionDB(id: string, updates: Partial<IntakeSession
   return data ? rowToSession(data) : null;
 }
 
+/** Generates a fresh access code for a student/parent and re-activates it. */
+export async function regenerateCodeDB(
+  id: string,
+  type: "student" | "parent"
+): Promise<string | null> {
+  const newCode = generateCode();
+  const dbUpdates =
+    type === "student"
+      ? { student_code: newCode, student_code_active: true }
+      : { parent_code: newCode, parent_code_active: true };
+
+  const { error } = await supabase.from("intake_sessions").update(dbUpdates).eq("id", id);
+  if (error) {
+    console.error("Error regenerating code:", error);
+    return null;
+  }
+  return newCode;
+}
+
 export async function createSessionDB(data: Partial<IntakeSession>): Promise<IntakeSession | null> {
   const row = {
     student_name: data.studentName || "",
