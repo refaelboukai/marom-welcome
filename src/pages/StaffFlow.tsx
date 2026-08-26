@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { getSessionDB, updateSessionDB, getSessionsDB } from "@/lib/supabase-storage";
 import { IntakeSession, STAFF_QUESTION_LABELS, STAFF_QUESTION_KEYS } from "@/lib/types";
 import { allQuestionnaireItems as questionnaireItems } from "@/data/questionnaires";
@@ -13,6 +13,8 @@ const ITEMS_PER_PAGE = 3;
 const StaffFlow = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const backTo = searchParams.get("from") === "viewer" ? "/viewer" : "/staff";
   const [session, setSession] = useState<IntakeSession | null>(null);
   const [sessions, setSessions] = useState<IntakeSession[]>([]);
   const [loading, setLoading] = useState(true);
@@ -153,7 +155,7 @@ const StaffFlow = () => {
           <h1 className="text-2xl font-heading font-bold mb-3">השאלון הוגש בהצלחה</h1>
           <p className="text-muted-foreground">תודה. הערכת הצוות עבור {session.studentName} נשמרה.</p>
           <button
-            onClick={() => navigate("/staff")}
+            onClick={() => navigate(backTo)}
             className="btn-intake bg-primary text-primary-foreground w-full mt-6"
           >
             חזרה לרשימת התלמידים
@@ -193,7 +195,7 @@ const StaffFlow = () => {
         <ProgressHeader current={totalAnswered} total={questionnaireItems.length} sectionLabel="הערכת צוות" />
 
         <div className="flex justify-end mt-2">
-          <button onClick={() => navigate("/staff")} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-lg hover:bg-muted">
+          <button onClick={() => navigate(backTo)} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-lg hover:bg-muted">
             <LogOut className="w-3.5 h-3.5" /> שמור וצא
           </button>
         </div>
