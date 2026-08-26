@@ -117,7 +117,7 @@ const ViewerDashboard = () => {
           </button>
           <div className="flex-1">
             <h1 className="text-lg font-heading font-bold">רשימות תלמידים</h1>
-            <p className="text-xs text-muted-foreground">צפייה בפרופיל התלמיד והפקת תכניות אישיות</p>
+            <p className="text-xs text-muted-foreground">צפייה בפרופיל, הפקת תכניות ומילוי שאלוני מחנך/ת</p>
           </div>
           <div className="flex items-center gap-1 bg-muted/60 rounded-xl p-1">
             {([
