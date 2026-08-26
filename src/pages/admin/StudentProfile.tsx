@@ -59,6 +59,7 @@ const StudentProfile = () => {
   const [phonePrompt, setPhonePrompt] = useState<"student" | "parent" | null>(null);
   const [phoneInput, setPhoneInput] = useState("");
   const [phoneError, setPhoneError] = useState("");
+  const [regenerating, setRegenerating] = useState<"student" | "parent" | null>(null);
 
 
   // Peer chemistry (relationships)
