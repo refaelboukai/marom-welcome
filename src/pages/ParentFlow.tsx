@@ -44,11 +44,14 @@ const ParentFlow = () => {
         }
       }
 
-      if (["parent_completed", "under_review", "completed"].includes(s.status)) {
+      // Only the parent's own answers decide whether the parent is done.
+      const parentAnswered = Object.keys(s.parentResponses || {}).length;
+      if (parentAnswered > 0 && ["parent_completed", "under_review", "completed"].includes(s.status)) {
         setStep("complete");
-      } else if (Object.keys(s.parentResponses).length > 0) {
+      } else if (parentAnswered > 0) {
         setStep("questionnaire");
       }
+
       setLoading(false);
     });
   }, [sessionId, navigate]);
