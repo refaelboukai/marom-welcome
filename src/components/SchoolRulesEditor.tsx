@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getSchoolRules, saveSchoolRules, DEFAULT_SCHOOL_RULES } from "@/lib/supabase-storage";
-import { Loader2, Plus, Trash2, ArrowUp, ArrowDown, Save, RotateCcw, CheckCircle, X, BookOpen } from "lucide-react";
+import { renderHTMLToPDF } from "@/lib/pdf-export";
+import { Loader2, Plus, Trash2, ArrowUp, ArrowDown, Save, RotateCcw, CheckCircle, X, BookOpen, Download } from "lucide-react";
 
 interface Props {
   onClose: () => void;
