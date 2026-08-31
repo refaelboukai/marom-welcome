@@ -150,6 +150,11 @@ const SchoolRulesEditor = ({ onClose }: Props) => {
               <button onClick={handleReset} className="btn-intake bg-muted text-muted-foreground text-sm px-3 py-2 gap-1">
                 <RotateCcw className="w-3.5 h-3.5" /> ברירת מחדל
               </button>
+              <button onClick={handleDownload} disabled={exporting || rules.every((r) => !r.trim())}
+                className="btn-intake bg-muted text-foreground text-sm px-3 py-2 gap-1 disabled:opacity-50" title="הורדת כללי בית הספר כקובץ PDF מעוצב">
+                {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                הורד PDF מעוצב
+              </button>
               {saved && (
                 <span className="text-xs text-success flex items-center gap-1">
                   <CheckCircle className="w-3.5 h-3.5" /> נשמר
