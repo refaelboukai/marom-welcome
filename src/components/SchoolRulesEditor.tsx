@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getSchoolRules, saveSchoolRules, DEFAULT_SCHOOL_RULES } from "@/lib/supabase-storage";
-import { Loader2, Plus, Trash2, ArrowUp, ArrowDown, Save, RotateCcw, CheckCircle, X, BookOpen } from "lucide-react";
+import { renderHTMLToPDF } from "@/lib/pdf-export";
+import { Loader2, Plus, Trash2, ArrowUp, ArrowDown, Save, RotateCcw, CheckCircle, X, BookOpen, Download } from "lucide-react";
 
 interface Props {
   onClose: () => void;
@@ -48,6 +49,42 @@ const SchoolRulesEditor = ({ onClose }: Props) => {
     if (confirm("לאפס לכללי ברירת המחדל?")) {
       setRules([...DEFAULT_SCHOOL_RULES]);
       setSaved(false);
+    }
+  };
+
+  const [exporting, setExporting] = useState(false);
+  const handleDownload = async () => {
+    const clean = rules.map((r) => r.trim()).filter(Boolean);
+    if (clean.length === 0) return;
+    setExporting(true);
+    try {
+      const rows = clean
+        .map(
+          (rule, i) => `
+        <div data-section style="display:flex;gap:14px;align-items:flex-start;background:#fff;border:1px solid #dce8e2;border-right:5px solid #4a9a7a;border-radius:10px;padding:14px 16px;margin-bottom:12px;page-break-inside:avoid;">
+          <div style="flex-shrink:0;width:34px;height:34px;border-radius:50%;background:#4a9a7a;color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;">${i + 1}</div>
+          <p style="flex:1;font-size:14px;line-height:1.7;color:#1a2b26;margin:0;">${rule}</p>
+        </div>`
+        )
+        .join("");
+
+      const html = `
+      <div style="font-family:'Assistant','Heebo',Arial,sans-serif;direction:rtl;padding:36px 32px;background:#f4f9f6;color:#1a2b26;">
+        <div data-section style="text-align:center;border-bottom:3px solid #4a9a7a;padding-bottom:18px;margin-bottom:22px;">
+          <img src="${window.location.origin}/logo.png" alt="מרום בית אקשטיין" style="width:84px;height:84px;object-fit:contain;margin:0 auto 10px auto;display:block;" onerror="this.style.display='none'" />
+          <h1 style="font-size:24px;font-weight:800;margin:0;color:#173f33;">כללי בית הספר</h1>
+          <p style="font-size:14px;color:#4a9a7a;font-weight:700;margin:6px 0 0 0;">מרום — בית אקשטיין יבנה</p>
+          <p style="font-size:11px;color:#777;margin:6px 0 0 0;">הופק בתאריך ${new Date().toLocaleDateString("he-IL")}</p>
+        </div>
+        ${rows}
+        <div data-section style="margin-top:20px;text-align:center;font-size:11px;color:#777;border-top:1px solid #dce8e2;padding-top:12px;">
+          הכללים נועדו ליצור סביבת למידה בטוחה, מכבדת ומטפחת — לכל תלמידה ותלמיד.
+        </div>
+      </div>`;
+
+      await renderHTMLToPDF(html, "כללי_בית_הספר.pdf");
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -112,6 +149,11 @@ const SchoolRulesEditor = ({ onClose }: Props) => {
             <div className="border-t border-border p-4 flex items-center gap-2">
               <button onClick={handleReset} className="btn-intake bg-muted text-muted-foreground text-sm px-3 py-2 gap-1">
                 <RotateCcw className="w-3.5 h-3.5" /> ברירת מחדל
+              </button>
+              <button onClick={handleDownload} disabled={exporting || rules.every((r) => !r.trim())}
+                className="btn-intake bg-muted text-foreground text-sm px-3 py-2 gap-1 disabled:opacity-50" title="הורדת כללי בית הספר כקובץ PDF מעוצב">
+                {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                הורד PDF מעוצב
               </button>
               {saved && (
                 <span className="text-xs text-success flex items-center gap-1">
