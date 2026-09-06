@@ -71,6 +71,19 @@ const DigitalFormsAdmin = () => {
             </button>
           );
         })}
+        <a href={STAFF_LINK} target="_blank" rel="noreferrer"
+          className="intake-card-soft text-right hover:border-primary/50 hover:shadow-lg transition-all block">
+          <div className="flex items-start gap-3">
+            <span className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <Brain className="w-6 h-6 text-primary" />
+            </span>
+            <div className="flex-1">
+              <h3 className="font-heading font-semibold text-base leading-tight mb-1">שאלון רפלקציה אישי — אנשי צוות</h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">גמישות מחשבתית, מיקוד שליטה ומסוגלות עצמית — עם תמונת מצב אישית, דירוגים והמלצות להורדה. לשליחה לצוות בוואטסאפ.</p>
+              <p className="text-[10px] text-muted-foreground/70 mt-2 break-all">{STAFF_LINK}</p>
+            </div>
+          </div>
+        </a>
       </div>
     </div>
   );
