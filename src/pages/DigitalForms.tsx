@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowLeft, Clock, FileText } from "lucide-react";
+import { ArrowLeft, Clock, FileText, Brain } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 import moeLogo from "@/assets/moe-state.png";
 
@@ -18,7 +18,15 @@ const FORMS = [
     desc: "בקשה לקיצור קבוע של יום הלימודים — שעה וימים מבוקשים, נימוק מקצועי, הצהרת הורים וחתימות.",
     tag: 'שנה"ל תשפ"ז',
   },
+  {
+    to: "/forms/staff-reflection",
+    icon: Brain,
+    title: "שאלון רפלקציה אישי — אנשי צוות",
+    desc: "גמישות מחשבתית, מיקוד שליטה ומסוגלות עצמית. בסיום מתקבלת תמונת מצב אישית עם דירוגים, חוזקות והמלצות להורדה.",
+    tag: "לצוות בלבד",
+  },
 ];
+
 
 const DigitalForms = () => (
   <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background">
