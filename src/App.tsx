@@ -11,6 +11,7 @@ import StaffFlow from "./pages/StaffFlow";
 import Enrollment from "./pages/Enrollment";
 import DigitalForms from "./pages/DigitalForms";
 import ShortDayRequest from "./pages/ShortDayRequest";
+import StaffSelfAssessment from "./pages/StaffSelfAssessment";
 import Dashboard from "./pages/admin/Dashboard";
 import StudentProfile from "./pages/admin/StudentProfile";
 import NewIntake from "./pages/admin/NewIntake";
