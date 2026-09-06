@@ -43,6 +43,7 @@ const App = () => {
           <Route path="/enroll" element={<Enrollment />} />
           <Route path="/forms" element={<DigitalForms />} />
           <Route path="/forms/short-day" element={<ShortDayRequest />} />
+          <Route path="/forms/staff-reflection" element={<StaffSelfAssessment />} />
           <Route path="/staff/:sessionId" element={<StaffFlow />} />
           <Route path="/admin" element={<Dashboard />} />
           <Route path="/admin/student/:sessionId" element={<StudentProfile />} />
