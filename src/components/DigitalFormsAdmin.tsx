@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight, Clock, Eye, FileText, ListChecks, Settings2 } from "lucide-react";
+import { ArrowRight, Brain, Clock, Eye, FileText, ListChecks, Settings2 } from "lucide-react";
 import EnrollmentFormsAdmin from "@/components/EnrollmentFormsAdmin";
 import ShortDayAdmin from "@/components/ShortDayAdmin";
 import FormEditor from "@/components/FormEditor";
@@ -12,6 +12,8 @@ const CARDS = [
   { key: "enrollment" as const, icon: FileText, title: "טופס קליטה לתלמיד/ה חדש/ה", desc: "שליחת הזמנות להורים, מעקב אחר מילוי הטופס, צפייה במסמכים והפקת PDF.", link: `${APP_URL}/enroll` },
   { key: "short-day" as const, icon: Clock, title: "בקשה לקיצור יום לימודים", desc: "בקשות הורים לקיצור יום הלימודים, רישום החלטת בית הספר וחתימות הצוות.", link: `${APP_URL}/forms/short-day` },
 ];
+
+const STAFF_LINK = `${APP_URL}/forms/staff-reflection`;
 
 const DigitalFormsAdmin = () => {
   const [open, setOpen] = useState<FormKey>(null);
@@ -69,6 +71,19 @@ const DigitalFormsAdmin = () => {
             </button>
           );
         })}
+        <a href={STAFF_LINK} target="_blank" rel="noreferrer"
+          className="intake-card-soft text-right hover:border-primary/50 hover:shadow-lg transition-all block">
+          <div className="flex items-start gap-3">
+            <span className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <Brain className="w-6 h-6 text-primary" />
+            </span>
+            <div className="flex-1">
+              <h3 className="font-heading font-semibold text-base leading-tight mb-1">שאלון רפלקציה אישי — אנשי צוות</h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">גמישות מחשבתית, מיקוד שליטה ומסוגלות עצמית — עם תמונת מצב אישית, דירוגים והמלצות להורדה. לשליחה לצוות בוואטסאפ.</p>
+              <p className="text-[10px] text-muted-foreground/70 mt-2 break-all">{STAFF_LINK}</p>
+            </div>
+          </div>
+        </a>
       </div>
     </div>
   );
