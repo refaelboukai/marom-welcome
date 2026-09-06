@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight, Clock, Eye, FileText, ListChecks, Settings2 } from "lucide-react";
+import { ArrowRight, Brain, Clock, Eye, FileText, ListChecks, Settings2 } from "lucide-react";
 import EnrollmentFormsAdmin from "@/components/EnrollmentFormsAdmin";
 import ShortDayAdmin from "@/components/ShortDayAdmin";
 import FormEditor from "@/components/FormEditor";
@@ -12,6 +12,8 @@ const CARDS = [
   { key: "enrollment" as const, icon: FileText, title: "טופס קליטה לתלמיד/ה חדש/ה", desc: "שליחת הזמנות להורים, מעקב אחר מילוי הטופס, צפייה במסמכים והפקת PDF.", link: `${APP_URL}/enroll` },
   { key: "short-day" as const, icon: Clock, title: "בקשה לקיצור יום לימודים", desc: "בקשות הורים לקיצור יום הלימודים, רישום החלטת בית הספר וחתימות הצוות.", link: `${APP_URL}/forms/short-day` },
 ];
+
+const STAFF_LINK = `${APP_URL}/forms/staff-reflection`;
 
 const DigitalFormsAdmin = () => {
   const [open, setOpen] = useState<FormKey>(null);
