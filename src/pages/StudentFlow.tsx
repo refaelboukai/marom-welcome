@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { getSessionDB, updateSessionDB, getActiveRoundForSession, updateAssessmentRound, AssessmentRound, getSchoolRules, DEFAULT_SCHOOL_RULES } from "@/lib/supabase-storage";
 import { IntakeSession } from "@/lib/types";
 import QuestionnaireFlow from "@/components/QuestionnaireFlow";
 import logo from "@/assets/logo.jpeg";
-import { Heart, BookOpen, Brain, Lightbulb, Star, Sparkles, Loader2, RotateCcw, CheckCircle, LogOut } from "lucide-react";
+import { Heart, BookOpen, Brain, Lightbulb, Star, Sparkles, Loader2, RotateCcw, CheckCircle, LogOut, ChevronRight } from "lucide-react";
 import SignatureCanvas from "react-signature-canvas";
 import { supabase } from "@/integrations/supabase/client";
 import { getStudentGender, createGenderedText, Gender } from "@/lib/gender-utils";
