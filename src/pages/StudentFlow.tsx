@@ -339,8 +339,16 @@ const StudentFlow = () => {
     const responses = isReassessment && activeRound ? activeRound.student_responses : isReassessment ? (session.reassessmentStudentResponses || {}) : session.studentResponses;
     return (
       <div className="min-h-screen py-6 px-0 sm:px-2 bg-background relative safe-top safe-bottom">
-        <button onClick={() => navigate("/")} className="absolute top-4 left-4 z-30 p-2 rounded-xl hover:bg-muted transition-colors" title="התנתק">
-          <LogOut className="w-5 h-5 text-muted-foreground" />
+        <div className="absolute top-4 left-4 z-30 flex items-center gap-2">
+          <button onClick={handleSaveAndExit} className="p-2 rounded-xl hover:bg-muted transition-colors" title="שמור וצא">
+            <LogOut className="w-5 h-5 text-muted-foreground" />
+          </button>
+        </div>
+        <button
+          onClick={() => setStep(isReassessment ? "welcome" : "explanation")}
+          className="absolute top-4 right-4 z-30 flex items-center gap-1 text-sm text-foreground bg-card border border-border px-3 py-2 rounded-xl hover:bg-muted transition-colors"
+        >
+          <ChevronRight className="w-4 h-4" /> חזרה
         </button>
         <QuestionnaireFlow
           role="student"
