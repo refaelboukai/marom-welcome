@@ -185,6 +185,13 @@ const StaffFlow = () => {
     <div className="min-h-screen py-6 bg-background">
       <div className="max-w-lg mx-auto px-4 pb-8">
         <div className="flex items-center gap-2 mb-4">
+          <button
+            onClick={() => navigate(backTo)}
+            className="p-2 rounded-xl hover:bg-muted transition-colors"
+            title="חזרה לרשימת התלמידים"
+          >
+            <ChevronRight className="w-5 h-5 text-muted-foreground" />
+          </button>
           <img src={logo} alt="מרום" className="h-8 rounded-lg" />
           <div>
             <p className="text-xs text-muted-foreground">הערכת צוות עבור</p>
@@ -193,12 +200,6 @@ const StaffFlow = () => {
         </div>
 
         <ProgressHeader current={totalAnswered} total={questionnaireItems.length} sectionLabel="הערכת צוות" />
-
-        <div className="flex justify-end mt-2">
-          <button onClick={() => navigate(backTo)} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-lg hover:bg-muted">
-            <LogOut className="w-3.5 h-3.5" /> שמור וצא
-          </button>
-        </div>
 
         {!isOpenPage && (
           <div className="mt-4 space-y-2">
