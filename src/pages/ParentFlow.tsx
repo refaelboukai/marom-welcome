@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { getSessionDB, updateSessionDB, getActiveRoundForSession, updateAssessmentRound, AssessmentRound } from "@/lib/supabase-storage";
 import { IntakeSession } from "@/lib/types";
 import QuestionnaireFlow from "@/components/QuestionnaireFlow";
 import logo from "@/assets/logo.jpeg";
-import { Heart, Star, Loader2, LogOut } from "lucide-react";
+import { Heart, Star, Loader2, LogOut, ChevronRight } from "lucide-react";
 
 type Step = "welcome" | "questionnaire" | "complete";
 
