@@ -342,7 +342,33 @@ const ViewerDashboard = () => {
           );
         })}
       </div>
+
+      {phonePrompt && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setPhonePrompt(null)}>
+          <div className="bg-card rounded-2xl p-5 w-full max-w-sm space-y-3" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-heading font-bold">מספר נייד של ההורה</h3>
+            <p className="text-xs text-muted-foreground">עבור {phonePrompt.studentName} — המספר יישמר במערכת.</p>
+            <input
+              value={phoneInput}
+              onChange={(e) => { setPhoneInput(e.target.value); setPhoneError(""); }}
+              placeholder="0541234567"
+              dir="ltr"
+              className="w-full text-sm bg-background border border-input rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+            {phoneError && <p className="text-xs text-destructive">{phoneError}</p>}
+            <div className="flex gap-2">
+              <button onClick={handleSavePhoneAndSend} className="btn-intake bg-primary text-primary-foreground text-sm flex-1">
+                שמור ושלח
+              </button>
+              <button onClick={() => setPhonePrompt(null)} className="btn-intake bg-muted text-muted-foreground text-sm">
+                ביטול
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+
   );
 };
 
