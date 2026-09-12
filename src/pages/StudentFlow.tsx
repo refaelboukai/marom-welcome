@@ -179,7 +179,7 @@ const StudentFlow = () => {
     setStep("complete");
   }, [session, isReassessment, activeRound]);
 
-  const handleSaveAndExit = useCallback(() => { navigate("/"); }, [navigate]);
+  const handleSaveAndExit = useCallback(() => { navigate(backTo); }, [navigate, backTo]);
 
   const handleClearSignature = () => {
     sigCanvasRef.current?.clear();
