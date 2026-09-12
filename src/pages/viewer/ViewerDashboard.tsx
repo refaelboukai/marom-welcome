@@ -123,42 +123,50 @@ const ViewerDashboard = () => {
           ? "border-warning/40 bg-warning/10 text-warning"
           : "border-border text-muted-foreground hover:border-primary/40 hover:text-primary";
     return (
-      <div className="flex items-center gap-1.5">
-        <button
-          onClick={() => navigate(`/viewer/student/${s.id}`)}
-          className="flex-1 min-w-0 flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border hover:border-primary/40 hover:bg-primary/5 transition-colors text-right"
-        >
-          <span className="w-8 h-8 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center flex-shrink-0">
-            {s.studentName.charAt(0)}
-          </span>
-          <span className="flex-1 text-sm truncate">{s.studentName}</span>
-          {s.grade && <span className="text-[11px] text-muted-foreground">כיתה {s.grade}</span>}
-          <ChevronLeft className="w-4 h-4 text-muted-foreground" />
-        </button>
-        <button
-          onClick={() => navigate(`/student/${s.id}`)}
-          title="פתיחת השאלון למילוי יחד עם התלמיד/ה"
-          className={`flex items-center gap-1 px-2.5 py-2 rounded-xl border text-[11px] font-medium transition-colors flex-shrink-0 ${tone(studentPct)}`}
-        >
-          <PenLine className="w-4 h-4" />
-          {studentPct > 0 && <span>{studentPct}%</span>}
-        </button>
-        <button
-          onClick={() => { const tab = preOpenTab(); sendParentWhatsApp(s, undefined, tab); }}
-          title={parentPct >= 100 ? "ההורה סיים — שליחה חוזרת בוואטסאפ" : "שליחת השאלון להורה בוואטסאפ"}
-          className={`flex items-center gap-1 px-2.5 py-2 rounded-xl border text-[11px] font-medium transition-colors flex-shrink-0 ${tone(parentPct)}`}
-        >
-          <MessageCircle className="w-4 h-4" />
-          {parentPct > 0 && <span>{parentPct}%</span>}
-        </button>
-        <button
-          onClick={() => navigate(`/staff/${s.id}?from=viewer`)}
-          title="מילוי שאלון מחנך/ת"
-          className={`flex items-center gap-1 px-2.5 py-2 rounded-xl border text-[11px] font-medium transition-colors flex-shrink-0 ${tone(staffPct)}`}
-        >
-          <ClipboardList className="w-4 h-4" />
-          {staffPct > 0 && <span>{staffPct}%</span>}
-        </button>
+      <div className="space-y-1">
+        <div className="flex items-center gap-1.5 px-1">
+          <span className="flex-1 min-w-0 text-[10px] text-muted-foreground text-right truncate">פרופיל</span>
+          <span className="text-[10px] text-muted-foreground w-16 text-center">תלמיד</span>
+          <span className="text-[10px] text-muted-foreground w-16 text-center">הורה</span>
+          <span className="text-[10px] text-muted-foreground w-16 text-center">צוות</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => navigate(`/viewer/student/${s.id}`)}
+            className="flex-1 min-w-0 flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border hover:border-primary/40 hover:bg-primary/5 transition-colors text-right"
+          >
+            <span className="w-8 h-8 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center flex-shrink-0">
+              {s.studentName.charAt(0)}
+            </span>
+            <span className="flex-1 text-sm truncate">{s.studentName}</span>
+            {s.grade && <span className="text-[11px] text-muted-foreground">כיתה {s.grade}</span>}
+            <ChevronLeft className="w-4 h-4 text-muted-foreground" />
+          </button>
+          <button
+            onClick={() => navigate(`/student/${s.id}?from=viewer`)}
+            title="פתיחת השאלון למילוי יחד עם התלמיד/ה"
+            className={`flex items-center justify-center gap-1 px-2.5 py-2 rounded-xl border text-[11px] font-medium transition-colors flex-shrink-0 w-16 ${tone(studentPct)}`}
+          >
+            <PenLine className="w-4 h-4" />
+            {studentPct > 0 && <span>{studentPct}%</span>}
+          </button>
+          <button
+            onClick={() => { const tab = preOpenTab(); sendParentWhatsApp(s, undefined, tab); }}
+            title={parentPct >= 100 ? "ההורה סיים — שליחה חוזרת בוואטסאפ" : "שליחת השאלון להורה בוואטסאפ"}
+            className={`flex items-center justify-center gap-1 px-2.5 py-2 rounded-xl border text-[11px] font-medium transition-colors flex-shrink-0 w-16 ${tone(parentPct)}`}
+          >
+            <MessageCircle className="w-4 h-4" />
+            {parentPct > 0 && <span>{parentPct}%</span>}
+          </button>
+          <button
+            onClick={() => navigate(`/staff/${s.id}?from=viewer`)}
+            title="מילוי שאלון מחנך/ת"
+            className={`flex items-center justify-center gap-1 px-2.5 py-2 rounded-xl border text-[11px] font-medium transition-colors flex-shrink-0 w-16 ${tone(staffPct)}`}
+          >
+            <ClipboardList className="w-4 h-4" />
+            {staffPct > 0 && <span>{staffPct}%</span>}
+          </button>
+        </div>
       </div>
     );
   };
