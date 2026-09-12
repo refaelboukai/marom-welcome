@@ -11,7 +11,9 @@ type Step = "welcome" | "questionnaire" | "complete";
 const ParentFlow = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
-  const [session, setSession] = useState<IntakeSession | null>(null);
+  const [searchParams] = useSearchParams();
+  const backTo = searchParams.get("from") === "viewer" ? "/viewer" : "/";
+  const [session, setSession,] = useState<IntakeSession | null>(null);
   const [step, setStep] = useState<Step>("welcome");
   const [loading, setLoading] = useState(true);
   const [isReassessment, setIsReassessment] = useState(false);
