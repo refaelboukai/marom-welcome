@@ -13,7 +13,7 @@ const ParentFlow = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const backTo = searchParams.get("from") === "viewer" ? "/viewer" : "/";
-  const [session, setSession,] = useState<IntakeSession | null>(null);
+  const [session, setSession] = useState<IntakeSession | null>(null);
   const [step, setStep] = useState<Step>("welcome");
   const [loading, setLoading] = useState(true);
   const [isReassessment, setIsReassessment] = useState(false);
