@@ -43,6 +43,8 @@ const DEFAULT_SCHOOL_RULES_FALLBACK = [
 const StudentFlow = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const backTo = searchParams.get("from") === "viewer" ? "/viewer" : "/";
   const [session, setSession] = useState<IntakeSession | null>(null);
   const [step, setStep] = useState<Step>("welcome");
   const [loading, setLoading] = useState(true);
