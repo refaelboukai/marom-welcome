@@ -123,7 +123,7 @@ const ParentFlow = () => {
     setStep("complete");
   }, [session, isReassessment, activeRound]);
 
-  const handleSaveAndExit = useCallback(() => { navigate("/"); }, [navigate]);
+  const handleSaveAndExit = useCallback(() => { navigate(backTo); }, [navigate, backTo]);
 
   if (loading) {
     return (
