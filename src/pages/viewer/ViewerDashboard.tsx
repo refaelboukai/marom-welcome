@@ -1,12 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getSessionsDB, getClassGroups, DEFAULT_CLASS_GROUPS, ClassGroupsMap } from "@/lib/supabase-storage";
+import { getSessionsDB, getClassGroups, DEFAULT_CLASS_GROUPS, ClassGroupsMap, updateSessionDB, getWelcomeMessage } from "@/lib/supabase-storage";
 import { IntakeSession } from "@/lib/types";
-import { ChevronLeft, Folder, FolderOpen, Loader2, Search, Users, ArrowRight, List, LayoutGrid, Columns3, ClipboardList } from "lucide-react";
+import { ChevronLeft, Folder, FolderOpen, Loader2, Search, Users, ArrowRight, List, LayoutGrid, Columns3, ClipboardList, PenLine, MessageCircle } from "lucide-react";
 import { getClassSpace } from "@/lib/class-spaces";
-import { allQuestionnaireItems } from "@/data/questionnaires";
+import { allQuestionnaireItems, studentParentItems } from "@/data/questionnaires";
+import { openWhatsApp, normalizePhone, preOpenTab } from "@/lib/whatsapp";
+import { APP_URL } from "@/lib/app-url";
 
 const STAFF_TOTAL = allQuestionnaireItems.length;
+const SP_TOTAL = studentParentItems.length;
+
+
 
 
 type ViewMode = "list" | "grid" | "columns";
@@ -22,6 +27,39 @@ const ViewerDashboard = () => {
     () => (localStorage.getItem("viewer_view_mode") as ViewMode) || "grid"
   );
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
+  const [phonePrompt, setPhonePrompt] = useState<IntakeSession | null>(null);
+  const [phoneInput, setPhoneInput] = useState("");
+  const [phoneError, setPhoneError] = useState("");
+
+  const sendParentWhatsApp = async (s: IntakeSession, phoneOverride?: string, preOpened?: Window | null) => {
+    const rawPhone = phoneOverride ?? s.parentPhone ?? "";
+    if (!normalizePhone(rawPhone)) {
+      if (preOpened && !preOpened.closed) preOpened.close();
+      setPhonePrompt(s);
+      setPhoneInput(rawPhone);
+      setPhoneError(rawPhone ? "מספר לא תקין — הזן מספר נייד תקין" : "");
+      return;
+    }
+    const base = await getWelcomeMessage();
+    const msg = `${base}\n\nקוד אישי: ${s.parentCode}\nכניסה ישירה: ${APP_URL}/?code=${s.parentCode}`;
+    openWhatsApp(rawPhone, msg, preOpened);
+  };
+
+  const handleSavePhoneAndSend = async () => {
+    if (!phonePrompt) return;
+    if (!normalizePhone(phoneInput)) {
+      setPhoneError("מספר לא תקין — לדוגמה 0541234567");
+      return;
+    }
+    const tab = preOpenTab();
+    const target = phonePrompt;
+    await updateSessionDB(target.id, { parentPhone: phoneInput });
+    setSessions((prev) => prev.map((x) => (x.id === target.id ? { ...x, parentPhone: phoneInput } : x)));
+    setPhonePrompt(null);
+    setPhoneError("");
+    await sendParentWhatsApp({ ...target, parentPhone: phoneInput }, phoneInput, tab);
+  };
+
 
   const changeView = (mode: ViewMode) => {
     setViewMode(mode);
@@ -76,6 +114,14 @@ const ViewerDashboard = () => {
   const StudentRow = ({ s }: { s: IntakeSession }) => {
     const staffAnswered = Object.keys(s.staffResponses || {}).length;
     const staffPct = Math.round((staffAnswered / STAFF_TOTAL) * 100);
+    const studentPct = Math.round((Object.keys(s.studentResponses || {}).length / SP_TOTAL) * 100);
+    const parentPct = Math.round((Object.keys(s.parentResponses || {}).length / SP_TOTAL) * 100);
+    const tone = (pct: number) =>
+      pct >= 100
+        ? "border-success/40 bg-success/10 text-success"
+        : pct > 0
+          ? "border-warning/40 bg-warning/10 text-warning"
+          : "border-border text-muted-foreground hover:border-primary/40 hover:text-primary";
     return (
       <div className="flex items-center gap-1.5">
         <button
@@ -90,15 +136,25 @@ const ViewerDashboard = () => {
           <ChevronLeft className="w-4 h-4 text-muted-foreground" />
         </button>
         <button
+          onClick={() => navigate(`/student/${s.id}`)}
+          title="פתיחת השאלון למילוי יחד עם התלמיד/ה"
+          className={`flex items-center gap-1 px-2.5 py-2 rounded-xl border text-[11px] font-medium transition-colors flex-shrink-0 ${tone(studentPct)}`}
+        >
+          <PenLine className="w-4 h-4" />
+          {studentPct > 0 && <span>{studentPct}%</span>}
+        </button>
+        <button
+          onClick={() => { const tab = preOpenTab(); sendParentWhatsApp(s, undefined, tab); }}
+          title={parentPct >= 100 ? "ההורה סיים — שליחה חוזרת בוואטסאפ" : "שליחת השאלון להורה בוואטסאפ"}
+          className={`flex items-center gap-1 px-2.5 py-2 rounded-xl border text-[11px] font-medium transition-colors flex-shrink-0 ${tone(parentPct)}`}
+        >
+          <MessageCircle className="w-4 h-4" />
+          {parentPct > 0 && <span>{parentPct}%</span>}
+        </button>
+        <button
           onClick={() => navigate(`/staff/${s.id}?from=viewer`)}
           title="מילוי שאלון מחנך/ת"
-          className={`flex items-center gap-1 px-2.5 py-2 rounded-xl border text-[11px] font-medium transition-colors flex-shrink-0 ${
-            staffPct >= 100
-              ? "border-success/40 bg-success/10 text-success"
-              : staffPct > 0
-                ? "border-warning/40 bg-warning/10 text-warning"
-                : "border-border text-muted-foreground hover:border-primary/40 hover:text-primary"
-          }`}
+          className={`flex items-center gap-1 px-2.5 py-2 rounded-xl border text-[11px] font-medium transition-colors flex-shrink-0 ${tone(staffPct)}`}
         >
           <ClipboardList className="w-4 h-4" />
           {staffPct > 0 && <span>{staffPct}%</span>}
@@ -106,6 +162,7 @@ const ViewerDashboard = () => {
       </div>
     );
   };
+
 
 
   return (
@@ -285,7 +342,33 @@ const ViewerDashboard = () => {
           );
         })}
       </div>
+
+      {phonePrompt && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setPhonePrompt(null)}>
+          <div className="bg-card rounded-2xl p-5 w-full max-w-sm space-y-3" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-heading font-bold">מספר נייד של ההורה</h3>
+            <p className="text-xs text-muted-foreground">עבור {phonePrompt.studentName} — המספר יישמר במערכת.</p>
+            <input
+              value={phoneInput}
+              onChange={(e) => { setPhoneInput(e.target.value); setPhoneError(""); }}
+              placeholder="0541234567"
+              dir="ltr"
+              className="w-full text-sm bg-background border border-input rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+            {phoneError && <p className="text-xs text-destructive">{phoneError}</p>}
+            <div className="flex gap-2">
+              <button onClick={handleSavePhoneAndSend} className="btn-intake bg-primary text-primary-foreground text-sm flex-1">
+                שמור ושלח
+              </button>
+              <button onClick={() => setPhonePrompt(null)} className="btn-intake bg-muted text-muted-foreground text-sm">
+                ביטול
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+
   );
 };
 
