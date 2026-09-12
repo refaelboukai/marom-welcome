@@ -1,12 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getSessionsDB, getClassGroups, DEFAULT_CLASS_GROUPS, ClassGroupsMap } from "@/lib/supabase-storage";
+import { getSessionsDB, getClassGroups, DEFAULT_CLASS_GROUPS, ClassGroupsMap, updateSessionDB, getWelcomeMessage } from "@/lib/supabase-storage";
 import { IntakeSession } from "@/lib/types";
-import { ChevronLeft, Folder, FolderOpen, Loader2, Search, Users, ArrowRight, List, LayoutGrid, Columns3, ClipboardList } from "lucide-react";
+import { ChevronLeft, Folder, FolderOpen, Loader2, Search, Users, ArrowRight, List, LayoutGrid, Columns3, ClipboardList, PenLine, MessageCircle } from "lucide-react";
 import { getClassSpace } from "@/lib/class-spaces";
-import { allQuestionnaireItems } from "@/data/questionnaires";
+import { allQuestionnaireItems, studentParentItems } from "@/data/questionnaires";
+import { openWhatsApp, normalizePhone, preOpenTab } from "@/lib/whatsapp";
+import { APP_URL } from "@/lib/app-url";
 
 const STAFF_TOTAL = allQuestionnaireItems.length;
+const SP_TOTAL = studentParentItems.length;
+
+
 
 
 type ViewMode = "list" | "grid" | "columns";
