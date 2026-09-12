@@ -114,6 +114,14 @@ const ViewerDashboard = () => {
   const StudentRow = ({ s }: { s: IntakeSession }) => {
     const staffAnswered = Object.keys(s.staffResponses || {}).length;
     const staffPct = Math.round((staffAnswered / STAFF_TOTAL) * 100);
+    const studentPct = Math.round((Object.keys(s.studentResponses || {}).length / SP_TOTAL) * 100);
+    const parentPct = Math.round((Object.keys(s.parentResponses || {}).length / SP_TOTAL) * 100);
+    const tone = (pct: number) =>
+      pct >= 100
+        ? "border-success/40 bg-success/10 text-success"
+        : pct > 0
+          ? "border-warning/40 bg-warning/10 text-warning"
+          : "border-border text-muted-foreground hover:border-primary/40 hover:text-primary";
     return (
       <div className="flex items-center gap-1.5">
         <button
@@ -128,15 +136,25 @@ const ViewerDashboard = () => {
           <ChevronLeft className="w-4 h-4 text-muted-foreground" />
         </button>
         <button
+          onClick={() => navigate(`/student/${s.id}`)}
+          title="פתיחת השאלון למילוי יחד עם התלמיד/ה"
+          className={`flex items-center gap-1 px-2.5 py-2 rounded-xl border text-[11px] font-medium transition-colors flex-shrink-0 ${tone(studentPct)}`}
+        >
+          <PenLine className="w-4 h-4" />
+          {studentPct > 0 && <span>{studentPct}%</span>}
+        </button>
+        <button
+          onClick={() => { const tab = preOpenTab(); sendParentWhatsApp(s, undefined, tab); }}
+          title={parentPct >= 100 ? "ההורה סיים — שליחה חוזרת בוואטסאפ" : "שליחת השאלון להורה בוואטסאפ"}
+          className={`flex items-center gap-1 px-2.5 py-2 rounded-xl border text-[11px] font-medium transition-colors flex-shrink-0 ${tone(parentPct)}`}
+        >
+          <MessageCircle className="w-4 h-4" />
+          {parentPct > 0 && <span>{parentPct}%</span>}
+        </button>
+        <button
           onClick={() => navigate(`/staff/${s.id}?from=viewer`)}
           title="מילוי שאלון מחנך/ת"
-          className={`flex items-center gap-1 px-2.5 py-2 rounded-xl border text-[11px] font-medium transition-colors flex-shrink-0 ${
-            staffPct >= 100
-              ? "border-success/40 bg-success/10 text-success"
-              : staffPct > 0
-                ? "border-warning/40 bg-warning/10 text-warning"
-                : "border-border text-muted-foreground hover:border-primary/40 hover:text-primary"
-          }`}
+          className={`flex items-center gap-1 px-2.5 py-2 rounded-xl border text-[11px] font-medium transition-colors flex-shrink-0 ${tone(staffPct)}`}
         >
           <ClipboardList className="w-4 h-4" />
           {staffPct > 0 && <span>{staffPct}%</span>}
@@ -144,6 +162,7 @@ const ViewerDashboard = () => {
       </div>
     );
   };
+
 
 
   return (
