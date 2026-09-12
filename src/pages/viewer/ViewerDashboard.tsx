@@ -27,6 +27,39 @@ const ViewerDashboard = () => {
     () => (localStorage.getItem("viewer_view_mode") as ViewMode) || "grid"
   );
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
+  const [phonePrompt, setPhonePrompt] = useState<IntakeSession | null>(null);
+  const [phoneInput, setPhoneInput] = useState("");
+  const [phoneError, setPhoneError] = useState("");
+
+  const sendParentWhatsApp = async (s: IntakeSession, phoneOverride?: string, preOpened?: Window | null) => {
+    const rawPhone = phoneOverride ?? s.parentPhone ?? "";
+    if (!normalizePhone(rawPhone)) {
+      if (preOpened && !preOpened.closed) preOpened.close();
+      setPhonePrompt(s);
+      setPhoneInput(rawPhone);
+      setPhoneError(rawPhone ? "מספר לא תקין — הזן מספר נייד תקין" : "");
+      return;
+    }
+    const base = await getWelcomeMessage();
+    const msg = `${base}\n\nקוד אישי: ${s.parentCode}\nכניסה ישירה: ${APP_URL}/?code=${s.parentCode}`;
+    openWhatsApp(rawPhone, msg, preOpened);
+  };
+
+  const handleSavePhoneAndSend = async () => {
+    if (!phonePrompt) return;
+    if (!normalizePhone(phoneInput)) {
+      setPhoneError("מספר לא תקין — לדוגמה 0541234567");
+      return;
+    }
+    const tab = preOpenTab();
+    const target = phonePrompt;
+    await updateSessionDB(target.id, { parentPhone: phoneInput });
+    setSessions((prev) => prev.map((x) => (x.id === target.id ? { ...x, parentPhone: phoneInput } : x)));
+    setPhonePrompt(null);
+    setPhoneError("");
+    await sendParentWhatsApp({ ...target, parentPhone: phoneInput }, phoneInput, tab);
+  };
+
 
   const changeView = (mode: ViewMode) => {
     setViewMode(mode);
