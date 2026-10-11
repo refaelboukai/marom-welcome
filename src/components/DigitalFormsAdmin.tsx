@@ -1,16 +1,18 @@
 import { useState } from "react";
-import { ArrowRight, Brain, Clock, Eye, FileText, ListChecks, Settings2 } from "lucide-react";
+import { ArrowRight, Brain, Clock, Eye, FileText, ListChecks, School, Settings2 } from "lucide-react";
 import EnrollmentFormsAdmin from "@/components/EnrollmentFormsAdmin";
 import ShortDayAdmin from "@/components/ShortDayAdmin";
+import InclusionAdmin from "@/components/InclusionAdmin";
 import FormEditor from "@/components/FormEditor";
 import { APP_URL } from "@/lib/app-url";
 
-type FormKey = "enrollment" | "short-day" | null;
+type FormKey = "enrollment" | "short-day" | "inclusion" | null;
 type Tab = "manage" | "edit" | "preview";
 
 const CARDS = [
   { key: "enrollment" as const, icon: FileText, title: "טופס קליטה לתלמיד/ה חדש/ה", desc: "שליחת הזמנות להורים, מעקב אחר מילוי הטופס, צפייה במסמכים והפקת PDF.", link: `${APP_URL}/enroll` },
   { key: "short-day" as const, icon: Clock, title: "בקשה לקיצור יום לימודים", desc: "בקשות הורים לקיצור יום הלימודים, רישום החלטת בית הספר וחתימות הצוות.", link: `${APP_URL}/forms/short-day` },
+  { key: "inclusion" as const, icon: School, title: "אישור הורים — שילוב לימודי", desc: "אישור הורים לשילוב לימודי בבית ספר קולט — פרטי השילוב, יעד חזרה וחתימות ההורים.", link: `${APP_URL}/forms/inclusion-consent` },
 ];
 
 const STAFF_LINK = `${APP_URL}/forms/staff-reflection`;
@@ -21,7 +23,9 @@ const DigitalFormsAdmin = () => {
 
   if (open) {
     const card = CARDS.find((c) => c.key === open)!;
-    const previewUrl = open === "enrollment" ? "/enroll" : "/forms/short-day";
+    const previewUrl = open === "enrollment" ? "/enroll" : open === "inclusion" ? "/forms/inclusion-consent" : "/forms/short-day";
+    const tabs = ([["manage", "ניהול ושליחה", ListChecks], ["edit", "עריכת הטופס", Settings2], ["preview", "תצוגה מקדימה", Eye]] as const)
+      .filter(([k]) => k !== "edit" || open !== "inclusion");
     return (
       <div className="space-y-4">
         <button onClick={() => { setOpen(null); setTab("manage"); }}
@@ -30,7 +34,7 @@ const DigitalFormsAdmin = () => {
         </button>
         <h2 className="font-heading font-bold text-lg">{card.title}</h2>
         <div className="flex flex-wrap gap-2">
-          {([["manage", "ניהול ושליחה", ListChecks], ["edit", "עריכת הטופס", Settings2], ["preview", "תצוגה מקדימה", Eye]] as const).map(([k, l, Icon]) => (
+          {tabs.map(([k, l, Icon]) => (
             <button key={k} onClick={() => setTab(k)}
               className={`px-3.5 py-2 rounded-xl text-sm font-medium border-2 transition-all inline-flex items-center gap-1.5 ${
                 tab === k ? "bg-primary text-primary-foreground border-primary shadow-md" : "bg-card border-border hover:border-primary/40"}`}>
@@ -38,8 +42,8 @@ const DigitalFormsAdmin = () => {
             </button>
           ))}
         </div>
-        {tab === "manage" && (open === "enrollment" ? <EnrollmentFormsAdmin /> : <ShortDayAdmin />)}
-        {tab === "edit" && <FormEditor form={open} />}
+        {tab === "manage" && (open === "enrollment" ? <EnrollmentFormsAdmin /> : open === "inclusion" ? <InclusionAdmin /> : <ShortDayAdmin />)}
+        {tab === "edit" && open !== "inclusion" && <FormEditor form={open} />}
         {tab === "preview" && (
           <div className="rounded-2xl border-2 border-border overflow-hidden bg-card">
             <iframe title="תצוגה מקדימה" src={previewUrl} className="w-full h-[75vh]" />
