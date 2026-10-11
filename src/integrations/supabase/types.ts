@@ -427,6 +427,57 @@ export type Database = {
         }
         Relationships: []
       }
+      inclusion_invites: {
+        Row: {
+          academic_year: string
+          consent_id: string | null
+          created_at: string
+          draft_data: Json
+          grade: string
+          id: string
+          parent_name: string
+          parent_phone: string
+          sent_at: string | null
+          status: string
+          student_name: string
+          submitted_at: string | null
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          academic_year?: string
+          consent_id?: string | null
+          created_at?: string
+          draft_data?: Json
+          grade?: string
+          id?: string
+          parent_name?: string
+          parent_phone?: string
+          sent_at?: string | null
+          status?: string
+          student_name?: string
+          submitted_at?: string | null
+          token: string
+          updated_at?: string
+        }
+        Update: {
+          academic_year?: string
+          consent_id?: string | null
+          created_at?: string
+          draft_data?: Json
+          grade?: string
+          id?: string
+          parent_name?: string
+          parent_phone?: string
+          sent_at?: string | null
+          status?: string
+          student_name?: string
+          submitted_at?: string | null
+          token?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       intake_sessions: {
         Row: {
           academic_year: string
