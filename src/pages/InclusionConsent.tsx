@@ -20,6 +20,8 @@ const Req = () => <span className="text-destructive font-bold">*</span>;
 const today = () => new Date().toISOString().split("T")[0];
 
 const InclusionConsentPage = () => {
+  const [params] = useSearchParams();
+  const token = (params.get("t") || "").trim().toLowerCase();
   const [v, setV] = useState({
     request_date: today(),
     student_name: "",
@@ -45,6 +47,36 @@ const InclusionConsentPage = () => {
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
   const [pdfBusy, setPdfBusy] = useState(false);
+  const [savedAt, setSavedAt] = useState<string | null>(null);
+  const loadedRef = useRef(false);
+
+  // Load the personal invite (WhatsApp link) and any saved draft
+  useEffect(() => {
+    if (!token) { loadedRef.current = true; return; }
+    (async () => {
+      const inv = await getInclusionInviteByToken(token);
+      if (inv) {
+        const d = (inv.draft_data || {}) as Record<string, any>;
+        setV((prev) => ({
+          ...prev,
+          ...Object.fromEntries(Object.entries(d).filter(([k]) => k in prev)),
+          student_name: d.student_name || inv.student_name || prev.student_name,
+          grade: d.grade || inv.grade || prev.grade,
+        }));
+      }
+      loadedRef.current = true;
+    })();
+  }, [token]);
+
+  // Auto-save the draft so parents can pause and continue later
+  useEffect(() => {
+    if (!token || !loadedRef.current || done) return;
+    const t = setTimeout(async () => {
+      await saveInclusionDraft(token, { ...v });
+      setSavedAt(new Date().toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" }));
+    }, 1200);
+    return () => clearTimeout(t);
+  }, [v, token, done]);
 
   const set = (k: keyof typeof v, val: string) => setV((p) => ({ ...p, [k]: val }));
 
@@ -113,6 +145,10 @@ const InclusionConsentPage = () => {
         setError(`אירעה שגיאה בשליחת הטופס: ${res.error || "נסו שוב בעוד רגע"}`);
         return;
       }
+      if (token) {
+        try { await markInclusionInviteSubmitted(token, res.id || null); }
+        catch (e) { console.error("inclusion invite update failed", e); }
+      }
     } catch (e: any) {
       console.error("inclusion submit exception", e);
       setError(`אירעה שגיאה בשליחת הטופס: ${e?.message || "נסו שוב בעוד רגע"}`);
@@ -156,6 +192,9 @@ const InclusionConsentPage = () => {
             <h1 className="font-heading font-bold text-base leading-tight">אישור הורים — שילוב לימודי בבית ספר {v.receiving_school}</h1>
             <p className="text-[11px] text-muted-foreground">בית ספר מרום — בית אקשטיין יבנה · שנת הלימודים {ACADEMIC_YEAR}</p>
           </div>
+          {token && savedAt && (
+            <span className="hidden sm:inline text-[10px] text-muted-foreground">נשמר {savedAt}</span>
+          )}
           <img src={moeLogo} alt="משרד החינוך" loading="lazy" className="h-9 w-auto object-contain" />
         </div>
       </div>
