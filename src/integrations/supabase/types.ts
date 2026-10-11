@@ -343,6 +343,90 @@ export type Database = {
           },
         ]
       }
+      inclusion_consents: {
+        Row: {
+          academic_year: string
+          arrival_notes: string
+          birth_date: string | null
+          created_at: string
+          grade: string
+          id: string
+          inclusion_day: string
+          inclusion_hours: string
+          parent1_name: string
+          parent1_phone: string
+          parent1_sign_date: string | null
+          parent1_signature: string
+          parent2_name: string
+          parent2_phone: string
+          parent2_sign_date: string | null
+          parent2_signature: string
+          receiving_school: string
+          request_date: string | null
+          return_destination: string
+          school_name: string
+          start_date: string | null
+          status: string
+          student_id_number: string
+          student_name: string
+          updated_at: string
+        }
+        Insert: {
+          academic_year?: string
+          arrival_notes?: string
+          birth_date?: string | null
+          created_at?: string
+          grade?: string
+          id?: string
+          inclusion_day?: string
+          inclusion_hours?: string
+          parent1_name?: string
+          parent1_phone?: string
+          parent1_sign_date?: string | null
+          parent1_signature?: string
+          parent2_name?: string
+          parent2_phone?: string
+          parent2_sign_date?: string | null
+          parent2_signature?: string
+          receiving_school?: string
+          request_date?: string | null
+          return_destination?: string
+          school_name?: string
+          start_date?: string | null
+          status?: string
+          student_id_number?: string
+          student_name?: string
+          updated_at?: string
+        }
+        Update: {
+          academic_year?: string
+          arrival_notes?: string
+          birth_date?: string | null
+          created_at?: string
+          grade?: string
+          id?: string
+          inclusion_day?: string
+          inclusion_hours?: string
+          parent1_name?: string
+          parent1_phone?: string
+          parent1_sign_date?: string | null
+          parent1_signature?: string
+          parent2_name?: string
+          parent2_phone?: string
+          parent2_sign_date?: string | null
+          parent2_signature?: string
+          receiving_school?: string
+          request_date?: string | null
+          return_destination?: string
+          school_name?: string
+          start_date?: string | null
+          status?: string
+          student_id_number?: string
+          student_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       intake_sessions: {
         Row: {
           academic_year: string
