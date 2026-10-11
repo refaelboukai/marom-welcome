@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowLeft, Clock, FileText, Brain } from "lucide-react";
+import { ArrowLeft, Clock, FileText, Brain, School } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 import moeLogo from "@/assets/moe-state.png";
 
@@ -16,6 +16,13 @@ const FORMS = [
     icon: Clock,
     title: "בקשת הורים לקיצור יום לימודים",
     desc: "בקשה לקיצור קבוע של יום הלימודים — שעה וימים מבוקשים, נימוק מקצועי, הצהרת הורים וחתימות.",
+    tag: 'שנה"ל תשפ"ז',
+  },
+  {
+    to: "/forms/inclusion-consent",
+    icon: School,
+    title: "אישור הורים — שילוב לימודי",
+    desc: "אישור הורים לשילוב לימודי בבית ספר קולט במסגרת החינוך הרגיל — פרטי השילוב, יעד חזרה וחתימות ההורים.",
     tag: 'שנה"ל תשפ"ז',
   },
   {
