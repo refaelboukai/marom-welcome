@@ -1,16 +1,18 @@
 import { useState } from "react";
-import { ArrowRight, Brain, Clock, Eye, FileText, ListChecks, Settings2 } from "lucide-react";
+import { ArrowRight, Brain, Clock, Eye, FileText, ListChecks, School, Settings2 } from "lucide-react";
 import EnrollmentFormsAdmin from "@/components/EnrollmentFormsAdmin";
 import ShortDayAdmin from "@/components/ShortDayAdmin";
+import InclusionAdmin from "@/components/InclusionAdmin";
 import FormEditor from "@/components/FormEditor";
 import { APP_URL } from "@/lib/app-url";
 
-type FormKey = "enrollment" | "short-day" | null;
+type FormKey = "enrollment" | "short-day" | "inclusion" | null;
 type Tab = "manage" | "edit" | "preview";
 
 const CARDS = [
   { key: "enrollment" as const, icon: FileText, title: "טופס קליטה לתלמיד/ה חדש/ה", desc: "שליחת הזמנות להורים, מעקב אחר מילוי הטופס, צפייה במסמכים והפקת PDF.", link: `${APP_URL}/enroll` },
   { key: "short-day" as const, icon: Clock, title: "בקשה לקיצור יום לימודים", desc: "בקשות הורים לקיצור יום הלימודים, רישום החלטת בית הספר וחתימות הצוות.", link: `${APP_URL}/forms/short-day` },
+  { key: "inclusion" as const, icon: School, title: "אישור הורים — שילוב לימודי", desc: "אישור הורים לשילוב לימודי בבית ספר קולט — פרטי השילוב, יעד חזרה וחתימות ההורים.", link: `${APP_URL}/forms/inclusion-consent` },
 ];
 
 const STAFF_LINK = `${APP_URL}/forms/staff-reflection`;
