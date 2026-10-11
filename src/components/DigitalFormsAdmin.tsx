@@ -23,7 +23,9 @@ const DigitalFormsAdmin = () => {
 
   if (open) {
     const card = CARDS.find((c) => c.key === open)!;
-    const previewUrl = open === "enrollment" ? "/enroll" : "/forms/short-day";
+    const previewUrl = open === "enrollment" ? "/enroll" : open === "inclusion" ? "/forms/inclusion-consent" : "/forms/short-day";
+    const tabs = ([["manage", "ניהול ושליחה", ListChecks], ["edit", "עריכת הטופס", Settings2], ["preview", "תצוגה מקדימה", Eye]] as const)
+      .filter(([k]) => k !== "edit" || open !== "inclusion");
     return (
       <div className="space-y-4">
         <button onClick={() => { setOpen(null); setTab("manage"); }}
@@ -32,7 +34,7 @@ const DigitalFormsAdmin = () => {
         </button>
         <h2 className="font-heading font-bold text-lg">{card.title}</h2>
         <div className="flex flex-wrap gap-2">
-          {([["manage", "ניהול ושליחה", ListChecks], ["edit", "עריכת הטופס", Settings2], ["preview", "תצוגה מקדימה", Eye]] as const).map(([k, l, Icon]) => (
+          {tabs.map(([k, l, Icon]) => (
             <button key={k} onClick={() => setTab(k)}
               className={`px-3.5 py-2 rounded-xl text-sm font-medium border-2 transition-all inline-flex items-center gap-1.5 ${
                 tab === k ? "bg-primary text-primary-foreground border-primary shadow-md" : "bg-card border-border hover:border-primary/40"}`}>
@@ -40,8 +42,8 @@ const DigitalFormsAdmin = () => {
             </button>
           ))}
         </div>
-        {tab === "manage" && (open === "enrollment" ? <EnrollmentFormsAdmin /> : <ShortDayAdmin />)}
-        {tab === "edit" && <FormEditor form={open} />}
+        {tab === "manage" && (open === "enrollment" ? <EnrollmentFormsAdmin /> : open === "inclusion" ? <InclusionAdmin /> : <ShortDayAdmin />)}
+        {tab === "edit" && open !== "inclusion" && <FormEditor form={open} />}
         {tab === "preview" && (
           <div className="rounded-2xl border-2 border-border overflow-hidden bg-card">
             <iframe title="תצוגה מקדימה" src={previewUrl} className="w-full h-[75vh]" />
