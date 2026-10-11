@@ -36,14 +36,15 @@ function makeToken(): string {
 }
 
 export const inclusionInviteCode = (token: string) => token.toUpperCase();
-export const inclusionInviteLink = (token: string) => `${APP_URL}/forms/inclusion-consent?t=${token}`;
+export const inclusionInviteLink = (token: string) => `${APP_URL}/?code=${token.toUpperCase()}`;
 
 export function inclusionInviteMessage(inv: InclusionInvite): string {
   return `שלום ${inv.parent_name},
 
 מצורף קישור אישי למילוי "אישור הורים — שילוב לימודי" עבור ${inv.student_name} בבית ספר מרום — בית אקשטיין, לשנת הלימודים ${inv.academic_year || ACADEMIC_YEAR}:
 
-${inclusionInviteLink(inv.token)}
+קוד גישה: ${inclusionInviteCode(inv.token)}
+כניסה ישירה: ${inclusionInviteLink(inv.token)}
 
 הטופס נשמר אוטומטית — אפשר לעצור באמצע ולהמשיך מאוחר יותר.
 בסיום ניתן להוריד עותק PDF של האישור.

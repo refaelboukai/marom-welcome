@@ -4,6 +4,7 @@ import { findSessionByCodeDB, isAdminCode, initializeSessionsDB } from "@/lib/su
 import { STAFF_CODE, VIEWER_CODE } from "@/data/students";
 import { getInviteByToken } from "@/lib/enrollment-invites";
 import { getShortDayInviteByToken } from "@/lib/short-day-invites";
+import { getInclusionInviteByToken } from "@/lib/inclusion-invites";
 import logo from "@/assets/logo.jpeg";
 import { Loader2 } from "lucide-react";
 
