@@ -42,6 +42,8 @@ const Login = () => {
         if (invite) { navigate(`/enroll?t=${invite.token}`); return; }
         const sd = await getShortDayInviteByToken(trimmed);
         if (sd) { navigate(`/forms/short-day?t=${sd.token}`); return; }
+        const inc = await getInclusionInviteByToken(trimmed);
+        if (inc) { navigate(`/forms/inclusion-consent?t=${inc.token}`); return; }
         setError("הקוד שבקישור אינו תקין. ניתן להזין אותו ידנית.");
       } catch {
         setError("שגיאה בחיבור לשרת. נסה שוב.");
@@ -73,6 +75,8 @@ const Login = () => {
       if (invite) { navigate(`/enroll?t=${invite.token}`); return; }
       const sd = await getShortDayInviteByToken(trimmed);
       if (sd) { navigate(`/forms/short-day?t=${sd.token}`); return; }
+      const inc = await getInclusionInviteByToken(trimmed);
+      if (inc) { navigate(`/forms/inclusion-consent?t=${inc.token}`); return; }
       setError("הקוד שהוזן אינו תקין. נסה שוב.");
     } catch {
       setError("שגיאה בחיבור לשרת. נסה שוב.");
