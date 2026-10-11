@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { CheckCircle2, ChevronRight, Download, FileText, Loader2, School, Send } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 import moeLogo from "@/assets/moe-state.png";
@@ -9,6 +9,9 @@ import {
   InclusionConsent as IC, RETURN_DESTINATIONS,
   generateInclusionConsentPDF, submitInclusionConsent,
 } from "@/lib/inclusion-consent";
+import {
+  getInclusionInviteByToken, markInclusionInviteSubmitted, saveInclusionDraft,
+} from "@/lib/inclusion-invites";
 
 const inputCls =
   "w-full px-3.5 py-2.5 rounded-xl border-2 border-border bg-card text-sm focus:outline-none focus:border-primary/60 transition-colors";
