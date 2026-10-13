@@ -214,21 +214,65 @@ const Enrollment = () => {
 
   const currentStep = steps[step];
 
-  const stepValid = useMemo(() => {
-    for (const group of currentStep.groups) {
-      for (const f of group.fields) {
-        if (!f.required || !visible(f)) continue;
-        const v = values[f.key];
-        if (f.type === "checkbox") { if (v !== true) return false; }
-        else if (typeof v !== "string" || !v.trim()) return false;
-      }
+  const fieldError = useCallback((f: FormField): string => {
+    if (!visible(f) || f.type === "note") return "";
+    const v = values[f.key];
+    const empty = f.type === "checkbox" ? v !== true
+      : Array.isArray(v) ? v.length === 0
+      : typeof v !== "string" || !v.trim();
+    if (empty) {
+      if (!f.required) return "";
+      if (f.type === "checkbox") return "יש לסמן את תיבת האישור";
+      if (f.type === "signature") return "חסרה חתימה — חתמו בתוך המסגרת";
+      if (f.type === "file") return "יש להעלות קובץ";
+      if (f.type === "yesno" || f.type === "radio" || f.type === "select") return "יש לבחור אפשרות";
+      return "שדה חובה — לא מולא";
     }
-    return true;
-  }, [currentStep, values, visible]);
+    if (typeof v !== "string") return "";
+    const s = v.trim();
+    if (f.key.includes("id_number") && !/^\d{9}$/.test(s))
+      return `תעודת זהות חייבת להכיל 9 ספרות (הוזנו ${s.replace(/\D/g, "").length})`;
+    if (f.type === "tel") {
+      const d = s.replace(/\D/g, "");
+      if (/[^\d\s\-+()]/.test(s)) return "מספר טלפון יכול להכיל ספרות בלבד";
+      if (d.length < 9 || d.length > 12) return `מספר טלפון לא תקין — יש להזין 9–10 ספרות (הוזנו ${d.length})`;
+    }
+    if (f.type === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s))
+      return "כתובת דוא״ל לא תקינה (לדוגמה: name@gmail.com)";
+    return "";
+  }, [values, visible]);
+
+  const stepErrors = useMemo(() => {
+    const out: { field: FormField; group: string; msg: string }[] = [];
+    for (const group of currentStep.groups)
+      for (const f of group.fields) {
+        const msg = fieldError(f);
+        if (msg) out.push({ field: f, group: group.title, msg });
+      }
+    return out;
+  }, [currentStep, fieldError]);
+  const stepValid = stepErrors.length === 0;
+  const [showErrors, setShowErrors] = useState(false);
+
+  const scrollToField = (key: string) => {
+    const el = document.getElementById(`f-${key}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    setTimeout(() => (el.querySelector("input:not([type=file]):not(.sr-only),select,textarea") as HTMLElement | null)?.focus({ preventScroll: true }), 400);
+  };
+
+  const tryAdvance = (action: () => void) => {
+    if (!stepValid) {
+      setShowErrors(true);
+      setTimeout(() => document.getElementById("step-errors")?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
+      return;
+    }
+    action();
+  };
 
   const studentName = `${values.student_first_name || ""} ${values.student_last_name || ""}`.trim() || invite?.student_name || "";
 
-  const goTo = (i: number) => { setStep(i); window.scrollTo({ top: 0, behavior: "smooth" }); };
+  const goTo = (i: number) => { setShowErrors(false); setStep(i); window.scrollTo({ top: 0, behavior: "smooth" }); };
 
   const isIOS = typeof navigator !== "undefined" &&
     (/iP(hone|ad|od)/.test(navigator.userAgent) ||
