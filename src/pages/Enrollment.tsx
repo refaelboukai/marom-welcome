@@ -572,11 +572,44 @@ const Enrollment = () => {
                 <p className="text-xs text-muted-foreground mb-3 leading-relaxed">{group.description}</p>
               )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
-                {group.fields.map(renderField)}
+                {group.fields.map((f) => {
+                  const node = renderField(f);
+                  if (!node) return null;
+                  const msg = showErrors ? fieldError(f) : "";
+                  const wide = f.full || !["text", "tel", "email", "date", "select"].includes(f.type);
+                  return (
+                    <div key={f.key} id={`f-${f.key}`}
+                      className={`${wide ? "sm:col-span-2" : ""} scroll-mt-24 ${msg ? "rounded-xl ring-2 ring-destructive/70 bg-destructive/5 p-2" : ""}`}>
+                      {node}
+                      {msg && <p className="text-xs text-destructive font-medium mt-1.5">⚠ {msg}</p>}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           ))}
         </div>
+
+        {showErrors && stepErrors.length > 0 && (
+          <div id="step-errors" className="mt-4 rounded-2xl border-2 border-destructive/60 bg-destructive/5 p-4">
+            <p className="text-sm font-semibold text-destructive mb-2">
+              לא ניתן להמשיך — {stepErrors.length === 1 ? "שדה אחד דורש" : `${stepErrors.length} שדות דורשים`} תיקון:
+            </p>
+            <ul className="space-y-1.5">
+              {stepErrors.map((e) => (
+                <li key={e.field.key}>
+                  <button type="button" onClick={() => scrollToField(e.field.key)}
+                    className="text-right text-sm hover:underline">
+                    <span className="font-medium">{e.field.label}</span>
+                    <span className="text-muted-foreground"> ({e.group})</span>
+                    <span className="text-destructive"> — {e.msg}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <p className="text-[11px] text-muted-foreground mt-2">לחצו על שם השדה כדי לעבור אליו</p>
+          </div>
+        )}
 
         {error && <p className="text-sm text-destructive mt-3">{error}</p>}
 
@@ -588,19 +621,19 @@ const Enrollment = () => {
             </button>
           )}
           {step < steps.length - 1 ? (
-            <button onClick={() => goTo(step + 1)} disabled={!stepValid}
-              className={`btn-intake flex-[2] flex items-center justify-center gap-1 ${stepValid ? "bg-primary text-primary-foreground shadow-md" : "bg-muted text-muted-foreground cursor-not-allowed"}`}>
+            <button onClick={() => tryAdvance(() => goTo(step + 1))}
+              className="btn-intake flex-[2] flex items-center justify-center gap-1 bg-primary text-primary-foreground shadow-md">
               המשך <ChevronLeft className="w-4 h-4" />
             </button>
           ) : (
-            <button onClick={handleSubmit} disabled={!stepValid || submitting}
-              className={`btn-intake flex-[2] flex items-center justify-center gap-2 ${stepValid && !submitting ? "bg-primary text-primary-foreground shadow-md" : "bg-muted text-muted-foreground cursor-not-allowed"}`}>
+            <button onClick={() => tryAdvance(handleSubmit)} disabled={submitting}
+              className={`btn-intake flex-[2] flex items-center justify-center gap-2 ${!submitting ? "bg-primary text-primary-foreground shadow-md" : "bg-muted text-muted-foreground cursor-not-allowed"}`}>
               {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> שולח...</> : <><Send className="w-4 h-4" /> שליחת הטופס</>}
             </button>
           )}
         </div>
 
-        {!stepValid && <p className="text-center text-xs text-muted-foreground mt-2">יש למלא את שדות החובה כדי להמשיך</p>}
+        {!stepValid && !showErrors && <p className="text-center text-xs text-muted-foreground mt-2">שדות המסומנים ב-* הם חובה</p>}
         <p className="text-center text-[11px] text-muted-foreground mt-3">
           {token ? "הטופס נשמר בענן — אפשר לסגור ולחזור מאוחר יותר מאותו קישור ומכל מכשיר."
                  : "הפרטים נשמרים במכשיר עד לשליחה, כך שניתן להשלים את הטופס בהמשך."}
