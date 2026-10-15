@@ -9,6 +9,7 @@ import logo from "@/assets/logo.jpeg";
 import { FORM_STEPS, FormField, SCHOOL_RULES } from "@/data/enrollment-form";
 import { EMPTY_OVERRIDES, FormOverrides, applyOverridesToSteps, loadFormOverrides } from "@/lib/form-config";
 import { FormValues, submitEnrollmentForm } from "@/lib/enrollment";
+import { ACADEMIC_YEAR } from "@/lib/short-day";
 import { generateEnrollmentPDF } from "@/lib/enrollment-pdf";
 import { MAX_UPLOAD_MB, fileNameFromPath, openEnrollmentDoc, uploadEnrollmentDoc } from "@/lib/enrollment-uploads";
 import {
@@ -142,12 +143,13 @@ const Enrollment = () => {
   const [invite, setInvite] = useState<EnrollmentInvite | null>(null);
   const [step, setStep] = useState(0);
   const [values, setValues] = useState<FormValues>(() => {
-    if (token) return {};
+    const base: FormValues = { academic_year: ACADEMIC_YEAR };
+    if (token) return base;
     try {
       const saved = localStorage.getItem(DRAFT_KEY);
-      if (saved) return JSON.parse(saved);
+      if (saved) return { ...base, ...JSON.parse(saved) };
     } catch { /* ignore */ }
-    return {};
+    return base;
   });
   const [saving, setSaving] = useState<"idle" | "saving" | "saved">("idle");
   const [submitting, setSubmitting] = useState(false);
@@ -301,7 +303,7 @@ const Enrollment = () => {
 
   const handleSubmit = async () => {
     setSubmitting(true); setError("");
-    const filled: FormValues = { ...values, filled_at: new Date().toISOString() };
+    const filled: FormValues = { ...values, academic_year: ACADEMIC_YEAR, filled_at: new Date().toISOString() };
     setValues(filled);
     const res = await submitEnrollmentForm(filled, {
       invite_token: token,
