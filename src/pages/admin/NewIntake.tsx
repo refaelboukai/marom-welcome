@@ -7,6 +7,7 @@ import { ArrowRight, Copy, CheckCircle, Loader2, Plus, MessageCircle, FileText }
 import { openWhatsApp, normalizePhone, WELCOME_MESSAGE } from "@/lib/whatsapp";
 import { createInvites, inviteWhatsAppMessage, inviteLink } from "@/lib/enrollment-invites";
 import { copyText } from "@/lib/clipboard";
+import { ACADEMIC_YEAR } from "@/lib/short-day";
 
 const NewIntake = () => {
   const navigate = useNavigate();
@@ -21,7 +22,7 @@ const NewIntake = () => {
     secondParentName: "",
     gender: "",
     classGroup: "",
-    academicYear: 'תשפ"ו',
+    academicYear: ACADEMIC_YEAR,
     notes: "",
   });
   const [created, setCreated] = useState<{ studentCode: string; parentCode: string } | null>(null);
@@ -243,7 +244,7 @@ const NewIntake = () => {
               <button
                 onClick={() => {
                   setCreated(null);
-                  setForm({ studentName: "", studentIdNumber: "", grade: "", intakeDate: new Date().toISOString().split("T")[0], parentName: "", parentPhone: "", studentPhone: "", secondParentName: "", gender: "", classGroup: "", academicYear: 'תשפ"ו', notes: "" });
+                  setForm({ studentName: "", studentIdNumber: "", grade: "", intakeDate: new Date().toISOString().split("T")[0], parentName: "", parentPhone: "", studentPhone: "", secondParentName: "", gender: "", classGroup: "", academicYear: ACADEMIC_YEAR, notes: "" });
                 }}
                 className="btn-intake bg-secondary text-secondary-foreground flex-1 text-sm"
               >

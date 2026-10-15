@@ -9,6 +9,7 @@ import logo from "@/assets/logo.jpeg";
 import { FORM_STEPS, FormField, SCHOOL_RULES } from "@/data/enrollment-form";
 import { EMPTY_OVERRIDES, FormOverrides, applyOverridesToSteps, loadFormOverrides } from "@/lib/form-config";
 import { FormValues, submitEnrollmentForm } from "@/lib/enrollment";
+import { ACADEMIC_YEAR } from "@/lib/short-day";
 import { generateEnrollmentPDF } from "@/lib/enrollment-pdf";
 import { MAX_UPLOAD_MB, fileNameFromPath, openEnrollmentDoc, uploadEnrollmentDoc } from "@/lib/enrollment-uploads";
 import {
@@ -302,7 +303,7 @@ const Enrollment = () => {
 
   const handleSubmit = async () => {
     setSubmitting(true); setError("");
-    const filled: FormValues = { ...values, filled_at: new Date().toISOString() };
+    const filled: FormValues = { ...values, academic_year: ACADEMIC_YEAR, filled_at: new Date().toISOString() };
     setValues(filled);
     const res = await submitEnrollmentForm(filled, {
       invite_token: token,

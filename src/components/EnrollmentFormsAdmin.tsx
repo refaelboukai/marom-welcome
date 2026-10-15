@@ -6,6 +6,7 @@ import {
   Send, Trash2, UserPlus, X,
 } from "lucide-react";
 import { FORM_STEPS, GRADES } from "@/data/enrollment-form";
+import { ACADEMIC_YEAR } from "@/lib/short-day";
 import { fileNameFromPath, openEnrollmentDoc } from "@/lib/enrollment-uploads";
 import {
   ENROLLMENT_STATUS_LABELS, EnrollmentForm, deleteEnrollmentForm,
@@ -71,7 +72,7 @@ const EnrollmentFormsAdmin = () => {
     });
     setCreating(false);
     if (created.length) {
-      setDraft({ student_name: "", grade: "", academic_year: 'תשפ"ז', divorced: false, p1_name: "", p1_phone: "", p2_name: "", p2_phone: "" });
+      setDraft({ student_name: "", grade: "", academic_year: ACADEMIC_YEAR, divorced: false, p1_name: "", p1_phone: "", p2_name: "", p2_phone: "" });
       setShowNew(false);
       reload();
     }
@@ -161,11 +162,6 @@ const EnrollmentFormsAdmin = () => {
                 <option value="">בחרו</option>
                 {GRADES.map((g) => <option key={g} value={g}>{g}</option>)}
               </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium mb-1">שנת לימודים</label>
-              <input className="w-full bg-background border border-input rounded-xl p-2.5 text-sm"
-                value={draft.academic_year} onChange={(e) => setDraft({ ...draft, academic_year: e.target.value })} />
             </div>
 
             <label className="sm:col-span-2 flex items-center gap-2 text-sm p-2.5 rounded-xl border border-border bg-muted/30 cursor-pointer">
