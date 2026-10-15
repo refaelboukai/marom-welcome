@@ -78,7 +78,9 @@ const IndependentExit = () => {
           <div className="intake-card-soft text-center py-8 space-y-3">
             <CheckCircle2 className="w-12 h-12 text-success mx-auto" />
             <h2 className="font-heading font-bold text-lg">האישור נשלח לבית הספר</h2>
-            <p className="text-sm text-muted-foreground">יש להוריד את ה-PDF, להדפיס ולאמת את החתימות אצל עו"ד, ולמסור למזכירות.</p>
+            <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 mx-auto max-w-md">
+              <p className="text-sm font-semibold text-destructive">יש להוריד את ה-PDF, להדפיס ולאמת את החתימות אצל עו"ד, ולמסור למזכירות.</p>
+            </div>
             <button onClick={() => generateExitPDF(d)} className="btn-intake bg-primary text-primary-foreground inline-flex items-center gap-1.5">
               <Download className="w-4 h-4" /> הורדת PDF
             </button>
@@ -132,7 +134,7 @@ const IndependentExit = () => {
               </div>
             ))}
             <label className="flex items-center gap-2 text-sm">תאריך <input type="date" className={inp + " max-w-[200px]"} value={d.sign_date || ""} onChange={(e) => set("sign_date", e.target.value)} /></label>
-            <p className="text-xs text-muted-foreground">לאחר השליחה יש להוריד את ה-PDF ולאמת את החתימות אצל עו"ד (אימות חתימה בלבד).</p>
+            <p className="text-xs font-semibold text-destructive rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2">לאחר השליחה יש להוריד את ה-PDF ולאמת את החתימות אצל עו"ד (אימות חתימה בלבד).</p>
           </div>
 
           <button onClick={submit} disabled={busy} className="btn-intake w-full bg-primary text-primary-foreground flex items-center justify-center gap-2">
