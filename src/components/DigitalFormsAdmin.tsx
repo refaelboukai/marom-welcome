@@ -94,6 +94,11 @@ const DigitalFormsAdmin = () => {
               <h3 className="font-heading font-semibold text-base leading-tight mb-1">שאלון רפלקציה אישי — אנשי צוות</h3>
               <p className="text-xs text-muted-foreground leading-relaxed">גמישות מחשבתית, מיקוד שליטה ומסוגלות עצמית — עם תמונת מצב אישית, דירוגים והמלצות להורדה. לשליחה לצוות בוואטסאפ.</p>
               <p className="text-[10px] text-muted-foreground/70 mt-2 break-all">{STAFF_LINK}</p>
+              <span role="button" tabIndex={0}
+                onClick={async (e) => { e.preventDefault(); e.stopPropagation(); toast[(await copyText(STAFF_LINK)) ? "success" : "error"]("הקישור הועתק"); }}
+                className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-semibold">
+                <Copy className="w-3.5 h-3.5" /> העתקת קישור
+              </span>
             </div>
           </div>
         </a>
