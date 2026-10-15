@@ -22,6 +22,7 @@ import { exportToExcel } from "@/lib/export-utils";
 import { generateStudentPDF } from "@/lib/pdf-export";
 import { copyText } from "@/lib/clipboard";
 import { getCompletionRow } from "@/lib/completion";
+import { ACADEMIC_YEAR } from "@/lib/short-day";
 
 type Tab = string; // "all" | "unassigned" | "codes" | "archive" | any classGroup key
 
@@ -36,13 +37,13 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>("all");
   const [copied, setCopied] = useState<string | null>(null);
-  const [selectedYear, setSelectedYear] = useState<string>('תשפ"ו');
+  const [selectedYear, setSelectedYear] = useState<string>('all');
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [resetPassword, setResetPassword] = useState("");
   const [resetError, setResetError] = useState("");
   const [resetting, setResetting] = useState(false);
   const [showPromoteDialog, setShowPromoteDialog] = useState(false);
-  const [promoteTargetYear, setPromoteTargetYear] = useState<string>('תשפ"ז');
+  const [promoteTargetYear, setPromoteTargetYear] = useState<string>(ACADEMIC_YEAR);
   const [promoteSelected, setPromoteSelected] = useState<Set<string>>(new Set());
   const [promoteCopyData, setPromoteCopyData] = useState(true);
   const [promoting, setPromoting] = useState(false);
@@ -63,13 +64,6 @@ const Dashboard = () => {
         if (cancelled) return;
         setSessions(data);
         setLoadError("");
-        const hasDefaultYear = data.some((session) => (session.academicYear || 'תשפ"ו') === 'תשפ"ו');
-        if (!hasDefaultYear && data.length > 0) {
-          const populatedYear = ACADEMIC_YEARS.find((year) =>
-            data.some((session) => (session.academicYear || 'תשפ"ו') === year)
-          );
-          if (populatedYear) setSelectedYear(populatedYear);
-        }
         setLoading(false);
       } catch (e) {
         if (cancelled) return;
@@ -146,6 +140,7 @@ const Dashboard = () => {
   };
 
   const sessionsForYear = useMemo(() => {
+    if (selectedYear === 'all') return sessions;
     return sessions.filter((s) => (s.academicYear || 'תשפ"ו') === selectedYear);
   }, [sessions, selectedYear]);
 
@@ -238,7 +233,7 @@ const Dashboard = () => {
 
   const openPromoteDialog = () => {
     // Default target = next year after the selected one
-    const idx = ACADEMIC_YEARS.indexOf(selectedYear);
+    const idx = ACADEMIC_YEARS.indexOf(selectedYear === 'all' ? ACADEMIC_YEAR : selectedYear);
     const next = idx >= 0 && idx < ACADEMIC_YEARS.length - 1 ? ACADEMIC_YEARS[idx + 1] : ACADEMIC_YEARS[ACADEMIC_YEARS.length - 1];
     setPromoteTargetYear(next);
     setPromoteSelected(new Set(sessionsForYear.map((s) => s.id)));
@@ -390,6 +385,14 @@ const Dashboard = () => {
           <Calendar className="w-4 h-4 text-primary" />
           <span className="text-sm font-medium text-muted-foreground">שנת לימודים:</span>
           <div className="flex gap-1">
+            <button onClick={() => setSelectedYear('all')}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                selectedYear === 'all'
+                  ? "bg-primary text-primary-foreground shadow-md"
+                  : "bg-muted/50 text-muted-foreground hover:bg-muted"
+              }`}>
+              כל השנים
+            </button>
             {ACADEMIC_YEARS.map((year) => (
               <button key={year} onClick={() => setSelectedYear(year)}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
@@ -769,7 +772,7 @@ const Dashboard = () => {
               <ArrowLeftRight className="w-7 h-7" />
               <div>
                 <h2 className="text-lg font-heading font-bold">העברת תלמידים לשנה הבאה</h2>
-                <p className="text-xs text-muted-foreground">משנה {selectedYear} — סמנו מי ממשיך</p>
+                <p className="text-xs text-muted-foreground">משנה {selectedYear === 'all' ? 'כל השנים' : selectedYear} — סמנו מי ממשיך</p>
               </div>
             </div>
 
