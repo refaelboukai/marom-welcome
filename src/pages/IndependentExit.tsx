@@ -91,6 +91,8 @@ const IndependentExit = () => {
             </div>
           )}
           <div className="intake-card-soft space-y-3">
+            <p className="text-sm">לכבוד: מחלקת היסעים · הנהלת בית ספר בית אקשטיין, יבנה</p>
+            <input className={inp} placeholder="לכבוד (שם הפונה במחלקת ההיסעים — לא חובה)" value={d.addressee || ""} onChange={(e) => set("addressee", e.target.value)} />
             <h3 className="font-heading font-semibold">פרטי התלמיד/ה</h3>
             <div className="grid sm:grid-cols-3 gap-3">
               <input className={inp} placeholder="שם התלמיד/ה *" value={d.student_name || ""} onChange={(e) => set("student_name", e.target.value)} />
