@@ -17,7 +17,6 @@ const ExitAdmin = () => {
   const load = async () => { setLoading(true); try { setRows(await getExitConsents()); } catch (e: any) { toast.error(e.message); } setLoading(false); };
   useEffect(() => { load(); }, []);
 
-  const copy = async (r: ExitConsent) => toast[(await copyText(exitLink(r.token))) ? "success" : "error"]((await Promise.resolve(true)) ? "הקישור הועתק" : "");
   const send = (r: ExitConsent, win?: Window | null) => {
     if (!openWhatsApp(r.parent_phone, exitMessage(r), win ?? preOpenTab())) toast.error("מספר טלפון לא תקין — אפשר להעתיק את הקישור");
   };

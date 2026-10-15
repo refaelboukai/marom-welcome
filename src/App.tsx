@@ -13,6 +13,7 @@ import DigitalForms from "./pages/DigitalForms";
 import ShortDayRequest from "./pages/ShortDayRequest";
 import StaffSelfAssessment from "./pages/StaffSelfAssessment";
 import InclusionConsent from "./pages/InclusionConsent";
+import IndependentExit from "./pages/IndependentExit";
 import Dashboard from "./pages/admin/Dashboard";
 import StudentProfile from "./pages/admin/StudentProfile";
 import NewIntake from "./pages/admin/NewIntake";
@@ -46,6 +47,7 @@ const App = () => {
           <Route path="/forms/short-day" element={<ShortDayRequest />} />
           <Route path="/forms/staff-reflection" element={<StaffSelfAssessment />} />
           <Route path="/forms/inclusion-consent" element={<InclusionConsent />} />
+          <Route path="/forms/independent-exit" element={<IndependentExit />} />
           <Route path="/staff/:sessionId" element={<StaffFlow />} />
           <Route path="/admin" element={<Dashboard />} />
           <Route path="/admin/student/:sessionId" element={<StudentProfile />} />

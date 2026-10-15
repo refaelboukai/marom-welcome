@@ -1,18 +1,20 @@
 import { useState } from "react";
-import { ArrowRight, Brain, Clock, Eye, FileText, ListChecks, School, Settings2 } from "lucide-react";
+import { ArrowRight, Brain, Clock, Eye, FileText, ListChecks, School, Settings2, Footprints } from "lucide-react";
 import EnrollmentFormsAdmin from "@/components/EnrollmentFormsAdmin";
 import ShortDayAdmin from "@/components/ShortDayAdmin";
 import InclusionAdmin from "@/components/InclusionAdmin";
+import ExitAdmin from "@/components/ExitAdmin";
 import FormEditor from "@/components/FormEditor";
 import { APP_URL } from "@/lib/app-url";
 
-type FormKey = "enrollment" | "short-day" | "inclusion" | null;
+type FormKey = "enrollment" | "short-day" | "inclusion" | "exit" | null;
 type Tab = "manage" | "edit" | "preview";
 
 const CARDS = [
   { key: "enrollment" as const, icon: FileText, title: "טופס קליטה לתלמיד/ה חדש/ה", desc: "שליחת הזמנות להורים, מעקב אחר מילוי הטופס, צפייה במסמכים והפקת PDF.", link: `${APP_URL}/enroll` },
   { key: "short-day" as const, icon: Clock, title: "בקשה לקיצור יום לימודים", desc: "בקשות הורים לקיצור יום הלימודים, רישום החלטת בית הספר וחתימות הצוות.", link: `${APP_URL}/forms/short-day` },
   { key: "inclusion" as const, icon: School, title: "אישור הורים — שילוב לימודי", desc: "אישור הורים לשילוב לימודי בבית ספר קולט — פרטי השילוב, יעד חזרה וחתימות ההורים.", link: `${APP_URL}/forms/inclusion-consent` },
+  { key: "exit" as const, icon: Footprints, title: "אישור יציאה עצמאית — ללא ליווי וללא הסעה", desc: "אישור הורים לשחרור התלמיד/ה ללא ליווי הורי וללא הסעה, כולל חתימות ואימות עו\"ד ב-PDF.", link: `${APP_URL}/forms/independent-exit` },
 ];
 
 const STAFF_LINK = `${APP_URL}/forms/staff-reflection`;
@@ -23,9 +25,9 @@ const DigitalFormsAdmin = () => {
 
   if (open) {
     const card = CARDS.find((c) => c.key === open)!;
-    const previewUrl = open === "enrollment" ? "/enroll" : open === "inclusion" ? "/forms/inclusion-consent" : "/forms/short-day";
+    const previewUrl = open === "enrollment" ? "/enroll" : open === "inclusion" ? "/forms/inclusion-consent" : open === "exit" ? "/forms/independent-exit" : "/forms/short-day";
     const tabs = ([["manage", "ניהול ושליחה", ListChecks], ["edit", "עריכת הטופס", Settings2], ["preview", "תצוגה מקדימה", Eye]] as const)
-      .filter(([k]) => k !== "edit" || open !== "inclusion");
+      .filter(([k]) => k !== "edit" || (open !== "inclusion" && open !== "exit"));
     return (
       <div className="space-y-4">
         <button onClick={() => { setOpen(null); setTab("manage"); }}
@@ -42,8 +44,8 @@ const DigitalFormsAdmin = () => {
             </button>
           ))}
         </div>
-        {tab === "manage" && (open === "enrollment" ? <EnrollmentFormsAdmin /> : open === "inclusion" ? <InclusionAdmin /> : <ShortDayAdmin />)}
-        {tab === "edit" && open !== "inclusion" && <FormEditor form={open} />}
+        {tab === "manage" && (open === "enrollment" ? <EnrollmentFormsAdmin /> : open === "inclusion" ? <InclusionAdmin /> : open === "exit" ? <ExitAdmin /> : <ShortDayAdmin />)}
+        {tab === "edit" && open !== "inclusion" && open !== "exit" && <FormEditor form={open} />}
         {tab === "preview" && (
           <div className="rounded-2xl border-2 border-border overflow-hidden bg-card">
             <iframe title="תצוגה מקדימה" src={previewUrl} className="w-full h-[75vh]" />
