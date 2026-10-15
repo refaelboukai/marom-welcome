@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowLeft, Clock, FileText, Brain, School } from "lucide-react";
+import { ArrowLeft, Clock, FileText, Brain, School, Footprints } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 import moeLogo from "@/assets/moe-state.png";
 
@@ -24,6 +24,13 @@ const FORMS = [
     title: "אישור הורים — שילוב לימודי",
     desc: "אישור הורים לשילוב לימודי בבית ספר קולט במסגרת החינוך הרגיל — פרטי השילוב, יעד חזרה וחתימות ההורים.",
     tag: 'שנה"ל תשפ"ז',
+  },
+  {
+    to: "/forms/independent-exit",
+    icon: Footprints,
+    title: "אישור יציאה עצמאית — ללא ליווי וללא הסעה",
+    desc: "אישור הורים לשחרור התלמיד/ה מבית הספר ללא ליווי הורי וללא הסעה, עם חתימות ההורים והורדת PDF לאימות עו\"ד.",
+    tag: "אישור הורים",
   },
   {
     to: "/forms/staff-reflection",

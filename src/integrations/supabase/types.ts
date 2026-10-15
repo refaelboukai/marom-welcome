@@ -343,6 +343,45 @@ export type Database = {
           },
         ]
       }
+      exit_consents: {
+        Row: {
+          created_at: string
+          data: Json
+          grade: string
+          id: string
+          parent_phone: string
+          status: string
+          student_name: string
+          submitted_at: string | null
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          grade?: string
+          id?: string
+          parent_phone?: string
+          status?: string
+          student_name?: string
+          submitted_at?: string | null
+          token: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          grade?: string
+          id?: string
+          parent_phone?: string
+          status?: string
+          student_name?: string
+          submitted_at?: string | null
+          token?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       inclusion_consents: {
         Row: {
           academic_year: string
