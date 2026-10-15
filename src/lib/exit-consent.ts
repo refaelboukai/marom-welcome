@@ -95,7 +95,7 @@ async function toDataUrl(url: string) {
   try { const b = await (await fetch(url)).blob(); return await new Promise<string>((r) => { const f = new FileReader(); f.onload = () => r(String(f.result)); f.readAsDataURL(b); }); } catch { return ""; }
 }
 const box = (c?: boolean) => `<span style="display:inline-flex;width:14px;height:14px;border:1.5px solid #333;align-items:center;justify-content:center;font-weight:800;color:#1a5e42;margin-left:6px;vertical-align:middle;">${c ? "✓" : ""}</span>`;
-const u = (v?: string) => `<span style="border-bottom:1px solid #888;padding:0 8px;font-weight:700;">${esc(v) || "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"}</span>`;
+const u = (v?: string) => `<span style="display:inline-block;border-bottom:1px solid #888;padding:0 8px 2px;line-height:18px;font-weight:700;">${esc(v) || "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"}</span>`;
 const sig = (n?: string, id?: string, s?: string) => `<div style="flex:1;border:1px solid #cfd8d5;border-radius:8px;padding:8px;">
   ${s?.startsWith("data:") ? `<img src="${s}" style="width:100%;height:55px;object-fit:contain;"/>` : `<div style="height:55px;"></div>`}
   <p style="font-size:11.5px;margin:4px 0 0;border-top:1px solid #aaa;padding-top:3px;">${esc(n) || "—"} · ת.ז. ${esc(id) || "—"}</p></div>`;
