@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { ArrowRight, Brain, Clock, Eye, FileText, ListChecks, School, Settings2, Footprints } from "lucide-react";
+import { ArrowRight, Brain, Clock, Copy, Eye, FileText, ListChecks, School, Settings2, Footprints } from "lucide-react";
+import { toast } from "sonner";
+import { copyText } from "@/lib/clipboard";
 import EnrollmentFormsAdmin from "@/components/EnrollmentFormsAdmin";
 import ShortDayAdmin from "@/components/ShortDayAdmin";
 import InclusionAdmin from "@/components/InclusionAdmin";
@@ -72,6 +74,11 @@ const DigitalFormsAdmin = () => {
                   <h3 className="font-heading font-semibold text-base leading-tight mb-1">{c.title}</h3>
                   <p className="text-xs text-muted-foreground leading-relaxed">{c.desc}</p>
                   <p className="text-[10px] text-muted-foreground/70 mt-2 break-all">{c.link}</p>
+                  <span role="button" tabIndex={0}
+                    onClick={async (e) => { e.stopPropagation(); toast[(await copyText(c.link)) ? "success" : "error"]("הקישור הועתק"); }}
+                    className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-semibold">
+                    <Copy className="w-3.5 h-3.5" /> העתקת קישור
+                  </span>
                 </div>
               </div>
             </button>
