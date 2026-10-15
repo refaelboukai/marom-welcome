@@ -5,6 +5,7 @@ import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import logo from "@/assets/logo.jpeg";
 
 export interface ExitData {
+  addressee?: string;
   student_name?: string;
   student_id?: string;
   grade?: string;
@@ -102,12 +103,13 @@ const sig = (n?: string, id?: string, s?: string) => `<div style="flex:1;border:
 export async function generateExitPDF(d: ExitData) {
   const lg = await toDataUrl(logo);
   const way = d.mode_a_way === "walk" ? "ילך הביתה ברגל" : d.mode_a_way === "public" ? "ייסע לבדו בתחבורה ציבורית" : "";
+  const aText = way ? MODE_TEXT.a.replace("ייסע לבדו בתחבורה ציבורית / ילך הביתה ברגל", way) : MODE_TEXT.a;
   const html = `<div style="font-family:'Heebo',Arial,sans-serif;direction:rtl;padding:28px 34px;width:700px;box-sizing:border-box;color:#1a1a2e;line-height:1.6;background:#fff;font-size:12.5px;">
     <div style="text-align:center;margin-bottom:14px;">${lg ? `<img src="${lg}" style="height:60px;"/>` : ""}</div>
-    <p style="margin:0;font-weight:700;">לכבוד: מחלקת היסעים<br/>הנהלת בית ספר בית אקשטיין<br/>יבנה</p>
+    <p style="margin:0;font-weight:700;">לכבוד: ${d.addressee ? esc(d.addressee) + " — " : ""}מחלקת היסעים<br/>הנהלת בית ספר בית אקשטיין<br/>יבנה</p>
     <p style="text-align:center;font-weight:800;text-decoration:underline;margin:12px 0;">הנדון: אישור לשחרור תלמיד מבית הספר ללא ליווי הורי וללא הסעה לחזרה הביתה בהסעה או ברגל</p>
     <p>אנו הח"מ, הורי התלמיד ${u(d.student_name)} ת.ז. ${u(d.student_id)}, נותנים את הסכמתנו המפורשת לכך כי ילדנו ישוחרר מבית הספר ללא ליווי הורי וללא הסעה או השגחה, ע"פ המודל הבא:</p>
-    <p>${box(d.mode_a)}<b>א.</b> ${esc(MODE_TEXT.a)} ${way ? `(<b>${way}</b>)` : ""} מיום ${u(heDate(d.from_date))}.</p>
+    <p>${box(d.mode_a)}<b>א.</b> ${esc(aText).replace(". ידוע", ` מיום ${u(heDate(d.from_date))}. ידוע`)}</p>
     <p>${box(d.mode_b)}<b>ב.</b> ${esc(MODE_TEXT.b)}</p>
     <p>${box(d.mode_c)}<b>ג.</b> ${esc(MODE_TEXT.c)}</p>
     <p>${esc(LIABILITY)}</p>
