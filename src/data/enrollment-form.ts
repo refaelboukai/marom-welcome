@@ -127,7 +127,6 @@ export const FORM_STEPS: FormStep[] = [
         title: "פרטי הרשמה",
         description: "טופס הרשמה ופרטים אישיים לתלמיד/ה חדש/ה — בית ספר מרום, בית אקשטיין יבנה.",
         fields: [
-          { key: "academic_year", label: "שנת הלימודים", type: "select", options: ['תשפ"ו', 'תשפ"ז', 'תשפ"ח'], required: true },
           { key: "grade", label: "כיתה", type: "select", options: GRADES, required: true },
           { key: "student_first_name", label: "שם פרטי", type: "text", required: true },
           { key: "student_last_name", label: "שם משפחה", type: "text", required: true },

@@ -31,7 +31,7 @@ const EnrollmentFormsAdmin = () => {
   const [loadError, setLoadError] = useState("");
 
   const [draft, setDraft] = useState({
-    student_name: "", grade: "", academic_year: 'תשפ"ז', divorced: false,
+    student_name: "", grade: "", academic_year: ACADEMIC_YEAR, divorced: false,
     p1_name: "", p1_phone: "", p2_name: "", p2_phone: "",
   });
 

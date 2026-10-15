@@ -142,12 +142,13 @@ const Enrollment = () => {
   const [invite, setInvite] = useState<EnrollmentInvite | null>(null);
   const [step, setStep] = useState(0);
   const [values, setValues] = useState<FormValues>(() => {
-    if (token) return {};
+    const base: FormValues = { academic_year: ACADEMIC_YEAR };
+    if (token) return base;
     try {
       const saved = localStorage.getItem(DRAFT_KEY);
-      if (saved) return JSON.parse(saved);
+      if (saved) return { ...base, ...JSON.parse(saved) };
     } catch { /* ignore */ }
-    return {};
+    return base;
   });
   const [saving, setSaving] = useState<"idle" | "saving" | "saved">("idle");
   const [submitting, setSubmitting] = useState(false);

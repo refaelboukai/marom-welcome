@@ -344,18 +344,6 @@ const NewIntake = () => {
             )}
           </div>
 
-          {/* Academic year selector */}
-          <div>
-            <label className="block text-sm font-medium mb-1.5">שנת לימודים</label>
-            <select value={form.academicYear} onChange={(e) => updateField("academicYear", e.target.value)}
-              className="w-full bg-card border border-input rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
-              <option value='תשפ"ו'>תשפ״ו</option>
-              <option value='תשפ"ז'>תשפ״ז</option>
-              <option value='תשפ"ח'>תשפ״ח</option>
-              <option value='תשפ"ט'>תשפ״ט</option>
-            </select>
-          </div>
-
           <div>
             <label className="block text-sm font-medium mb-1.5">הערות</label>
             <textarea value={form.notes} onChange={(e) => updateField("notes", e.target.value)}
