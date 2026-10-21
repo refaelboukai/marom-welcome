@@ -858,6 +858,48 @@ export type Database = {
           },
         ]
       }
+      trip_consents: {
+        Row: {
+          created_at: string
+          data: Json
+          grade: string
+          id: string
+          parent_phone: string
+          status: string
+          student_name: string
+          submitted_at: string | null
+          token: string
+          trip: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          grade?: string
+          id?: string
+          parent_phone?: string
+          status?: string
+          student_name?: string
+          submitted_at?: string | null
+          token: string
+          trip?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          grade?: string
+          id?: string
+          parent_phone?: string
+          status?: string
+          student_name?: string
+          submitted_at?: string | null
+          token?: string
+          trip?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
