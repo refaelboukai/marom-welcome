@@ -1,4 +1,4 @@
-import { copyText } from "@/lib/clipboard";
+import { copyText, labeledLink } from "@/lib/clipboard";
 import { useEffect, useState } from "react";
 import { Clock, Copy, Download, Loader2, MessageCircle, Plus, Save, Trash2 } from "lucide-react";
 import { APP_URL } from "@/lib/app-url";
@@ -156,7 +156,7 @@ const ShortDayAdmin = () => {
           <p className="font-semibold text-sm">בקשות לקיצור יום לימודים</p>
           <p className="text-xs text-muted-foreground">קישור למילוי על ידי הורים: {APP_URL}/forms/short-day</p>
         </div>
-        <button onClick={async () => { const ok = await copyText(`${APP_URL}/forms/short-day`); setLinkCopied(ok ? "ok" : "fail"); setTimeout(() => setLinkCopied(""), 2000); }}
+        <button onClick={async () => { const ok = await copyText(labeledLink("בקשה לקיצור יום לימודים", `${APP_URL}/forms/short-day`)); setLinkCopied(ok ? "ok" : "fail"); setTimeout(() => setLinkCopied(""), 2000); }}
           className="btn-intake bg-secondary text-secondary-foreground text-xs px-3 py-2">
           {linkCopied === "ok" ? "הקישור הועתק ✓" : linkCopied === "fail" ? "ההעתקה נכשלה" : "העתקת קישור"}
         </button>

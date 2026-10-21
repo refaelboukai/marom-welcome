@@ -1,4 +1,4 @@
-import { copyText } from "@/lib/clipboard";
+import { copyText, labeledLink } from "@/lib/clipboard";
 import { APP_URL } from "@/lib/app-url";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -130,7 +130,7 @@ const EnrollmentFormsAdmin = () => {
           <p className="text-sm font-medium">קישור כללי לטופס הקליטה</p>
           <p className="text-xs text-muted-foreground break-all">{openLink}</p>
         </div>
-        <button onClick={() => copy(openLink, "open")}
+        <button onClick={() => copy(labeledLink("טופס קליטה לתלמיד/ה חדש/ה", openLink), "open")}
           className="btn-intake bg-primary/10 text-primary text-xs px-3 py-2 gap-1 hover:bg-primary/20 inline-flex items-center">
           <Copy className="w-3.5 h-3.5" /> {copied === "open" ? "הועתק ✓" : "העתקה"}
         </button>
@@ -251,7 +251,7 @@ const EnrollmentFormsAdmin = () => {
                             <Send className="w-3 h-3" /> וואטסאפ
                           </a>
                         )}
-                        <button onClick={() => copy(inviteLink(inv.token), inv.id)}
+                        <button onClick={() => copy(labeledLink(`טופס קליטה — ${inv.student_name}`, inviteLink(inv.token)), inv.id)}
                           className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground" title="העתקת קישור">
                           {copied === inv.id ? <span className="text-[10px] text-success">✓</span> : <Copy className="w-3.5 h-3.5" />}
                         </button>
