@@ -5,6 +5,7 @@ import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import logo from "@/assets/logo.jpeg";
 
 export interface TripDetails {
+  id?: string;
   name: string;        // שם/יעד הטיול
   date: string;        // yyyy-mm-dd
   route: string;       // מסלול הטיול
@@ -41,14 +42,27 @@ export const HEALTH_TEXT = {
   limited_no: "לבני/בתי מגבלות בריאותיות המגבילות/מונעות את השתתפותו/ה בפעילות הנ\"ל — מצ\"ב אישור רפואי.",
 };
 
-const SKEY = "trip_details";
-export async function loadTripDetails(): Promise<TripDetails> {
+const SKEY = "trips";
+export async function loadTrips(): Promise<TripDetails[]> {
   const { data } = await (supabase as any).from("school_settings").select("value").eq("key", SKEY).maybeSingle();
-  return { ...DEFAULT_TRIP, ...(data?.value || {}) };
+  return Array.isArray(data?.value) ? data.value.map((t: TripDetails) => ({ ...DEFAULT_TRIP, ...t })) : [];
 }
-export async function saveTripDetails(v: TripDetails) {
-  const { error } = await (supabase as any).from("school_settings").upsert({ key: SKEY, value: v, updated_at: new Date().toISOString() }, { onConflict: "key" });
-  return !error;
+export async function saveTrip(t: TripDetails): Promise<TripDetails | null> {
+  const list = await loadTrips();
+  const trip = { ...t, id: t.id || crypto.randomUUID() };
+  const i = list.findIndex((x) => x.id === trip.id);
+  if (i >= 0) list[i] = trip; else list.unshift(trip);
+  const { error } = await (supabase as any).from("school_settings").upsert({ key: SKEY, value: list, updated_at: new Date().toISOString() }, { onConflict: "key" });
+  return error ? null : trip;
+}
+export async function deleteTripDetails(id: string) {
+  const list = (await loadTrips()).filter((x) => x.id !== id);
+  await (supabase as any).from("school_settings").upsert({ key: SKEY, value: list, updated_at: new Date().toISOString() }, { onConflict: "key" });
+}
+/** Trip by id, or the most recent trip when no id is given. */
+export async function loadTripDetails(id?: string | null): Promise<TripDetails> {
+  const list = await loadTrips();
+  return (id ? list.find((x) => x.id === id) : list[0]) || DEFAULT_TRIP;
 }
 
 const T = () => (supabase as any).from("trip_consents");
@@ -62,6 +76,7 @@ export const heDate = (d?: string) => { if (!d) return ""; const x = new Date(d)
 export const heDay = (d?: string) => { if (!d) return ""; const x = new Date(d); return isNaN(x.getTime()) ? "" : x.toLocaleDateString("he-IL", { weekday: "long" }); };
 
 export const tripLink = (token?: string) => `${APP_URL}/forms/trip-consent${token ? `?t=${token}` : ""}`;
+export const tripPublicLink = (tripId: string) => `${APP_URL}/forms/trip-consent?trip=${tripId}`;
 export const tripMessage = (r: TripConsent) => `שלום,
 
 מצורף קישור אישי למילוי "אישור הורים להשתתפות בטיול"${r.trip?.name ? ` — ${r.trip.name}` : ""}${r.trip?.date ? ` (${heDay(r.trip.date)} ${heDate(r.trip.date)})` : ""} עבור ${r.student_name}:
@@ -72,8 +87,7 @@ ${tripLink(r.token)}
 צוות בית הספר`;
 export const tripWhatsAppUrl = (r: TripConsent) => buildWhatsAppUrl(r.parent_phone, tripMessage(r));
 
-export async function createTripInvite(i: { student_name: string; grade: string; parent_phone: string }) {
-  const trip = await loadTripDetails();
+export async function createTripInvite(i: { student_name: string; grade: string; parent_phone: string }, trip: TripDetails) {
   const { data, error } = await T().insert([{ ...i, trip, token: makeToken(), data: { student_name: i.student_name, grade: i.grade } }]).select().maybeSingle();
   if (error) { console.error(error); return null; }
   return data as TripConsent;
