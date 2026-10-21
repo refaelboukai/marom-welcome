@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ArrowRight, Copy, Download, Loader2, MapPin, MessageCircle, Pencil, Plus, RefreshCw, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { copyText } from "@/lib/clipboard";
+import { copyText, labeledLink } from "@/lib/clipboard";
 import { openWhatsApp, preOpenTab } from "@/lib/whatsapp";
 import { DEFAULT_TRIP, TRIP_STATUS, TripConsent, TripDetails, createTripInvite, deleteTrip, deleteTripDetails, generateTripPDF, getTripConsents, heDate, heDay, loadTrips, saveTrip, tripLink, tripMessage, tripPublicLink } from "@/lib/trip-consent";
 
@@ -50,7 +50,7 @@ const TripAdmin = () => {
     setBusy(false);
     if (!r) { win?.close(); return toast.error("היצירה נכשלה"); }
     setForm({ student_name: "", grade: "", parent_phone: "" });
-    if (mode === "wa") send(r, win); else { await copyText(tripLink(r.token)); toast.success("הקישור נוצר והועתק"); }
+    if (mode === "wa") send(r, win); else { await copyText(labeledLink(`אישור הורים — יציאה לטיול${trip.name ? ` — ${trip.name}` : ""}`, tripLink(r.token))); toast.success("הקישור נוצר והועתק"); }
     load();
   };
 
@@ -73,7 +73,7 @@ const TripAdmin = () => {
               <p className="text-xs text-muted-foreground">{heDay(t.date)} {heDate(t.date)}{t.route && ` · ${t.route}`} · {sub} אישורים הוגשו</p>
             </div>
             <div className="flex gap-1.5">
-              <button onClick={async () => toast[(await copyText(tripPublicLink(t.id!))) ? "success" : "error"]("הקישור הועתק")} className="btn-intake bg-secondary text-secondary-foreground text-xs flex items-center gap-1"><Copy className="w-3.5 h-3.5" /> העתקת קישור</button>
+              <button onClick={async () => toast[(await copyText(labeledLink(`אישור הורים — יציאה לטיול${t.name ? ` — ${t.name}` : ""}`, tripPublicLink(t.id!)))) ? "success" : "error"]("הקישור הועתק")} className="btn-intake bg-secondary text-secondary-foreground text-xs flex items-center gap-1"><Copy className="w-3.5 h-3.5" /> העתקת קישור</button>
               <button onClick={() => { setTrip(t); setDirty(false); }} className="p-2 rounded-xl hover:bg-muted" title="פתיחה ועריכה"><Pencil className="w-4 h-4" /></button>
               <button onClick={async () => { if (confirm(`למחוק את הטיול "${t.name}"?`)) { await deleteTripDetails(t.id!); load(); } }} className="p-2 rounded-xl text-destructive hover:bg-destructive/10"><Trash2 className="w-4 h-4" /></button>
             </div>
@@ -114,7 +114,7 @@ const TripAdmin = () => {
       <div className={`intake-card-soft space-y-3 ${savedOk ? "" : "opacity-50 pointer-events-none"}`}>
         <h4 className="font-heading font-semibold text-sm">2. הפקת קישור {savedOk ? "" : "(יש לשמור קודם)"}</h4>
         {trip.id && <p className="text-[11px] text-muted-foreground break-all">{tripPublicLink(trip.id)}</p>}
-        <button onClick={async () => toast[(await copyText(tripPublicLink(trip.id!))) ? "success" : "error"]("הקישור הועתק — אפשר להדביק בוואטסאפ")} className="btn-intake bg-primary text-primary-foreground text-sm inline-flex items-center gap-1.5">
+        <button onClick={async () => toast[(await copyText(labeledLink(`אישור הורים — יציאה לטיול${trip.name ? ` — ${trip.name}` : ""}`, tripPublicLink(trip.id!)))) ? "success" : "error"]("הקישור הועתק — אפשר להדביק בוואטסאפ")} className="btn-intake bg-primary text-primary-foreground text-sm inline-flex items-center gap-1.5">
           <Copy className="w-4 h-4" /> העתקת קישור לטיול
         </button>
         <details className="text-sm">
