@@ -11,6 +11,7 @@ const today = () => new Date().toISOString().slice(0, 10);
 const TripConsentPage = () => {
   const [sp] = useSearchParams();
   const token = sp.get("t")?.toLowerCase() || null;
+  const tripId = sp.get("trip");
   const [trip, setTrip] = useState<TripDetails>(DEFAULT_TRIP);
   const [d, setD] = useState<TripData>({ sign_date: today() });
   const [loading, setLoading] = useState(true);
@@ -26,13 +27,13 @@ const TripConsentPage = () => {
         const r = await getTripByToken(token);
         if (r) {
           setD({ sign_date: today(), ...r.data });
-          setTrip(r.trip && Object.keys(r.trip).length ? { ...DEFAULT_TRIP, ...r.trip } : await loadTripDetails());
+          setTrip(r.trip && Object.keys(r.trip).length ? { ...DEFAULT_TRIP, ...r.trip } : await loadTripDetails(tripId));
           if (r.status === "submitted") setDone(true);
-        } else setTrip(await loadTripDetails());
-      } else setTrip(await loadTripDetails());
+        } else setTrip(await loadTripDetails(tripId));
+      } else setTrip(await loadTripDetails(tripId));
       setLoading(false); setTimeout(() => (ready.current = true), 100);
     })();
-  }, [token]);
+  }, [token, tripId]);
 
   useEffect(() => {
     if (!token || !ready.current || done) return;
