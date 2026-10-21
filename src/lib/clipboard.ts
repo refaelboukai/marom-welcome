@@ -1,5 +1,9 @@
 /** Copy text with a fallback for iframes / non-secure contexts where
  *  navigator.clipboard is unavailable or blocked. Returns success. */
+
+/** Text copied to the clipboard for a form link: the form name appears as a
+ *  line above the link when pasted into WhatsApp or any chat. */
+export const labeledLink = (label: string, url: string) => `${label}\n${url}`;
 export async function copyText(text: string): Promise<boolean> {
   try {
     if (navigator.clipboard && window.isSecureContext) {
