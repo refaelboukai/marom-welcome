@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Copy, Download, Loader2, MessageCircle, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { copyText } from "@/lib/clipboard";
+import { copyText, labeledLink } from "@/lib/clipboard";
 import { openWhatsApp, preOpenTab } from "@/lib/whatsapp";
 import { EXIT_STATUS, ExitConsent, createExitInvite, deleteExit, exitLink, exitMessage, generateExitPDF, getExitConsents } from "@/lib/exit-consent";
 
@@ -30,7 +30,7 @@ const ExitAdmin = () => {
     setBusy(false);
     if (!r) { win?.close(); return toast.error("היצירה נכשלה"); }
     setForm({ student_name: "", grade: "", parent_phone: "" });
-    if (mode === "wa") send(r, win); else { await copyText(exitLink(r.token)); toast.success("הקישור נוצר והועתק"); }
+    if (mode === "wa") send(r, win); else { await copyText(labeledLink("אישור יציאה עצמאית — ללא ליווי וללא הסעה", exitLink(r.token))); toast.success("הקישור נוצר והועתק"); }
     load();
   };
 
@@ -68,7 +68,7 @@ const ExitAdmin = () => {
           </div>
           <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg ${statusCls[r.status] || statusCls.sent}`}>{EXIT_STATUS[r.status] || r.status}</span>
           <div className="flex gap-1.5">
-            <button onClick={async () => toast[(await copyText(exitLink(r.token))) ? "success" : "error"]("הקישור הועתק")} className="p-2 rounded-xl hover:bg-muted" title="העתקת קישור"><Copy className="w-4 h-4" /></button>
+            <button onClick={async () => toast[(await copyText(labeledLink(`אישור יציאה עצמאית — ${r.student_name}`, exitLink(r.token)))) ? "success" : "error"]("הקישור הועתק")} className="p-2 rounded-xl hover:bg-muted" title="העתקת קישור"><Copy className="w-4 h-4" /></button>
             {r.parent_phone && <button onClick={() => send(r)} className="p-2 rounded-xl text-primary hover:bg-primary/10" title="וואטסאפ"><MessageCircle className="w-4 h-4" /></button>}
             {r.status === "submitted" && <button onClick={() => generateExitPDF(r.data)} className="btn-intake bg-primary text-primary-foreground text-xs flex items-center gap-1"><Download className="w-3.5 h-3.5" /> PDF</button>}
             <button onClick={async () => { if (confirm("למחוק?")) { await deleteExit(r.id); load(); } }} className="p-2 rounded-xl text-destructive hover:bg-destructive/10"><Trash2 className="w-4 h-4" /></button>
