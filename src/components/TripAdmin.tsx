@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { ArrowRight, Copy, Download, Loader2, MapPin, MessageCircle, Pencil, Plus, RefreshCw, Save, Trash2 } from "lucide-react";
+import { ArrowRight, Copy, Download, Eye, FileText, Loader2, MapPin, MessageCircle, Pencil, Plus, RefreshCw, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { copyText, labeledLink } from "@/lib/clipboard";
 import { openWhatsApp, preOpenTab } from "@/lib/whatsapp";
-import { DEFAULT_TRIP, TRIP_STATUS, TripConsent, TripDetails, createTripInvite, deleteTrip, deleteTripDetails, generateTripPDF, getTripConsents, heDate, heDay, loadTrips, saveTrip, tripLink, tripMessage, tripPublicLink } from "@/lib/trip-consent";
+import { DEFAULT_TRIP, HEALTH_TEXT, TRIP_STATUS, TripConsent, TripDetails, createTripInvite, deleteTrip, deleteTripDetails, generateTripPDF, getTripConsents, heDate, heDay, loadTrips, saveTrip, tripLink, tripMessage, tripPublicLink } from "@/lib/trip-consent";
 
 const inp = "w-full px-3 py-2 rounded-xl border-2 border-border bg-card text-sm focus:outline-none focus:border-primary/60";
 const statusCls: Record<string, string> = { sent: "bg-muted text-muted-foreground", in_progress: "bg-accent text-accent-foreground", submitted: "bg-success/15 text-success" };
@@ -17,6 +17,9 @@ const TripAdmin = () => {
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ student_name: "", grade: "", parent_phone: "" });
   const [busy, setBusy] = useState(false);
+  const [view, setView] = useState<"trips" | "received">("trips");
+  const [filterTrip, setFilterTrip] = useState<string>("all");
+  const [openRow, setOpenRow] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -54,12 +57,69 @@ const TripAdmin = () => {
     load();
   };
 
+  /* ---------- received forms window ---------- */
+  if (view === "received") {
+    const submitted = rows.filter((r) => r.status === "submitted" && (filterTrip === "all" || r.trip?.id === filterTrip));
+    return (
+      <div className="space-y-4">
+        <button onClick={() => setView("trips")} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary">
+          <ArrowRight className="w-4 h-4" /> לרשימת הטיולים
+        </button>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-heading font-bold text-lg">טפסים שהתקבלו ({submitted.length})</h2>
+          <button onClick={load} className="inline-flex items-center gap-1.5 text-xs text-primary"><RefreshCw className="w-3.5 h-3.5" /> רענון</button>
+        </div>
+        <select className={inp + " sm:max-w-xs"} value={filterTrip} onChange={(e) => setFilterTrip(e.target.value)}>
+          <option value="all">כל הטיולים</option>
+          {trips.map((t) => <option key={t.id} value={t.id!}>{t.name}{t.date ? ` — ${heDate(t.date)}` : ""}</option>)}
+        </select>
+        {loading ? <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto" /> : submitted.length === 0 ? (
+          <div className="intake-card-soft text-center py-6 text-sm text-muted-foreground">עדיין לא התקבלו אישורים{filterTrip !== "all" ? " לטיול זה" : ""}.</div>
+        ) : submitted.map((r) => {
+          const open = openRow === r.id;
+          return (
+            <div key={r.id} className="intake-card-soft">
+              <div className="flex flex-wrap items-center gap-3">
+                <button onClick={() => setOpenRow(open ? null : r.id)} className="flex-1 min-w-[200px] text-right">
+                  <p className="font-heading font-semibold text-sm">{r.student_name || "—"} {r.grade && <span className="text-xs text-muted-foreground">· {r.grade}</span>}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {r.trip?.name ? `${r.trip.name} · ` : ""}{r.data?.parent_name || "—"}{r.data?.health && ` · ${healthLbl[r.data.health]}`}{r.submitted_at && ` · הוגש ${heDate(r.submitted_at.slice(0, 10))}`}
+                  </p>
+                </button>
+                <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg ${statusCls[r.status]}`}>{TRIP_STATUS[r.status]}</span>
+                <button onClick={() => setOpenRow(open ? null : r.id)} className="p-2 rounded-xl hover:bg-muted" title="צפייה"><Eye className="w-4 h-4" /></button>
+                <button onClick={() => generateTripPDF(r.data, r.trip)} className="btn-intake bg-primary text-primary-foreground text-xs flex items-center gap-1"><Download className="w-3.5 h-3.5" /> PDF</button>
+                <button onClick={async () => { if (confirm("למחוק?")) { await deleteTrip(r.id); load(); } }} className="p-2 rounded-xl text-destructive hover:bg-destructive/10"><Trash2 className="w-4 h-4" /></button>
+              </div>
+              {open && r.data && (
+                <div className="mt-3 pt-3 border-t border-border text-sm space-y-1.5 text-muted-foreground">
+                  <p><span className="font-medium text-foreground">שם התלמיד/ה:</span> {r.data.student_name || "—"}</p>
+                  {r.data.grade && <p><span className="font-medium text-foreground">כיתה:</span> {r.data.grade}</p>}
+                  {r.trip?.name && <p><span className="font-medium text-foreground">טיול:</span> {r.trip.name}{r.trip.date && ` — ${heDay(r.trip.date)} ${heDate(r.trip.date)}`}</p>}
+                  <p><span className="font-medium text-foreground">שם ההורה:</span> {r.data.parent_name || "—"}{r.data.sign_date && ` · תאריך חתימה ${heDate(r.data.sign_date)}`}</p>
+                  {r.data.health && <p><span className="font-medium text-foreground">הצהרת בריאות:</span> {HEALTH_TEXT[r.data.health]}</p>}
+                  {r.data.remarks && <p><span className="font-medium text-foreground">הערות:</span> {r.data.remarks}</p>}
+                  {r.parent_phone && <p><span className="font-medium text-foreground">טלפון הורה:</span> {r.parent_phone}</p>}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
   /* ---------- trips list ---------- */
   if (!trip) return (
     <div className="space-y-4">
-      <button onClick={() => { setTrip({ ...DEFAULT_TRIP }); setDirty(false); }} className="btn-intake bg-primary text-primary-foreground text-sm inline-flex items-center gap-1.5">
-        <Plus className="w-4 h-4" /> טיול חדש
-      </button>
+      <div className="flex flex-wrap gap-2">
+        <button onClick={() => { setTrip({ ...DEFAULT_TRIP }); setDirty(false); }} className="btn-intake bg-primary text-primary-foreground text-sm inline-flex items-center gap-1.5">
+          <Plus className="w-4 h-4" /> טיול חדש
+        </button>
+        <button onClick={() => { setFilterTrip("all"); setOpenRow(null); setView("received"); }} className="btn-intake bg-secondary text-secondary-foreground text-sm inline-flex items-center gap-1.5">
+          <FileText className="w-4 h-4" /> טפסים שהתקבלו{rows.some((r) => r.status === "submitted") ? ` (${rows.filter((r) => r.status === "submitted").length})` : ""}
+        </button>
+      </div>
       {loading ? <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto" /> : trips.length === 0 ? (
         <div className="intake-card-soft text-center py-6 text-sm text-muted-foreground">עדיין אין טיולים. לחצו "טיול חדש" כדי להתחיל.</div>
       ) : trips.map((t) => {
@@ -138,9 +198,12 @@ const TripAdmin = () => {
       </div>
 
       {trip.id && (<>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-sm font-medium">אישורים לטיול זה ({mine.length})</p>
-          <button onClick={load} className="inline-flex items-center gap-1.5 text-xs text-primary"><RefreshCw className="w-3.5 h-3.5" /> רענון</button>
+          <div className="flex gap-3">
+            <button onClick={() => { setFilterTrip(trip.id!); setOpenRow(null); setView("received"); }} className="inline-flex items-center gap-1.5 text-xs text-primary"><FileText className="w-3.5 h-3.5" /> טפסים שהתקבלו</button>
+            <button onClick={load} className="inline-flex items-center gap-1.5 text-xs text-primary"><RefreshCw className="w-3.5 h-3.5" /> רענון</button>
+          </div>
         </div>
         {mine.length === 0 ? <div className="intake-card-soft text-center py-6 text-sm text-muted-foreground">עדיין אין אישורים.</div> : mine.map((r) => (
           <div key={r.id} className="intake-card-soft flex flex-wrap items-center gap-3">
