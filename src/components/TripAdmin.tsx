@@ -112,9 +112,14 @@ const TripAdmin = () => {
   /* ---------- trips list ---------- */
   if (!trip) return (
     <div className="space-y-4">
-      <button onClick={() => { setTrip({ ...DEFAULT_TRIP }); setDirty(false); }} className="btn-intake bg-primary text-primary-foreground text-sm inline-flex items-center gap-1.5">
-        <Plus className="w-4 h-4" /> טיול חדש
-      </button>
+      <div className="flex flex-wrap gap-2">
+        <button onClick={() => { setTrip({ ...DEFAULT_TRIP }); setDirty(false); }} className="btn-intake bg-primary text-primary-foreground text-sm inline-flex items-center gap-1.5">
+          <Plus className="w-4 h-4" /> טיול חדש
+        </button>
+        <button onClick={() => { setFilterTrip("all"); setOpenRow(null); setView("received"); }} className="btn-intake bg-secondary text-secondary-foreground text-sm inline-flex items-center gap-1.5">
+          <FileText className="w-4 h-4" /> טפסים שהתקבלו{rows.some((r) => r.status === "submitted") ? ` (${rows.filter((r) => r.status === "submitted").length})` : ""}
+        </button>
+      </div>
       {loading ? <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto" /> : trips.length === 0 ? (
         <div className="intake-card-soft text-center py-6 text-sm text-muted-foreground">עדיין אין טיולים. לחצו "טיול חדש" כדי להתחיל.</div>
       ) : trips.map((t) => {
