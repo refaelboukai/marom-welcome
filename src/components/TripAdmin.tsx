@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { ArrowRight, Copy, Download, Loader2, MapPin, MessageCircle, Pencil, Plus, RefreshCw, Save, Trash2 } from "lucide-react";
+import { ArrowRight, Copy, Download, Eye, FileText, Loader2, MapPin, MessageCircle, Pencil, Plus, RefreshCw, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { copyText, labeledLink } from "@/lib/clipboard";
 import { openWhatsApp, preOpenTab } from "@/lib/whatsapp";
-import { DEFAULT_TRIP, TRIP_STATUS, TripConsent, TripDetails, createTripInvite, deleteTrip, deleteTripDetails, generateTripPDF, getTripConsents, heDate, heDay, loadTrips, saveTrip, tripLink, tripMessage, tripPublicLink } from "@/lib/trip-consent";
+import { DEFAULT_TRIP, HEALTH_TEXT, TRIP_STATUS, TripConsent, TripDetails, createTripInvite, deleteTrip, deleteTripDetails, generateTripPDF, getTripConsents, heDate, heDay, loadTrips, saveTrip, tripLink, tripMessage, tripPublicLink } from "@/lib/trip-consent";
 
 const inp = "w-full px-3 py-2 rounded-xl border-2 border-border bg-card text-sm focus:outline-none focus:border-primary/60";
 const statusCls: Record<string, string> = { sent: "bg-muted text-muted-foreground", in_progress: "bg-accent text-accent-foreground", submitted: "bg-success/15 text-success" };
