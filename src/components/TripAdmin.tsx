@@ -198,9 +198,12 @@ const TripAdmin = () => {
       </div>
 
       {trip.id && (<>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-sm font-medium">אישורים לטיול זה ({mine.length})</p>
-          <button onClick={load} className="inline-flex items-center gap-1.5 text-xs text-primary"><RefreshCw className="w-3.5 h-3.5" /> רענון</button>
+          <div className="flex gap-3">
+            <button onClick={() => { setFilterTrip(trip.id!); setOpenRow(null); setView("received"); }} className="inline-flex items-center gap-1.5 text-xs text-primary"><FileText className="w-3.5 h-3.5" /> טפסים שהתקבלו</button>
+            <button onClick={load} className="inline-flex items-center gap-1.5 text-xs text-primary"><RefreshCw className="w-3.5 h-3.5" /> רענון</button>
+          </div>
         </div>
         {mine.length === 0 ? <div className="intake-card-soft text-center py-6 text-sm text-muted-foreground">עדיין אין אישורים.</div> : mine.map((r) => (
           <div key={r.id} className="intake-card-soft flex flex-wrap items-center gap-3">
