@@ -17,6 +17,9 @@ const TripAdmin = () => {
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ student_name: "", grade: "", parent_phone: "" });
   const [busy, setBusy] = useState(false);
+  const [view, setView] = useState<"trips" | "received">("trips");
+  const [filterTrip, setFilterTrip] = useState<string>("all");
+  const [openRow, setOpenRow] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
