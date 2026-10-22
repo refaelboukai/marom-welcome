@@ -57,6 +57,58 @@ const TripAdmin = () => {
     load();
   };
 
+  /* ---------- received forms window ---------- */
+  if (view === "received") {
+    const submitted = rows.filter((r) => r.status === "submitted" && (filterTrip === "all" || r.trip?.id === filterTrip));
+    return (
+      <div className="space-y-4">
+        <button onClick={() => setView("trips")} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary">
+          <ArrowRight className="w-4 h-4" /> לרשימת הטיולים
+        </button>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-heading font-bold text-lg">טפסים שהתקבלו ({submitted.length})</h2>
+          <button onClick={load} className="inline-flex items-center gap-1.5 text-xs text-primary"><RefreshCw className="w-3.5 h-3.5" /> רענון</button>
+        </div>
+        <select className={inp + " sm:max-w-xs"} value={filterTrip} onChange={(e) => setFilterTrip(e.target.value)}>
+          <option value="all">כל הטיולים</option>
+          {trips.map((t) => <option key={t.id} value={t.id!}>{t.name}{t.date ? ` — ${heDate(t.date)}` : ""}</option>)}
+        </select>
+        {loading ? <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto" /> : submitted.length === 0 ? (
+          <div className="intake-card-soft text-center py-6 text-sm text-muted-foreground">עדיין לא התקבלו אישורים{filterTrip !== "all" ? " לטיול זה" : ""}.</div>
+        ) : submitted.map((r) => {
+          const open = openRow === r.id;
+          return (
+            <div key={r.id} className="intake-card-soft">
+              <div className="flex flex-wrap items-center gap-3">
+                <button onClick={() => setOpenRow(open ? null : r.id)} className="flex-1 min-w-[200px] text-right">
+                  <p className="font-heading font-semibold text-sm">{r.student_name || "—"} {r.grade && <span className="text-xs text-muted-foreground">· {r.grade}</span>}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {r.trip?.name ? `${r.trip.name} · ` : ""}{r.data?.parent_name || "—"}{r.data?.health && ` · ${healthLbl[r.data.health]}`}{r.submitted_at && ` · הוגש ${heDate(r.submitted_at.slice(0, 10))}`}
+                  </p>
+                </button>
+                <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg ${statusCls[r.status]}`}>{TRIP_STATUS[r.status]}</span>
+                <button onClick={() => setOpenRow(open ? null : r.id)} className="p-2 rounded-xl hover:bg-muted" title="צפייה"><Eye className="w-4 h-4" /></button>
+                <button onClick={() => generateTripPDF(r.data, r.trip)} className="btn-intake bg-primary text-primary-foreground text-xs flex items-center gap-1"><Download className="w-3.5 h-3.5" /> PDF</button>
+                <button onClick={async () => { if (confirm("למחוק?")) { await deleteTrip(r.id); load(); } }} className="p-2 rounded-xl text-destructive hover:bg-destructive/10"><Trash2 className="w-4 h-4" /></button>
+              </div>
+              {open && r.data && (
+                <div className="mt-3 pt-3 border-t border-border text-sm space-y-1.5 text-muted-foreground">
+                  <p><span className="font-medium text-foreground">שם התלמיד/ה:</span> {r.data.student_name || "—"}</p>
+                  {r.data.grade && <p><span className="font-medium text-foreground">כיתה:</span> {r.data.grade}</p>}
+                  {r.trip?.name && <p><span className="font-medium text-foreground">טיול:</span> {r.trip.name}{r.trip.date && ` — ${heDay(r.trip.date)} ${heDate(r.trip.date)}`}</p>}
+                  <p><span className="font-medium text-foreground">שם ההורה:</span> {r.data.parent_name || "—"}{r.data.sign_date && ` · תאריך חתימה ${heDate(r.data.sign_date)}`}</p>
+                  {r.data.health && <p><span className="font-medium text-foreground">הצהרת בריאות:</span> {HEALTH_TEXT[r.data.health]}</p>}
+                  {r.data.remarks && <p><span className="font-medium text-foreground">הערות:</span> {r.data.remarks}</p>}
+                  {r.parent_phone && <p><span className="font-medium text-foreground">טלפון הורה:</span> {r.parent_phone}</p>}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
   /* ---------- trips list ---------- */
   if (!trip) return (
     <div className="space-y-4">
