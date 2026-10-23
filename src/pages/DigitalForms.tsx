@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowLeft, Clock, FileText, Brain, School, Footprints, MapPin } from "lucide-react";
+import { ArrowLeft, HeartPulse, Clock, FileText, Brain, School, Footprints, MapPin } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 import moeLogo from "@/assets/moe-state.png";
 import { ACADEMIC_YEAR } from "@/lib/short-day";
@@ -45,6 +45,13 @@ const FORMS = [
     icon: Brain,
     title: "שאלון רפלקציה אישי — אנשי צוות",
     desc: "גמישות מחשבתית, מיקוד שליטה ומסוגלות עצמית. בסיום מתקבלת תמונת מצב אישית עם דירוגים, חוזקות והמלצות להורדה.",
+    tag: "לצוות בלבד",
+  },
+  {
+    to: "/forms/staff-qol",
+    icon: HeartPulse,
+    title: "שאלון איכות חיים — אנשי צוות",
+    desc: "רווחה, קשרים בצוות, מצב רגשי, אוטונומיה, בריאות ואיזון ותפיסה עצמית. בסיום מתקבלת תמונת מצב אישית עם המלצות להורדה.",
     tag: "לצוות בלבד",
   },
 ];

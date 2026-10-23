@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight, Brain, Clock, Copy, Eye, FileText, ListChecks, School, Settings2, Footprints, MapPin } from "lucide-react";
+import { ArrowRight, Brain, Clock, Copy, Eye, FileText, ListChecks, School, Settings2, Footprints, MapPin, HeartPulse } from "lucide-react";
 import { toast } from "sonner";
 import { copyText, labeledLink } from "@/lib/clipboard";
 import EnrollmentFormsAdmin from "@/components/EnrollmentFormsAdmin";
@@ -22,6 +22,7 @@ const CARDS = [
 ];
 
 const STAFF_LINK = `${APP_URL}/forms/staff-reflection`;
+const STAFF_QOL_LINK = `${APP_URL}/forms/staff-qol`;
 
 const DigitalFormsAdmin = () => {
   const [open, setOpen] = useState<FormKey>(null);
@@ -98,6 +99,25 @@ const DigitalFormsAdmin = () => {
               <p className="text-[10px] text-muted-foreground/70 mt-2 break-all">{STAFF_LINK}</p>
               <span role="button" tabIndex={0}
                 onClick={async (e) => { e.preventDefault(); e.stopPropagation(); toast[(await copyText(labeledLink("שאלון רפלקציה אישי — אנשי צוות", STAFF_LINK))) ? "success" : "error"]("הקישור הועתק"); }}
+                className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-semibold">
+                <Copy className="w-3.5 h-3.5" /> העתקת קישור
+              </span>
+            </div>
+          </div>
+        </a>
+
+        <a href={STAFF_QOL_LINK} target="_blank" rel="noreferrer"
+          className="intake-card-soft text-right hover:border-primary/50 hover:shadow-lg transition-all block">
+          <div className="flex items-start gap-3">
+            <span className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <HeartPulse className="w-6 h-6 text-primary" />
+            </span>
+            <div className="flex-1">
+              <h3 className="font-heading font-semibold text-base leading-tight mb-1">שאלון איכות חיים — אנשי צוות</h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">רווחה, קשרים בצוות, מצב רגשי, אוטונומיה, בריאות ואיזון ותפיסה עצמית — עם תמונת מצב אישית והמלצות להורדה. לשליחה לצוות בוואטסאפ.</p>
+              <p className="text-[10px] text-muted-foreground/70 mt-2 break-all">{STAFF_QOL_LINK}</p>
+              <span role="button" tabIndex={0}
+                onClick={async (e) => { e.preventDefault(); e.stopPropagation(); toast[(await copyText(labeledLink("שאלון איכות חיים — אנשי צוות", STAFF_QOL_LINK))) ? "success" : "error"]("הקישור הועתק"); }}
                 className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-semibold">
                 <Copy className="w-3.5 h-3.5" /> העתקת קישור
               </span>
