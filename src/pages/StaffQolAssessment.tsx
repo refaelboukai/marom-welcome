@@ -65,7 +65,7 @@ const StaffQolAssessment = () => {
         </div>
         ${cards}
         <div data-section style="margin-top:14px;text-align:center;font-size:11px;color:#777;border-top:1px solid #dce8e2;padding-top:10px;">
-          כלי לרפלקציה מקצועית אישית. אינו מהווה אבחון. מרום — בית אקשטיין יבנה.
+          כלי לבחינת איכות חיים אישית. אינו מהווה אבחון. מרום — בית אקשטיין יבנה.
         </div>
       </div>`;
 
@@ -243,7 +243,7 @@ const StaffQolAssessment = () => {
         </div>
 
         <p className="text-[11px] text-muted-foreground text-center mt-5 leading-relaxed">
-          הכלי נועד לרפלקציה מקצועית אישית ואינו מהווה אבחון. התשובות אינן נשמרות במערכת.
+          הכלי נועד לבחינת איכות חיים אישית ואינו מהווה אבחון. התשובות אינן נשמרות במערכת.
         </p>
 
         <button onClick={() => setStage("quiz")} className="mt-4 mx-auto flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
