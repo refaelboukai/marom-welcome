@@ -9,6 +9,7 @@ import ExitAdmin from "@/components/ExitAdmin";
 import TripAdmin from "@/components/TripAdmin";
 import FormEditor from "@/components/FormEditor";
 import { APP_URL } from "@/lib/app-url";
+import { Button } from "@/components/ui/button";
 
 type FormKey = "enrollment" | "short-day" | "inclusion" | "exit" | "trip" | null;
 type Tab = "manage" | "edit" | "preview";
@@ -23,13 +24,15 @@ const CARDS = [
 
 const STAFF_LINK = `${APP_URL}/forms/staff-reflection`;
 const STAFF_QOL_LINK = `${APP_URL}/forms/staff-qol`;
+const STAFF_STUDENT_QOL_LINK = `${APP_URL}/forms/staff-student-qol`;
 
 const DigitalFormsAdmin = () => {
   const [open, setOpen] = useState<FormKey>(null);
   const [tab, setTab] = useState<Tab>("manage");
 
   if (open) {
-    const card = CARDS.find((c) => c.key === open)!;
+    const card = CARDS.find((c) => c.key === open);
+    if (!card) return null;
     const previewUrl = open === "enrollment" ? "/enroll" : open === "inclusion" ? "/forms/inclusion-consent" : open === "exit" ? "/forms/independent-exit" : open === "trip" ? "/forms/trip-consent" : "/forms/short-day";
     const tabs = ([["manage", "ניהול ושליחה", ListChecks], ["edit", "עריכת הטופס", Settings2], ["preview", "תצוגה מקדימה", Eye]] as const)
       .filter(([k]) => k !== "edit" || (open !== "inclusion" && open !== "exit" && open !== "trip"));
@@ -64,6 +67,23 @@ const DigitalFormsAdmin = () => {
     <div>
       <p className="text-sm text-muted-foreground mb-4">בחרו טופס לניהול. הקישורים הציבורים ניתנים לשליחה להורים בוואטסאפ.</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="intake-card-soft text-right">
+          <div className="flex items-start gap-3">
+            <span className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0"><HeartPulse className="w-6 h-6 text-primary" /></span>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-heading font-semibold text-base leading-tight mb-1">שאלון איכות חיים לתלמיד/ה — הערכת צוות</h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">שמונת ממדי איכות החיים מנקודת המבט של הצוות.</p>
+              <p className="text-[10px] text-muted-foreground/70 mt-2 break-all">{STAFF_STUDENT_QOL_LINK}</p>
+              <div className="flex flex-wrap gap-2 mt-3">
+                <Button size="sm" onClick={async () => {
+                  const copied = await copyText(labeledLink("שאלון איכות חיים לתלמיד/ה — הערכת צוות", STAFF_STUDENT_QOL_LINK));
+                  if (copied) toast.success("הקישור הועתק"); else toast.error("לא ניתן להעתיק את הקישור");
+                }}><Copy /> העתקת קישור</Button>
+                <Button size="sm" variant="outline" asChild><a href="/forms/staff-student-qol" target="_blank" rel="noreferrer"><Eye /> פתיחת השאלון</a></Button>
+              </div>
+            </div>
+          </div>
+        </div>
         {CARDS.map((c) => {
           const Icon = c.icon;
           return (
