@@ -40,7 +40,8 @@ const StaffQolAssessment = () => {
           <div style="height:9px;border-radius:9px;background:#eef3f1;overflow:hidden;margin-bottom:10px;">
             <div style="height:9px;width:${d.percent}%;background:${d.color};border-radius:9px;"></div>
           </div>
-          <p style="margin:0 0 8px 0;font-size:13px;line-height:1.7;color:#33443f;">${d.levelText}</p>
+          <p style="margin:0 0 8px 0;font-size:12px;line-height:1.7;color:#4c635c;background:#f6faf8;border-radius:8px;padding:8px 10px;"><b>על התחום:</b> ${d.description}</p>
+          <p style="margin:0 0 8px 0;font-size:13px;line-height:1.7;color:#33443f;"><b>מה עולה מהתשובות:</b> ${d.levelText}</p>
           <p style="margin:0 0 6px 0;font-size:12px;color:#4c635c;"><b>נקודות חוזק:</b> ${d.topItems.join(" · ")}</p>
           <p style="margin:0 0 10px 0;font-size:12px;color:#4c635c;"><b>מוקדי צמיחה:</b> ${d.growthItems.join(" · ")}</p>
           <div style="background:#f6faf8;border-radius:9px;padding:10px 12px;">
@@ -142,6 +143,13 @@ const StaffQolAssessment = () => {
             </div>
           </div>
 
+          {(() => { const d = STAFF_QOL_DOMAINS.find((x) => x.key === pageItems[0]?.domain); return d ? (
+            <div className="intake-card-soft mb-3 border-r-4 animate-fade-in" style={{ borderRightColor: d.color }}>
+              <p className="text-xs text-muted-foreground mb-1">תחום {page + 1} מתוך {TOTAL_PAGES}</p>
+              <h2 className="font-heading font-bold text-base mb-1">{d.label}</h2>
+              <p className="text-sm leading-relaxed">{d.description}</p>
+              <p className="text-xs text-muted-foreground mt-2">ההיגדים הבאים עוסקים בתחום זה. ענו לפי מה שנכון עבורכם כיום.</p>
+            </div>) : null; })()}
           <div className="space-y-2">
             {pageItems.map((item, idx) => (
               <LikertScale
@@ -200,8 +208,8 @@ const StaffQolAssessment = () => {
                 <div className="h-2.5 bg-muted rounded-full overflow-hidden mb-3">
                   <div className="h-full rounded-full transition-all" style={{ width: `${d.percent}%`, background: d.color }} />
                 </div>
-                <p className="text-sm leading-relaxed mb-3">{d.levelText}</p>
-                <p className="text-xs text-muted-foreground mb-3">{d.description}</p>
+                <p className="text-xs text-muted-foreground leading-relaxed mb-2 p-2.5 rounded-xl bg-muted/40"><b>על התחום:</b> {d.description}</p>
+                <p className="text-sm leading-relaxed mb-3"><b>מה עולה מהתשובות:</b> {d.levelText}</p>
 
                 <div className="grid sm:grid-cols-2 gap-3 mb-3">
                   <div className="p-3 rounded-xl bg-success/5 border border-success/10">
