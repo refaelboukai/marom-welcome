@@ -49,6 +49,7 @@ const App = () => {
           <Route path="/forms/short-day" element={<ShortDayRequest />} />
           <Route path="/forms/staff-reflection" element={<StaffSelfAssessment />} />
           <Route path="/forms/staff-qol" element={<StaffQolAssessment />} />
+          <Route path="/forms/staff-student-qol" element={<StaffQolAssessment studentMode />} />
           <Route path="/forms/inclusion-consent" element={<InclusionConsent />} />
           <Route path="/forms/independent-exit" element={<IndependentExit />} />
           <Route path="/forms/trip-consent" element={<TripConsentPage />} />

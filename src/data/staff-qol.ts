@@ -62,7 +62,7 @@ export interface QolDomainResult {
   description: string;
   score: number;
   percent: number;
-  level: "מתפתח" | "מתגבש" | "יציב" | "גבוה";
+  level: "מתפתח" | "מתגבש" | "יציב" | "גבוה" | "אין מידע";
   levelText: string;
   recommendations: string[];
   topItems: string[];
@@ -87,26 +87,36 @@ const RECS: Record<StaffQolDomain, { low: string[]; mid: string[]; high: string[
   rights: { low: ["בררו מי הגורם המתאים לפנייה חסויה בנושא פרטיות או יחס לא הוגן.", "בקשו מידע ברור לגבי זכויותיכם ואפשרויות הפנייה העומדות לרשותכם."], mid: ["הבהירו גבול אישי שחשוב לכם לשמור עליו.", "העלו את דעתכם במסגרת שבה אתם מרגישים בטוחים."], high: ["המשיכו לשמור על גבולות ועל פרטיותכם.", "טפחו שיח מכבד שמאפשר גם דעות שונות."] },
 };
 
-export function computeStaffQolResults(responses: Record<string, number>) {
-  const domains: QolDomainResult[] = STAFF_QOL_DOMAINS.map((d) => {
-    const scored = STAFF_QOL_ITEMS.filter((i) => i.domain === d.key)
-      .filter((i) => typeof responses[i.id] === "number")
+export interface QolProfile {
+  domains: typeof STAFF_QOL_DOMAINS;
+  items: StaffQolItem[];
+  levelText: Record<string, string>;
+  recommendations: typeof RECS;
+}
+
+export function computeStaffQolResults(responses: Record<string, number>, profile?: QolProfile) {
+  const domainDefinitions = profile?.domains ?? STAFF_QOL_DOMAINS;
+  const items = profile?.items ?? STAFF_QOL_ITEMS;
+  const domains: QolDomainResult[] = domainDefinitions.map((d) => {
+    const scored = items.filter((i) => i.domain === d.key)
+      .filter((i) => Number.isInteger(responses[i.id]) && responses[i.id] >= 1 && responses[i.id] <= 5)
       .map((i) => ({ item: i, value: i.isReverse ? 6 - responses[i.id] : responses[i.id] }));
     const score = scored.length ? scored.reduce((s, x) => s + x.value, 0) / scored.length : 0;
     const percent = score ? Math.round(((score - 1) / 4) * 100) : 0;
-    const level: QolDomainResult["level"] = score >= 4.3 ? "גבוה" : score >= 3.6 ? "יציב" : score >= 2.8 ? "מתגבש" : "מתפתח";
+    const level: QolDomainResult["level"] = !scored.length ? "אין מידע" : score >= 4.3 ? "גבוה" : score >= 3.6 ? "יציב" : score >= 2.8 ? "מתגבש" : "מתפתח";
     const bucket = score >= 4.3 ? "high" : score >= 3.2 ? "mid" : "low";
     const sorted = [...scored].sort((a, b) => b.value - a.value);
     return {
       key: d.key, label: d.label, color: d.color, description: d.description,
-      score: Number(score.toFixed(2)), percent, level, levelText: LEVEL_TEXT[level],
-      recommendations: RECS[d.key][bucket],
+      score: Number(score.toFixed(2)), percent, level,
+      levelText: !scored.length ? "אין מספיק מידע להערכת התחום. לא חושב ציון, ואין להסיק מכך על קושי או על חוזקה." : (profile?.levelText ?? LEVEL_TEXT)[level],
+      recommendations: !scored.length ? ["אספו מידע נוסף בשיחה מכבדת לפני קביעת מענה בתחום זה."] : (profile?.recommendations ?? RECS)[d.key][bucket],
       topItems: sorted.slice(0, 2).map((x) => x.item.text),
       growthItems: sorted.slice(-2).reverse().map((x) => x.item.text),
     };
   });
   const valid = domains.filter((d) => d.score > 0);
   const overall = valid.length ? Number((valid.reduce((s, d) => s + d.score, 0) / valid.length).toFixed(2)) : 0;
-  const answered = STAFF_QOL_ITEMS.filter((i) => typeof responses[i.id] === "number").length;
-  return { domains, overall, answered, total: STAFF_QOL_ITEMS.length };
+  const answered = items.filter((i) => Number.isInteger(responses[i.id]) && responses[i.id] >= 1 && responses[i.id] <= 5).length;
+  return { domains, overall, answered, total: items.length };
 }

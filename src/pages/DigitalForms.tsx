@@ -6,6 +6,13 @@ import { ACADEMIC_YEAR } from "@/lib/short-day";
 
 const FORMS = [
   {
+    to: "/forms/staff-student-qol",
+    icon: HeartPulse,
+    title: "שאלון איכות חיים לתלמיד/ה — הערכת צוות",
+    desc: "שמונת ממדי איכות החיים מנקודת המבט של הצוות.",
+    tag: "לצוות בלבד",
+  },
+  {
     to: "/enroll",
     icon: FileText,
     title: "טופס קליטה לתלמיד/ה חדש/ה",
