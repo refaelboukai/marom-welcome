@@ -114,7 +114,7 @@ const DigitalFormsAdmin = () => {
             </span>
             <div className="flex-1">
               <h3 className="font-heading font-semibold text-base leading-tight mb-1">שאלון איכות חיים — אנשי צוות</h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">רווחה, קשרים בצוות, מצב רגשי, אוטונומיה, בריאות ואיזון ותפיסה עצמית — עם תמונת מצב אישית והמלצות להורדה. לשליחה לצוות בוואטסאפ.</p>
+              <p className="text-xs text-muted-foreground leading-relaxed">רווחה רגשית, יחסים בין־אישיים, רווחה חומרית, התפתחות אישית, רווחה פיזית, הכוונה עצמית, הכלה חברתית וזכויות — עם תמונת מצב אישית והמלצות להורדה. לשליחה לצוות בוואטסאפ.</p>
               <p className="text-[10px] text-muted-foreground/70 mt-2 break-all">{STAFF_QOL_LINK}</p>
               <span role="button" tabIndex={0}
                 onClick={async (e) => { e.preventDefault(); e.stopPropagation(); toast[(await copyText(labeledLink("שאלון איכות חיים — אנשי צוות", STAFF_QOL_LINK))) ? "success" : "error"]("הקישור הועתק"); }}
