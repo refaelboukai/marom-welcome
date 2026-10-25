@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
 import LikertScale from "@/components/LikertScale";
 import { renderHTMLToPDF } from "@/lib/pdf-export";
 import logo from "@/assets/logo.jpeg";
@@ -7,12 +8,12 @@ import {
   STAFF_QOL_DOMAINS,
   computeStaffQolResults,
 } from "@/data/staff-qol";
-import { Brain, Compass, Sparkles, Heart, Users, Activity, ChevronRight, Download, Loader2, RotateCcw, CheckCircle2 } from "lucide-react";
+import { Brain, Compass, Sparkles, Heart, Users, Activity, Wallet, ShieldCheck, ChevronRight, Download, Loader2, RotateCcw, CheckCircle2 } from "lucide-react";
 
 const ITEMS_PER_PAGE = 4;
 const TOTAL_PAGES = Math.ceil(STAFF_QOL_ITEMS.length / ITEMS_PER_PAGE);
 
-const DOMAIN_ICONS = { general_wellbeing: Heart, social: Users, emotional: Brain, independence: Compass, health_lifestyle: Activity, self_view: Sparkles } as const;
+const DOMAIN_ICONS = { emotional: Heart, interpersonal: Users, material: Wallet, development: Sparkles, physical: Activity, self_determination: Compass, inclusion: Brain, rights: ShieldCheck } as const;
 
 const StaffQolAssessment = () => {
   const [stage, setStage] = useState<"intro" | "quiz" | "results">("intro");
@@ -55,9 +56,9 @@ const StaffQolAssessment = () => {
       const html = `
       <div style="font-family:'Assistant','Heebo',Arial,sans-serif;direction:rtl;padding:34px 30px;background:#f4f9f6;color:#1a2b26;">
         <div data-section style="text-align:center;border-bottom:3px solid #4a9a7a;padding-bottom:16px;margin-bottom:20px;">
-          <img src="${window.location.origin}/logo.png" style="width:76px;height:76px;object-fit:contain;margin:0 auto 8px;display:block;" onerror="this.style.display='none'" />
+          <img src="${logo}" style="width:76px;height:76px;object-fit:contain;margin:0 auto 8px;display:block;" onerror="this.style.display='none'" />
           <h1 style="margin:0;font-size:23px;font-weight:800;color:#173f33;">איכות חיים — תמונת מצב אישית לאנשי צוות</h1>
-          <p style="margin:6px 0 0;font-size:13px;color:#4a9a7a;font-weight:700;">רווחה · קשרים בצוות · רגשי · אוטונומיה · בריאות ואיזון · תפיסה עצמית</p>
+          <p style="margin:6px 0 0;font-size:13px;color:#4a9a7a;font-weight:700;">${STAFF_QOL_DOMAINS.map((d) => d.label).join(" · ")}</p>
           <p style="margin:6px 0 0;font-size:11px;color:#777;">${name ? name + " · " : ""}${new Date().toLocaleDateString("he-IL")}</p>
         </div>
         <div data-section style="background:#fff;border-radius:12px;padding:14px 16px;margin-bottom:14px;text-align:center;">
@@ -65,7 +66,7 @@ const StaffQolAssessment = () => {
         </div>
         ${cards}
         <div data-section style="margin-top:14px;text-align:center;font-size:11px;color:#777;border-top:1px solid #dce8e2;padding-top:10px;">
-          כלי לבחינת איכות חיים אישית. אינו מהווה אבחון. מרום — בית אקשטיין יבנה.
+          דיווח עצמי לפי שמונת ממדי איכות החיים, בניסוח מותאם לצוות. אינו שאלון מדידה מתוקף ואינו אבחון. מרום — בית אקשטיין יבנה.
         </div>
       </div>`;
 
@@ -83,8 +84,9 @@ const StaffQolAssessment = () => {
           <div className="text-center mb-7">
             <img src={logo} alt="מרום" className="w-16 h-16 rounded-2xl object-cover mx-auto mb-3" />
             <h1 className="font-heading font-bold text-2xl leading-tight">שאלון איכות חיים לאנשי צוות</h1>
+            <p className="text-sm text-primary mt-2">שמונת ממדי איכות החיים · החיים האישיים וסביבת העבודה</p>
             <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-              {STAFF_QOL_ITEMS.length} היגדים קצרים · כ-5 דקות · התוצאות מוצגות לך בלבד ואינן נשמרות במערכת.
+              {STAFF_QOL_ITEMS.length} היגדים קצרים · כ-7 דקות · התוצאות מוצגות לך בלבד ואינן נשמרות במערכת.
             </p>
           </div>
 
@@ -108,9 +110,9 @@ const StaffQolAssessment = () => {
               placeholder="שם פרטי ומשפחה" />
           </div>
 
-          <button onClick={() => setStage("quiz")} className="btn-intake bg-primary text-primary-foreground w-full shadow-md">
+          <Button onClick={() => setStage("quiz")} className="btn-intake bg-primary text-primary-foreground w-full shadow-md">
             להתחלת השאלון
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -125,7 +127,7 @@ const StaffQolAssessment = () => {
           <div className="flex items-center gap-2 mb-4">
             <img src={logo} alt="מרום" className="h-9 rounded-lg" />
             <div>
-              <p className="text-xs text-muted-foreground">איכות חיים בעבודה</p>
+              <p className="text-xs text-muted-foreground">{STAFF_QOL_DOMAINS.find((d) => d.key === pageItems[0]?.domain)?.label}</p>
               <p className="font-heading font-bold text-sm">{name || "איש/אשת צוות"}</p>
             </div>
           </div>
@@ -154,10 +156,10 @@ const StaffQolAssessment = () => {
 
           <div className="flex gap-3 mt-6">
             {page > 0 && (
-              <button onClick={() => { setPage((p) => p - 1); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                className="btn-intake bg-secondary text-secondary-foreground flex-1">חזרה</button>
+              <Button onClick={() => { setPage((p) => p - 1); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                className="btn-intake bg-secondary text-secondary-foreground flex-1">חזרה</Button>
             )}
-            <button
+            <Button
               disabled={!pageDone}
               onClick={() => {
                 if (page < TOTAL_PAGES - 1) { setPage((p) => p + 1); window.scrollTo({ top: 0, behavior: "smooth" }); }
@@ -165,7 +167,7 @@ const StaffQolAssessment = () => {
               }}
               className={`btn-intake flex-1 ${pageDone ? "bg-primary text-primary-foreground shadow-md" : "bg-muted text-muted-foreground cursor-not-allowed"}`}>
               {page === TOTAL_PAGES - 1 ? "הצג תוצאות" : "המשך"}
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -189,7 +191,7 @@ const StaffQolAssessment = () => {
             const Icon = DOMAIN_ICONS[d.key];
             return (
               <div key={d.key} className="intake-card border-r-4" style={{ borderRightColor: d.color }}>
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                   <h2 className="font-heading font-semibold flex items-center gap-2 text-base">
                     <Icon className="w-5 h-5" style={{ color: d.color }} /> {d.label}
                   </h2>
@@ -233,22 +235,22 @@ const StaffQolAssessment = () => {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 mt-6">
-          <button onClick={handleDownload} disabled={exporting} className="btn-intake bg-primary text-primary-foreground flex-1 gap-2 shadow-md">
+          <Button onClick={handleDownload} disabled={exporting} className="btn-intake bg-primary text-primary-foreground flex-1 gap-2 shadow-md">
             {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} הורדת דוח מעוצב
-          </button>
-          <button onClick={() => { setResponses({}); setPage(0); setStage("intro"); window.scrollTo({ top: 0 }); }}
+          </Button>
+          <Button onClick={() => { setResponses({}); setPage(0); setStage("intro"); window.scrollTo({ top: 0 }); }}
             className="btn-intake bg-secondary text-secondary-foreground flex-1 gap-2">
             <RotateCcw className="w-4 h-4" /> מילוי מחדש
-          </button>
+          </Button>
         </div>
 
         <p className="text-[11px] text-muted-foreground text-center mt-5 leading-relaxed">
-          הכלי נועד לבחינת איכות חיים אישית ואינו מהווה אבחון. התשובות אינן נשמרות במערכת.
+          דיווח עצמי לפי שמונת ממדי איכות החיים של Schalock ו־Verdugo, בניסוח מותאם לצוות. אינו שאלון מדידה מתוקף ואינו אבחון. התשובות אינן נשמרות במערכת.
         </p>
 
-        <button onClick={() => setStage("quiz")} className="mt-4 mx-auto flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+        <Button onClick={() => setStage("quiz")} className="mt-4 mx-auto flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
           <ChevronRight className="w-3.5 h-3.5" /> חזרה לשאלון
-        </button>
+        </Button>
       </div>
     </div>
   );
