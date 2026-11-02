@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { getOnlyCoach } from "@/lib/forms-visibility";
 import { ArrowLeft, HeartPulse, Clock, FileText, Brain, School, Footprints, MapPin, MessageCircleHeart } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 import moeLogo from "@/assets/moe-state.png";
