@@ -103,7 +103,7 @@ const ParentCoach = () => {
       <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
         <img src={logo} alt="בית אקשטיין" className="w-10 h-10 rounded-xl object-cover" />
         <div className="flex-1">
-          <h1 className="font-heading font-bold text-base leading-tight">רגע לפני — מרחב לתקשורת מקרבת</h1>
+          <h1 className="font-heading font-bold text-base leading-tight">שיחת תרגול</h1>
           <p className="text-[11px] text-muted-foreground">תרגול תקשורת מקרבת להורים · בית ספר מרום</p>
         </div>
         {token && me && (
