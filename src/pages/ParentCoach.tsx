@@ -1,0 +1,270 @@
+import { useEffect, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import { ArrowRight, Eye, Loader2, LogOut, MessageCircleHeart, PenLine, Send, Users, HeartHandshake, Wrench, Flag } from "lucide-react";
+import { toast } from "sonner";
+import logo from "@/assets/logo.jpeg";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { coachApi, coachStream, MODE_LABELS, TOKEN_KEY } from "@/lib/parent-coach";
+import { copyText } from "@/lib/clipboard";
+
+type Msg = { role: "user" | "assistant"; content: string };
+type Conv = { id: string; mode: string; title: string; feedback: string | null; ended_at: string | null; created_at: string };
+type Scenario = { id: string; title: string; opening: string };
+
+const MODE_ICONS: Record<string, any> = { draft: PenLine, simulate: Users, reflect: HeartHandshake, repair: Wrench };
+const PLACEHOLDER: Record<string, string> = {
+  draft: "הדבק כאן את הטיוטה שרצית לשלוח לבן…",
+  simulate: "איך היית מגיב?",
+  reflect: "ספר בקצרה מה קרה…",
+  repair: "מה נאמר או נעשה?",
+};
+const SUPERVISION = "מרחב תרגול מלווה: מנהל המערכת יכול לקרוא את השיחות שלך כאן.";
+
+const ParentCoach = () => {
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_KEY));
+  const [me, setMe] = useState<{ name: string; consent_at: string | null } | null>(null);
+  const [convs, setConvs] = useState<Conv[]>([]);
+  const [scenarios, setScenarios] = useState<Scenario[]>([]);
+  const [aiEnabled, setAiEnabled] = useState(true);
+  const [code, setCode] = useState("");
+  const [name, setName] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [pickScenario, setPickScenario] = useState(false);
+  const [active, setActive] = useState<Conv | null>(null);
+  const [msgs, setMsgs] = useState<Msg[]>([]);
+  const [text, setText] = useState("");
+  const [streaming, setStreaming] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const endRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const load = async (t = token) => {
+    if (!t) return;
+    try {
+      const d = await coachApi({ action: "me", token: t });
+      setMe(d.me); setConvs(d.conversations ?? []); setScenarios(d.scenarios ?? []); setAiEnabled(d.ai_enabled);
+    } catch (e: any) {
+      if (e.status === 401) { localStorage.removeItem(TOKEN_KEY); setToken(null); }
+      else toast.error(e.message);
+    }
+  };
+  useEffect(() => { load(); }, [token]);
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs, streaming, feedback]);
+
+  const login = async () => {
+    setBusy(true);
+    try {
+      const d = await coachApi({ action: "login", code, name });
+      localStorage.setItem(TOKEN_KEY, d.participant.token);
+      setToken(d.participant.token);
+    } catch (e: any) { toast.error(e.message); } finally { setBusy(false); }
+  };
+
+  const openConv = async (c: Conv) => {
+    const d = await coachApi({ action: "messages", token, conversation_id: c.id });
+    setActive(d.conversation); setMsgs(d.messages ?? []); setFeedback(d.conversation.feedback); setError(null);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  };
+
+  const start = async (mode: string, scenario_id?: string) => {
+    setBusy(true);
+    try {
+      const d = await coachApi({ action: "start", token, mode, scenario_id });
+      setPickScenario(false);
+      await openConv(d.conversation);
+    } catch (e: any) { toast.error(e.message); } finally { setBusy(false); }
+  };
+
+  const send = async (action: "chat" | "finish") => {
+    if (!active || streaming !== null) return;
+    const t = text.trim();
+    if (action === "chat" && !t) return;
+    setError(null);
+    if (action === "chat") { setMsgs((m) => [...m, { role: "user", content: t }]); setText(""); }
+    setStreaming("");
+    try {
+      const full = await coachStream({ action, token, conversation_id: active.id, text: t }, setStreaming);
+      if (action === "chat") setMsgs((m) => [...m, { role: "assistant", content: full }]);
+      else { setFeedback(full); load(); }
+    } catch (e: any) { setError(e.message); }
+    finally { setStreaming(null); setTimeout(() => inputRef.current?.focus(), 50); }
+  };
+
+  const header = (
+    <div className="bg-card border-b border-border">
+      <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
+        <img src={logo} alt="בית אקשטיין" className="w-10 h-10 rounded-xl object-cover" />
+        <div className="flex-1">
+          <h1 className="font-heading font-bold text-base leading-tight">רגע לפני — מרחב לתקשורת מקרבת</h1>
+          <p className="text-[11px] text-muted-foreground">תרגול תקשורת מקרבת להורים · בית ספר מרום</p>
+        </div>
+        {token && me && (
+          <Button size="sm" variant="ghost" onClick={() => { localStorage.removeItem(TOKEN_KEY); setToken(null); setMe(null); setActive(null); }}>
+            <LogOut /> יציאה
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+
+  const wrap = (c: React.ReactNode) => (
+    <div dir="rtl" className="min-h-screen bg-gradient-to-b from-primary/5 to-background">{header}<div className="max-w-3xl mx-auto px-4 py-6">{c}</div></div>
+  );
+
+  if (!token) return wrap(
+    <div className="intake-card-soft max-w-md mx-auto space-y-4">
+      <h2 className="font-heading font-bold text-lg">כניסה למרחב התרגול</h2>
+      <p className="text-sm text-muted-foreground">הזינו את קוד הכניסה שקיבלתם מבית הספר ואת שמכם.</p>
+      <Input inputMode="numeric" placeholder="קוד כניסה" value={code} onChange={(e) => setCode(e.target.value)} />
+      <Input placeholder="שם ההורה" value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && login()} />
+      <Button className="w-full" disabled={busy || !code || name.trim().length < 2} onClick={login}>
+        {busy && <Loader2 className="animate-spin" />} כניסה
+      </Button>
+    </div>
+  );
+
+  if (!me) return wrap(<div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary" /></div>);
+
+  if (!me.consent_at) return wrap(
+    <div className="intake-card-soft space-y-4">
+      <h2 className="font-heading font-bold text-lg">לפני שמתחילים, {me.name}</h2>
+      <div className="rounded-xl bg-primary/10 border border-primary/30 p-4 text-sm leading-relaxed">
+        זהו מרחב תרגול מלווה. מנהל המרחב יכול לצפות בשיחות שלך עם הכלי, בהודעות שתזין, בהצעות שתקבל ובנתוני השימוש. המרחב אינו יומן פרטי ואינו מנוטר בהכרח בזמן אמת.
+      </div>
+      <ul className="text-sm text-muted-foreground space-y-1.5 list-disc pr-5">
+        <li><b>מנהל מלווה:</b> רפאל בוקעי, מנהל בית ספר מרום.</li>
+        <li><b>מה נשמר:</b> השם שהזנת, השיחות והמשוב — לצורך ליווי ושיפור התרגול.</li>
+        <li><b>תקופת שמירה:</b> עד סוף שנת הלימודים, אלא אם תבקש מחיקה מוקדמת מהמנהל.</li>
+        <li>ההודעות מעובדות על ידי שירות תשובות חכם חיצוני לצורך יצירת המשוב.</li>
+        <li>זהו כלי תרגול — לא טיפול, אבחון או שירות חירום. במצב חירום: מד״א 101, משטרה 100, ער״ן 1201.</li>
+        <li>אין שליחה לבן דרך הכלי, ואין גישה לטלפון או לוואטסאפ שלך.</li>
+      </ul>
+      <p className="text-xs text-muted-foreground">אין צורך לכתוב את שם הבן או פרטים מזהים.</p>
+      <Button onClick={async () => { await coachApi({ action: "consent", token }); load(); }}>קראתי ואני מאשר</Button>
+    </div>
+  );
+
+  if (active) {
+    const Icon = MODE_ICONS[active.mode] ?? MessageCircleHeart;
+    const ended = !!feedback;
+    return wrap(
+      <div className="space-y-3">
+        <button onClick={() => { setActive(null); load(); }} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary">
+          <ArrowRight className="w-4 h-4" /> חזרה למסך הבית
+        </button>
+        <div className="flex items-center gap-2"><Icon className="w-5 h-5 text-primary" /><h2 className="font-heading font-bold">{active.title}</h2></div>
+        <p className="text-[11px] text-muted-foreground flex items-center gap-1"><Eye className="w-3.5 h-3.5" /> {SUPERVISION}</p>
+        {active.mode === "simulate" && <p className="text-xs rounded-lg bg-muted p-2">זהו תרחיש דמיוני לתרגול. הוא אינו תחזית לתגובת הבן שלך.</p>}
+        <div className="space-y-3 min-h-[200px]">
+          {msgs.map((m, i) => <Bubble key={i} m={m} canCopy={active.mode !== "simulate"} />)}
+          {streaming !== null && (streaming ? <Bubble m={{ role: "assistant", content: streaming }} /> :
+            <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="w-4 h-4 animate-spin" /> חושב…</div>)}
+          {error && <div className="rounded-xl border border-destructive/40 bg-destructive/10 text-destructive text-sm p-3">{error}</div>}
+          {feedback && (
+            <div className="rounded-2xl border-2 border-primary/40 bg-primary/5 p-4">
+              <h3 className="font-heading font-semibold mb-2">משוב מסכם</h3>
+              <div className="prose prose-sm max-w-none text-foreground"><ReactMarkdown>{feedback}</ReactMarkdown></div>
+            </div>
+          )}
+          <div ref={endRef} />
+        </div>
+        {!ended && (
+          !aiEnabled ? <p className="text-sm text-destructive">יצירת תשובות מושבתת כרגע על ידי מנהל המערכת.</p> :
+          <div className="sticky bottom-0 bg-background/95 pt-2 pb-3 space-y-2">
+            <div className="flex gap-2 items-end">
+              <Textarea ref={inputRef} autoFocus rows={2} value={text} placeholder={PLACEHOLDER[active.mode]}
+                onChange={(e) => setText(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send("chat"); } }} className="resize-none" />
+              <Button size="icon" aria-label="שליחה" disabled={!text.trim() || streaming !== null} onClick={() => send("chat")}><Send /></Button>
+            </div>
+            {msgs.some((m) => m.role === "user") && (
+              <Button variant="outline" size="sm" disabled={streaming !== null} onClick={() => send("finish")}><Flag /> סיום וקבלת משוב</Button>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (pickScenario) return wrap(
+    <div className="space-y-3">
+      <button onClick={() => setPickScenario(false)} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary"><ArrowRight className="w-4 h-4" /> חזרה</button>
+      <h2 className="font-heading font-bold">בחר תרחיש לתרגול</h2>
+      <p className="text-xs rounded-lg bg-muted p-2">זהו תרחיש דמיוני לתרגול. הוא אינו תחזית לתגובת הבן שלך.</p>
+      <div className="grid sm:grid-cols-2 gap-3">
+        {scenarios.map((s) => (
+          <button key={s.id} disabled={busy} onClick={() => start("simulate", s.id)} className="intake-card-soft text-right hover:border-primary/50">
+            <h3 className="font-semibold">{s.title}</h3>
+            {s.opening && <p className="text-xs text-muted-foreground mt-1">{s.opening}</p>}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
+  const finished = convs.filter((c) => c.feedback);
+  return wrap(
+    <div className="space-y-6">
+      <div>
+        <h2 className="font-heading font-bold text-lg">שלום {me.name}, במה נתרגל היום?</h2>
+        <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-1"><Eye className="w-3.5 h-3.5" /> {SUPERVISION}</p>
+      </div>
+      {!aiEnabled && <p className="text-sm text-destructive">יצירת תשובות מושבתת כרגע על ידי מנהל המערכת.</p>}
+      <div className="grid sm:grid-cols-2 gap-3">
+        {Object.entries(MODE_LABELS).map(([k, l]) => {
+          const Icon = MODE_ICONS[k];
+          return (
+            <button key={k} disabled={busy || !aiEnabled} onClick={() => k === "simulate" ? setPickScenario(true) : start(k)}
+              className="intake-card-soft text-right hover:border-primary/50 hover:shadow-lg transition-all flex items-center gap-3 disabled:opacity-50">
+              <span className="w-11 h-11 rounded-2xl bg-primary/10 flex items-center justify-center"><Icon className="w-5 h-5 text-primary" /></span>
+              <span className="font-semibold">{l}</span>
+            </button>
+          );
+        })}
+      </div>
+      {finished.length > 0 && (
+        <section className="space-y-2">
+          <h3 className="font-heading font-semibold">מה אני לומד על התקשורת שלי</h3>
+          {finished.slice(0, 3).map((c) => (
+            <div key={c.id} className="rounded-xl border border-border bg-card p-3">
+              <p className="text-xs text-muted-foreground mb-1">{c.title} · {new Date(c.created_at).toLocaleDateString("he-IL")}</p>
+              <div className="prose prose-sm max-w-none text-foreground"><ReactMarkdown>{c.feedback!}</ReactMarkdown></div>
+            </div>
+          ))}
+        </section>
+      )}
+      {convs.length > 0 && (
+        <section className="space-y-2">
+          <h3 className="font-heading font-semibold">התרגולים שלי</h3>
+          {convs.map((c) => (
+            <button key={c.id} onClick={() => openConv(c)} className="w-full text-right rounded-xl border border-border bg-card p-3 hover:border-primary/40 flex justify-between">
+              <span className="text-sm">{c.title}</span>
+              <span className="text-xs text-muted-foreground">{new Date(c.created_at).toLocaleDateString("he-IL")}{c.feedback ? " · הושלם" : ""}</span>
+            </button>
+          ))}
+        </section>
+      )}
+    </div>
+  );
+};
+
+const Bubble = ({ m, canCopy }: { m: Msg; canCopy?: boolean }) =>
+  m.role === "user" ? (
+    <div className="flex justify-start"><div className="max-w-[85%] rounded-2xl bg-primary text-primary-foreground px-4 py-2 text-sm whitespace-pre-wrap">{m.content}</div></div>
+  ) : (
+    <div>
+      <div className="prose prose-sm max-w-none text-foreground"><ReactMarkdown>{m.content}</ReactMarkdown></div>
+      {canCopy && /אפשר לנסח כך/.test(m.content) && (
+        <button className="text-xs text-primary mt-1 underline" onClick={async () => {
+          const match = m.content.match(/אפשר לנסח כך\**\s*\n+([\s\S]*?)(\n\n|$)/);
+          const ok = await copyText((match?.[1] ?? m.content).replace(/[״"*]/g, "").trim());
+          toast[ok ? "success" : "error"](ok ? "הנוסח הועתק — ההעתקה אינה שליחה" : "לא ניתן להעתיק");
+        }}>העתקת הנוסח</button>
+      )}
+    </div>
+  );
+
+export default ParentCoach;
