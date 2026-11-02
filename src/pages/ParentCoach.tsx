@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { ArrowRight, Eye, Loader2, LogOut, MessageCircleHeart, PenLine, Send, Users, HeartHandshake, Wrench, Flag } from "lucide-react";
+import { ArrowRight, Eye, Loader2, LogOut, MessageCircleHeart, PenLine, Send, Users, HeartHandshake, Wrench, Flag, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.jpeg";
 import { Button } from "@/components/ui/button";
