@@ -24,13 +24,15 @@ const SUPERVISION = "מרחב תרגול מלווה: מנהל המערכת יכ�
 
 const ParentCoach = () => {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_KEY));
-  const [me, setMe] = useState<{ name: string; child_name?: string; consent_at: string | null } | null>(null);
+  const [me, setMe] = useState<{ name: string; child_name?: string; child_gender?: string; parent_role?: string; consent_at: string | null } | null>(null);
   const [convs, setConvs] = useState<Conv[]>([]);
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [aiEnabled, setAiEnabled] = useState(true);
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
   const [child, setChild] = useState("");
+  const [role, setRole] = useState<"father" | "mother">("father");
+  const [gender, setGender] = useState<"son" | "daughter">("son");
   const [busy, setBusy] = useState(false);
   const [pickScenario, setPickScenario] = useState(false);
   const [active, setActive] = useState<Conv | null>(null);
@@ -58,7 +60,7 @@ const ParentCoach = () => {
   const login = async () => {
     setBusy(true);
     try {
-      const d = await coachApi({ action: "login", code, name, child_name: child });
+      const d = await coachApi({ action: "login", code, name, child_name: child, parent_role: role, child_gender: gender });
       localStorage.setItem(TOKEN_KEY, d.participant.token);
       setToken(d.participant.token);
     } catch (e: any) { toast.error(e.message); } finally { setBusy(false); }
@@ -118,10 +120,12 @@ const ParentCoach = () => {
   if (!token) return wrap(
     <div className="intake-card-soft max-w-md mx-auto space-y-4">
       <h2 className="font-heading font-bold text-lg">כניסה למרחב התרגול</h2>
-      <p className="text-sm text-muted-foreground">הזינו את קוד הכניסה, את שמכם ואת שם הבן.</p>
+      <p className="text-sm text-muted-foreground">הזינו את קוד הכניסה, את שמכם ואת שם הילד/ה.</p>
       <Input inputMode="numeric" placeholder="קוד כניסה" value={code} onChange={(e) => setCode(e.target.value)} />
+      <Seg value={role} onChange={setRole as any} options={[["father", "אבא"], ["mother", "אמא"]]} />
       <Input placeholder="שם ההורה" value={name} onChange={(e) => setName(e.target.value)} />
-      <Input placeholder="שם הבן" value={child} onChange={(e) => setChild(e.target.value)} onKeyDown={(e) => e.key === "Enter" && login()} />
+      <Seg value={gender} onChange={setGender as any} options={[["son", "בן"], ["daughter", "בת"]]} />
+      <Input placeholder={gender === "daughter" ? "שם הבת" : "שם הבן"} value={child} onChange={(e) => setChild(e.target.value)} onKeyDown={(e) => e.key === "Enter" && login()} />
       <Button className="w-full" disabled={busy || !code || name.trim().length < 2 || child.trim().length < 2} onClick={login}>
         {busy && <Loader2 className="animate-spin" />} כניסה
       </Button>
@@ -133,7 +137,7 @@ const ParentCoach = () => {
   if (!me.consent_at) return wrap(
     <div className="intake-card-soft space-y-4">
       <h2 className="font-heading font-bold text-lg">שלום {me.name}</h2>
-      <p className="text-sm leading-relaxed">זו שיחת תרגול בלבד — הבן בתרגול הוא דמות דמיונית, לא {me.child_name || "הבן"} האמיתי. מנהל המערכת יכול לקרוא את השיחות.</p>
+      <p className="text-sm leading-relaxed">זו שיחת תרגול בלבד — {me.child_gender === "daughter" ? "הבת בתרגול היא דמות דמיונית, לא" : "הבן בתרגול הוא דמות דמיונית, לא"} {me.child_name} {me.child_gender === "daughter" ? "האמיתית" : "האמיתי"}. מנהל המערכת יכול לקרוא את השיחות.</p>
       <Button onClick={async () => { await coachApi({ action: "consent", token }); load(); }}>קדימה לתרגול</Button>
     </div>
   );
@@ -148,7 +152,7 @@ const ParentCoach = () => {
         </button>
         <div className="flex items-center gap-2"><Icon className="w-5 h-5 text-primary" /><h2 className="font-heading font-bold">{active.title}</h2></div>
         <p className="text-[11px] text-muted-foreground flex items-center gap-1"><Eye className="w-3.5 h-3.5" /> {SUPERVISION}</p>
-        {active.mode === "simulate" && <p className="text-xs rounded-lg bg-muted p-2">זהו תרחיש דמיוני לתרגול. הוא אינו תחזית לתגובת הבן שלך.</p>}
+        {active.mode === "simulate" && <p className="text-xs rounded-lg bg-muted p-2">זהו תרחיש דמיוני לתרגול. הוא אינו תחזית לתגובה של {me.child_name || "הילד/ה"}.</p>}
         <div className="space-y-3 min-h-[200px]">
           {msgs.map((m, i) => <Bubble key={i} m={m} canCopy={active.mode !== "simulate"} />)}
           {streaming !== null && (streaming ? <Bubble m={{ role: "assistant", content: streaming }} /> :
@@ -184,7 +188,7 @@ const ParentCoach = () => {
     <div className="space-y-3">
       <button onClick={() => setPickScenario(false)} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary"><ArrowRight className="w-4 h-4" /> חזרה</button>
       <h2 className="font-heading font-bold">בחר תרחיש לתרגול</h2>
-      <p className="text-xs rounded-lg bg-muted p-2">זהו תרחיש דמיוני לתרגול. הוא אינו תחזית לתגובת הבן שלך.</p>
+      <p className="text-xs rounded-lg bg-muted p-2">זהו תרחיש דמיוני לתרגול. הוא אינו תחזית לתגובה של {me.child_name || "הילד/ה"}.</p>
       <div className="grid sm:grid-cols-2 gap-3">
         {scenarios.map((s) => (
           <button key={s.id} disabled={busy} onClick={() => start("simulate", s.id)} className="intake-card-soft text-right hover:border-primary/50">
@@ -241,6 +245,15 @@ const ParentCoach = () => {
     </div>
   );
 };
+
+const Seg = ({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: [string, string][] }) => (
+  <div className="grid grid-cols-2 gap-2">
+    {options.map(([k, l]) => (
+      <button key={k} type="button" onClick={() => onChange(k)}
+        className={`rounded-xl border-2 py-2 text-sm font-medium ${value === k ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border"}`}>{l}</button>
+    ))}
+  </div>
+);
 
 const Bubble = ({ m, canCopy }: { m: Msg; canCopy?: boolean }) =>
   m.role === "user" ? (

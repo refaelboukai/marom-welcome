@@ -722,32 +722,38 @@ export type Database = {
       parent_coach_participants: {
         Row: {
           active: boolean
+          child_gender: string
           child_name: string
           consent_at: string | null
           created_at: string
           id: string
           last_seen_at: string
           name: string
+          parent_role: string
           token: string
         }
         Insert: {
           active?: boolean
+          child_gender?: string
           child_name?: string
           consent_at?: string | null
           created_at?: string
           id?: string
           last_seen_at?: string
           name: string
+          parent_role?: string
           token?: string
         }
         Update: {
           active?: boolean
+          child_gender?: string
           child_name?: string
           consent_at?: string | null
           created_at?: string
           id?: string
           last_seen_at?: string
           name?: string
+          parent_role?: string
           token?: string
         }
         Relationships: []

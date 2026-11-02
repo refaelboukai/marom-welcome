@@ -1,0 +1,1 @@
+ALTER TABLE public.parent_coach_participants ADD COLUMN parent_role text NOT NULL DEFAULT 'father', ADD COLUMN child_gender text NOT NULL DEFAULT 'son';
