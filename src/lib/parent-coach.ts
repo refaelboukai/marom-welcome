@@ -7,6 +7,7 @@ export const MODE_LABELS: Record<string, string> = {
   simulate: "אני רוצה לתרגל שיחה",
   reflect: "אני צריך רגע להבין מה עובר עליי",
   repair: "אמרתי משהו פוגע — איך מתקנים?",
+  learn: "רוצה להבין לעומק — הסברים על גיל ההתבגרות",
 };
 
 const headers = { "Content-Type": "application/json", apikey: KEY, Authorization: `Bearer ${KEY}` };
