@@ -114,6 +114,8 @@ const ParentCoach = () => {
     </div>
   );
 
+  const g = (t: string) => genderize(t, me?.parent_role, me?.child_gender);
+  const ph = (m: string) => { const mom = me?.parent_role === "mother"; const girl = me?.child_gender === "daughter"; const map: Record<string, string> = { draft: `${mom ? "הדביקי" : "הדבק"} כאן את הטיוטה שרצית לשלוח ${girl ? "לבת" : "לבן"}…`, simulate: mom ? "איך היית מגיבה?" : "איך היית מגיב?", reflect: mom ? "ספרי בקצרה מה קרה…" : "ספר בקצרה מה קרה…", repair: "מה נאמר או נעשה?" }; return map[m] ?? PLACEHOLDER[m]; };
   const wrap = (c: React.ReactNode) => (
     <div dir="rtl" className="min-h-screen bg-gradient-to-b from-primary/5 to-background">{header}<div className="max-w-3xl mx-auto px-4 py-6">{c}</div></div>
   );
@@ -172,7 +174,7 @@ const ParentCoach = () => {
           !aiEnabled ? <p className="text-sm text-destructive">יצירת תשובות מושבתת כרגע על ידי מנהל המערכת.</p> :
           <div className="sticky bottom-0 bg-background/95 pt-2 pb-3 space-y-2">
             <div className="flex gap-2 items-end">
-              <Textarea ref={inputRef} autoFocus rows={2} value={text} placeholder={PLACEHOLDER[active.mode]}
+              <Textarea ref={inputRef} autoFocus rows={2} value={text} placeholder={ph(active.mode)}
                 onChange={(e) => setText(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send("chat"); } }} className="resize-none" />
               <Button size="icon" aria-label="שליחה" disabled={!text.trim() || streaming !== null} onClick={() => send("chat")}><Send /></Button>
