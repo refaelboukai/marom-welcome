@@ -24,12 +24,13 @@ const SUPERVISION = "מרחב תרגול מלווה: מנהל המערכת יכ�
 
 const ParentCoach = () => {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_KEY));
-  const [me, setMe] = useState<{ name: string; consent_at: string | null } | null>(null);
+  const [me, setMe] = useState<{ name: string; child_name?: string; consent_at: string | null } | null>(null);
   const [convs, setConvs] = useState<Conv[]>([]);
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [aiEnabled, setAiEnabled] = useState(true);
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
+  const [child, setChild] = useState("");
   const [busy, setBusy] = useState(false);
   const [pickScenario, setPickScenario] = useState(false);
   const [active, setActive] = useState<Conv | null>(null);
@@ -57,7 +58,7 @@ const ParentCoach = () => {
   const login = async () => {
     setBusy(true);
     try {
-      const d = await coachApi({ action: "login", code, name });
+      const d = await coachApi({ action: "login", code, name, child_name: child });
       localStorage.setItem(TOKEN_KEY, d.participant.token);
       setToken(d.participant.token);
     } catch (e: any) { toast.error(e.message); } finally { setBusy(false); }
@@ -117,10 +118,11 @@ const ParentCoach = () => {
   if (!token) return wrap(
     <div className="intake-card-soft max-w-md mx-auto space-y-4">
       <h2 className="font-heading font-bold text-lg">כניסה למרחב התרגול</h2>
-      <p className="text-sm text-muted-foreground">הזינו את קוד הכניסה שקיבלתם מבית הספר ואת שמכם.</p>
+      <p className="text-sm text-muted-foreground">הזינו את קוד הכניסה, את שמכם ואת שם הבן.</p>
       <Input inputMode="numeric" placeholder="קוד כניסה" value={code} onChange={(e) => setCode(e.target.value)} />
-      <Input placeholder="שם ההורה" value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && login()} />
-      <Button className="w-full" disabled={busy || !code || name.trim().length < 2} onClick={login}>
+      <Input placeholder="שם ההורה" value={name} onChange={(e) => setName(e.target.value)} />
+      <Input placeholder="שם הבן" value={child} onChange={(e) => setChild(e.target.value)} onKeyDown={(e) => e.key === "Enter" && login()} />
+      <Button className="w-full" disabled={busy || !code || name.trim().length < 2 || child.trim().length < 2} onClick={login}>
         {busy && <Loader2 className="animate-spin" />} כניסה
       </Button>
     </div>
@@ -130,20 +132,9 @@ const ParentCoach = () => {
 
   if (!me.consent_at) return wrap(
     <div className="intake-card-soft space-y-4">
-      <h2 className="font-heading font-bold text-lg">לפני שמתחילים, {me.name}</h2>
-      <div className="rounded-xl bg-primary/10 border border-primary/30 p-4 text-sm leading-relaxed">
-        זהו מרחב תרגול מלווה. מנהל המרחב יכול לצפות בשיחות שלך עם הכלי, בהודעות שתזין, בהצעות שתקבל ובנתוני השימוש. המרחב אינו יומן פרטי ואינו מנוטר בהכרח בזמן אמת.
-      </div>
-      <ul className="text-sm text-muted-foreground space-y-1.5 list-disc pr-5">
-        <li><b>מנהל מלווה:</b> רפאל בוקעי, מנהל בית ספר מרום.</li>
-        <li><b>מה נשמר:</b> השם שהזנת, השיחות והמשוב — לצורך ליווי ושיפור התרגול.</li>
-        <li><b>תקופת שמירה:</b> עד סוף שנת הלימודים, אלא אם תבקש מחיקה מוקדמת מהמנהל.</li>
-        <li>ההודעות מעובדות על ידי שירות תשובות חכם חיצוני לצורך יצירת המשוב.</li>
-        <li>זהו כלי תרגול — לא טיפול, אבחון או שירות חירום. במצב חירום: מד״א 101, משטרה 100, ער״ן 1201.</li>
-        <li>אין שליחה לבן דרך הכלי, ואין גישה לטלפון או לוואטסאפ שלך.</li>
-      </ul>
-      <p className="text-xs text-muted-foreground">אין צורך לכתוב את שם הבן או פרטים מזהים.</p>
-      <Button onClick={async () => { await coachApi({ action: "consent", token }); load(); }}>קראתי ואני מאשר</Button>
+      <h2 className="font-heading font-bold text-lg">שלום {me.name}</h2>
+      <p className="text-sm leading-relaxed">זו שיחת תרגול בלבד — הבן בתרגול הוא דמות דמיונית, לא {me.child_name || "הבן"} האמיתי. מנהל המערכת יכול לקרוא את השיחות.</p>
+      <Button onClick={async () => { await coachApi({ action: "consent", token }); load(); }}>קדימה לתרגול</Button>
     </div>
   );
 

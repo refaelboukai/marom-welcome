@@ -1,0 +1,1 @@
+ALTER TABLE public.parent_coach_participants ADD COLUMN child_name text NOT NULL DEFAULT '';
