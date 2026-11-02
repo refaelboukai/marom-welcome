@@ -13,6 +13,7 @@ import DigitalForms from "./pages/DigitalForms";
 import ShortDayRequest from "./pages/ShortDayRequest";
 import StaffSelfAssessment from "./pages/StaffSelfAssessment";
 import StaffQolAssessment from "./pages/StaffQolAssessment";
+import ParentCoach from "./pages/ParentCoach";
 import InclusionConsent from "./pages/InclusionConsent";
 import IndependentExit from "./pages/IndependentExit";
 import TripConsentPage from "./pages/TripConsent";
@@ -49,6 +50,7 @@ const App = () => {
           <Route path="/forms/short-day" element={<ShortDayRequest />} />
           <Route path="/forms/staff-reflection" element={<StaffSelfAssessment />} />
           <Route path="/forms/staff-qol" element={<StaffQolAssessment />} />
+          <Route path="/forms/parent-coach" element={<ParentCoach />} />
           <Route path="/forms/staff-student-qol" element={<StaffQolAssessment studentMode />} />
           <Route path="/forms/inclusion-consent" element={<InclusionConsent />} />
           <Route path="/forms/independent-exit" element={<IndependentExit />} />

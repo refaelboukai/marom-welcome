@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight, Brain, Clock, Copy, Eye, FileText, ListChecks, School, Settings2, Footprints, MapPin, HeartPulse } from "lucide-react";
+import { ArrowRight, Brain, Clock, Copy, Eye, FileText, ListChecks, School, Settings2, Footprints, MapPin, HeartPulse, MessageCircleHeart } from "lucide-react";
 import { toast } from "sonner";
 import { copyText, labeledLink } from "@/lib/clipboard";
 import EnrollmentFormsAdmin from "@/components/EnrollmentFormsAdmin";
@@ -7,11 +7,12 @@ import ShortDayAdmin from "@/components/ShortDayAdmin";
 import InclusionAdmin from "@/components/InclusionAdmin";
 import ExitAdmin from "@/components/ExitAdmin";
 import TripAdmin from "@/components/TripAdmin";
+import ParentCoachAdmin from "@/components/ParentCoachAdmin";
 import FormEditor from "@/components/FormEditor";
 import { APP_URL } from "@/lib/app-url";
 import { Button } from "@/components/ui/button";
 
-type FormKey = "enrollment" | "short-day" | "inclusion" | "exit" | "trip" | null;
+type FormKey = "enrollment" | "short-day" | "inclusion" | "exit" | "trip" | "coach" | null;
 type Tab = "manage" | "edit" | "preview";
 
 const CARDS = [
@@ -19,6 +20,7 @@ const CARDS = [
   { key: "short-day" as const, icon: Clock, title: "בקשה לקיצור יום לימודים", desc: "בקשות הורים לקיצור יום הלימודים, רישום החלטת בית הספר וחתימות הצוות.", link: `${APP_URL}/forms/short-day` },
   { key: "inclusion" as const, icon: School, title: "אישור הורים — שילוב לימודי", desc: "אישור הורים לשילוב לימודי בבית ספר קולט — פרטי השילוב, יעד חזרה וחתימות ההורים.", link: `${APP_URL}/forms/inclusion-consent` },
   { key: "exit" as const, icon: Footprints, title: "אישור יציאה עצמאית — ללא ליווי וללא הסעה", desc: "אישור הורים לשחרור התלמיד/ה ללא ליווי הורי וללא הסעה, כולל חתימות ואימות עו\"ד ב-PDF.", link: `${APP_URL}/forms/independent-exit` },
+  { key: "coach" as const, icon: MessageCircleHeart, title: "תרגול תקשורת מקרבת — הורים", desc: "צ'אט אימון להורים (קוד כניסה 100). תיקייה לכל הורה עם כל התרגולים, ניהול סימולציות ועצירת התשובות.", link: `${APP_URL}/forms/parent-coach` },
   { key: "trip" as const, icon: MapPin, title: "אישור הורים — יציאה לטיול", desc: "פרטי הטיול, ציוד נדרש והתאמות, הצהרת בריאות וחתימת הורה — כולל PDF.", link: `${APP_URL}/forms/trip-consent` },
 ];
 
@@ -29,6 +31,18 @@ const STAFF_STUDENT_QOL_LINK = `${APP_URL}/forms/staff-student-qol`;
 const DigitalFormsAdmin = () => {
   const [open, setOpen] = useState<FormKey>(null);
   const [tab, setTab] = useState<Tab>("manage");
+
+  if (open === "coach") {
+    return (
+      <div className="space-y-4">
+        <button onClick={() => setOpen(null)} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary">
+          <ArrowRight className="w-4 h-4" /> חזרה לטפסים הדיגיטליים
+        </button>
+        <h2 className="font-heading font-bold text-lg">תרגול תקשורת מקרבת — הורים</h2>
+        <ParentCoachAdmin />
+      </div>
+    );
+  }
 
   if (open) {
     const card = CARDS.find((c) => c.key === open);
