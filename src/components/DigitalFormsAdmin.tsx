@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Switch } from "@/components/ui/switch";
+import { getOnlyCoach, setOnlyCoach } from "@/lib/forms-visibility";
 import { ArrowRight, Brain, Clock, Copy, Eye, FileText, ListChecks, School, Settings2, Footprints, MapPin, HeartPulse, MessageCircleHeart } from "lucide-react";
 import { toast } from "sonner";
 import { copyText, labeledLink } from "@/lib/clipboard";
@@ -31,6 +33,8 @@ const STAFF_STUDENT_QOL_LINK = `${APP_URL}/forms/staff-student-qol`;
 const DigitalFormsAdmin = () => {
   const [open, setOpen] = useState<FormKey>(null);
   const [tab, setTab] = useState<Tab>("manage");
+  const [onlyCoach, setOnlyCoachState] = useState(false);
+  useEffect(() => { getOnlyCoach().then(setOnlyCoachState); }, []);
 
   if (open === "coach") {
     return (
@@ -79,6 +83,17 @@ const DigitalFormsAdmin = () => {
 
   return (
     <div>
+      <div className="intake-card-soft mb-4 flex items-center justify-between gap-3">
+        <div>
+          <p className="font-semibold text-sm">הצגת רק "תרגול תקשורת מקרבת" בעמוד הטפסים הציבורי</p>
+          <p className="text-xs text-muted-foreground">כשפעיל — שאר הכרטיסים מוסתרים לכל המשתמשים.</p>
+        </div>
+        <Switch checked={onlyCoach} onCheckedChange={async (v) => {
+          setOnlyCoachState(v);
+          if (await setOnlyCoach(v)) toast.success(v ? "מוצג רק התרגול" : "כל הטפסים מוצגים");
+          else { setOnlyCoachState(!v); toast.error("השמירה נכשלה"); }
+        }} />
+      </div>
       <p className="text-sm text-muted-foreground mb-4">בחרו טופס לניהול. הקישורים הציבורים ניתנים לשליחה להורים בוואטסאפ.</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="intake-card-soft text-right">

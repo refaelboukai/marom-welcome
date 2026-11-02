@@ -71,7 +71,17 @@ const FORMS = [
 ];
 
 
-const DigitalForms = () => (
+const DigitalForms = () => {
+  const [onlyCoach, setOnly] = useState<boolean | null>(null);
+  useEffect(() => {
+    const load = () => getOnlyCoach().then(setOnly).catch(() => setOnly(false));
+    load();
+    const id = setInterval(load, 20000);
+    window.addEventListener("focus", load);
+    return () => { clearInterval(id); window.removeEventListener("focus", load); };
+  }, []);
+  const forms = onlyCoach === null ? [] : onlyCoach ? FORMS.filter((f) => f.to === "/forms/parent-coach") : FORMS;
+  return (
   <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background">
     <div className="bg-card border-b border-border">
       <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-3">
@@ -89,7 +99,7 @@ const DigitalForms = () => (
         בחרו את הטופס שברצונכם למלא. כל טופס נשלח ישירות למזכירות בית הספר וניתן להוריד ממנו עותק PDF.
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {FORMS.map((f) => {
+        {forms.map((f) => {
           const Icon = f.icon;
           return (
             <Link key={f.to} to={f.to}
