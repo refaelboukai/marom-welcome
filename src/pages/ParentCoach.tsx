@@ -14,12 +14,13 @@ type Msg = { role: "user" | "assistant"; content: string };
 type Conv = { id: string; mode: string; title: string; feedback: string | null; ended_at: string | null; created_at: string };
 type Scenario = { id: string; title: string; opening: string };
 
-const MODE_ICONS: Record<string, any> = { draft: PenLine, simulate: Users, reflect: HeartHandshake, repair: Wrench };
+const MODE_ICONS: Record<string, any> = { draft: PenLine, simulate: Users, reflect: HeartHandshake, repair: Wrench, learn: BookOpen };
 const PLACEHOLDER: Record<string, string> = {
   draft: "הדבק כאן את הטיוטה שרצית לשלוח לבן…",
   simulate: "איך היית מגיב?",
   reflect: "ספר בקצרה מה קרה…",
   repair: "מה נאמר או נעשה?",
+  learn: "על מה תרצה להבין יותר? למשל: למה הוא מתרחק ממני?",
 };
 const SUPERVISION = "מרחב תרגול מלווה: מנהל המערכת יכול לקרוא את השיחות שלך כאן.";
 
@@ -115,7 +116,7 @@ const ParentCoach = () => {
   );
 
   const g = (t: string) => genderize(t, me?.parent_role, me?.child_gender);
-  const ph = (m: string) => { const mom = me?.parent_role === "mother"; const girl = me?.child_gender === "daughter"; const map: Record<string, string> = { draft: `${mom ? "הדביקי" : "הדבק"} כאן את הטיוטה שרצית לשלוח ${girl ? "לבת" : "לבן"}…`, simulate: mom ? "איך היית מגיבה?" : "איך היית מגיב?", reflect: mom ? "ספרי בקצרה מה קרה…" : "ספר בקצרה מה קרה…", repair: "מה נאמר או נעשה?" }; return map[m] ?? PLACEHOLDER[m]; };
+  const ph = (m: string) => { const mom = me?.parent_role === "mother"; const girl = me?.child_gender === "daughter"; const map: Record<string, string> = { draft: `${mom ? "הדביקי" : "הדבק"} כאן את הטיוטה שרצית לשלוח ${girl ? "לבת" : "לבן"}…`, simulate: mom ? "איך היית מגיבה?" : "איך היית מגיב?", reflect: mom ? "ספרי בקצרה מה קרה…" : "ספר בקצרה מה קרה…", repair: "מה נאמר או נעשה?", learn: `על מה ${mom ? "תרצי" : "תרצה"} להבין יותר? למשל: למה ${girl ? "היא מתרחקת" : "הוא מתרחק"} ממני?` }; return map[m] ?? PLACEHOLDER[m]; };
   const wrap = (c: React.ReactNode) => (
     <div dir="rtl" className="min-h-screen bg-gradient-to-b from-primary/5 to-background">{header}<div className="max-w-3xl mx-auto px-4 py-6">{c}</div></div>
   );
