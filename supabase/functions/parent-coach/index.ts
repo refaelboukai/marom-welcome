@@ -128,7 +128,7 @@ Deno.serve(async (req) => {
     let scenario_id: string | null = null;
     if (mode === "simulate" && body.scenario_id) {
       const { data: sc } = await db.from("parent_coach_scenarios").select("id,title,opening").eq("id", body.scenario_id).maybeSingle();
-      if (sc) { scenario_id = sc.id; title = `תרגול: ${sc.title}`; opening = sc.opening ? `**${me.child_gender === "daughter" ? "הבת (בדיונית)" : "הבן (בדיוני)"}:** ${sc.opening}\n\n${me.parent_role === "mother" ? "איך היית מגיבה?" : "איך היית מגיב?"}` : null; }
+      if (sc) { scenario_id = sc.id; title = `תרגול: ${genderize(sc.title, me.parent_role, me.child_gender)}`; opening = sc.opening ? `**${me.child_gender === "daughter" ? "הבת (בדיונית)" : "הבן (בדיוני)"}:** ${genderize(sc.opening, me.parent_role, me.child_gender)}\n\n${me.parent_role === "mother" ? "איך היית מגיבה?" : "איך היית מגיב?"}` : null; }
     }
     const { data: conv, error } = await db.from("parent_coach_conversations").insert({ participant_id: me.id, mode, scenario_id, title }).select("id,mode,title,created_at").single();
     if (error) return json({ error: error.message }, 500);
@@ -167,7 +167,7 @@ Deno.serve(async (req) => {
     let scenarioGuide = "";
     if (conv.scenario_id) {
       const { data: sc } = await db.from("parent_coach_scenarios").select("title,guidance").eq("id", conv.scenario_id).maybeSingle();
-      if (sc) scenarioGuide = `\nתרחיש: ${sc.title}. ${sc.guidance ?? ""}`;
+      if (sc) scenarioGuide = `\nתרחיש: ${genderize(sc.title, me.parent_role, me.child_gender)}. ${sc.guidance ?? ""}`;
     }
     const messages = (hist ?? []).map((m: any) => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.content })) as any[];
     if (action === "finish") messages.push({ role: "user", content: FINISH });
@@ -207,3 +207,13 @@ Deno.serve(async (req) => {
 
   return json({ error: "פעולה לא מוכרת" }, 400);
 });
+
+function genderize(text: string, parentRole?: string | null, childGender?: string | null): string {
+  if (!text) return text;
+  let t = text;
+  const mom = parentRole === "mother", girl = childGender === "daughter";
+  const sub = (pairs: [string, string][]) => { for (const [a, b] of pairs) t = t.replace(new RegExp(`(^|[^\\u0590-\\u05FF])${a}(?=$|[^\\u0590-\\u05FF])`, "g"), `$1${b}`); };
+  if (girl) sub([["הבן", "הבת"], ["בן", "בת"], ["קרא", "קראה"], ["נכנס", "נכנסת"], ["מסתכל", "מסתכלת"], ["עונה", "עונה"]]);
+  if (mom) sub([["האב", "האם"], ["אבא", "אמא"], ["אתה", "את"], ["מבין", "מבינה"], ["תעזוב", "תעזבי"], ["שואל", "שואלת"], ["חושב", "חושבת"], ["שלך", "שלך"], ["עליך", "עלייך"], ["איתך", "איתך"], ["מגיב", "מגיבה"]]);
+  return t;
+}
