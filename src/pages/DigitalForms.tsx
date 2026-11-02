@@ -123,6 +123,7 @@ const DigitalForms = () => {
       </div>
     </div>
   </div>
-);
+  );
+};
 
 export default DigitalForms;
