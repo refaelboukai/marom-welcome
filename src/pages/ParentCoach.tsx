@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { coachApi, coachStream, MODE_LABELS, TOKEN_KEY } from "@/lib/parent-coach";
 import { copyText } from "@/lib/clipboard";
+import { genderize } from "@/lib/genderize";
 
 type Msg = { role: "user" | "assistant"; content: string };
 type Conv = { id: string; mode: string; title: string; feedback: string | null; ended_at: string | null; created_at: string };
@@ -113,6 +114,8 @@ const ParentCoach = () => {
     </div>
   );
 
+  const g = (t: string) => genderize(t, me?.parent_role, me?.child_gender);
+  const ph = (m: string) => { const mom = me?.parent_role === "mother"; const girl = me?.child_gender === "daughter"; const map: Record<string, string> = { draft: `${mom ? "הדביקי" : "הדבק"} כאן את הטיוטה שרצית לשלוח ${girl ? "לבת" : "לבן"}…`, simulate: mom ? "איך היית מגיבה?" : "איך היית מגיב?", reflect: mom ? "ספרי בקצרה מה קרה…" : "ספר בקצרה מה קרה…", repair: "מה נאמר או נעשה?" }; return map[m] ?? PLACEHOLDER[m]; };
   const wrap = (c: React.ReactNode) => (
     <div dir="rtl" className="min-h-screen bg-gradient-to-b from-primary/5 to-background">{header}<div className="max-w-3xl mx-auto px-4 py-6">{c}</div></div>
   );
@@ -120,6 +123,7 @@ const ParentCoach = () => {
   if (!token) return wrap(
     <div className="intake-card-soft max-w-md mx-auto space-y-4">
       <h2 className="font-heading font-bold text-lg">כניסה למרחב התרגול</h2>
+      <p className="text-sm leading-relaxed rounded-lg bg-primary/5 p-3">מערכת לתרגול תקשורת מקרבת בין הורים לילדים, בליווי צוות בית הספר.</p>
       <p className="text-sm text-muted-foreground">הזינו את קוד הכניסה, את שמכם ואת שם הילד/ה.</p>
       <Input inputMode="numeric" placeholder="קוד כניסה" value={code} onChange={(e) => setCode(e.target.value)} />
       <Seg value={role} onChange={setRole as any} options={[["father", "אבא"], ["mother", "אמא"]]} />
@@ -150,7 +154,7 @@ const ParentCoach = () => {
         <button onClick={() => { setActive(null); load(); }} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary">
           <ArrowRight className="w-4 h-4" /> חזרה למסך הבית
         </button>
-        <div className="flex items-center gap-2"><Icon className="w-5 h-5 text-primary" /><h2 className="font-heading font-bold">{active.title}</h2></div>
+        <div className="flex items-center gap-2"><Icon className="w-5 h-5 text-primary" /><h2 className="font-heading font-bold">{g(active.title)}</h2></div>
         <p className="text-[11px] text-muted-foreground flex items-center gap-1"><Eye className="w-3.5 h-3.5" /> {SUPERVISION}</p>
         {active.mode === "simulate" && <p className="text-xs rounded-lg bg-muted p-2">זהו תרחיש דמיוני לתרגול. הוא אינו תחזית לתגובה של {me.child_name || "הילד/ה"}.</p>}
         <div className="space-y-3 min-h-[200px]">
@@ -170,7 +174,7 @@ const ParentCoach = () => {
           !aiEnabled ? <p className="text-sm text-destructive">יצירת תשובות מושבתת כרגע על ידי מנהל המערכת.</p> :
           <div className="sticky bottom-0 bg-background/95 pt-2 pb-3 space-y-2">
             <div className="flex gap-2 items-end">
-              <Textarea ref={inputRef} autoFocus rows={2} value={text} placeholder={PLACEHOLDER[active.mode]}
+              <Textarea ref={inputRef} autoFocus rows={2} value={text} placeholder={ph(active.mode)}
                 onChange={(e) => setText(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send("chat"); } }} className="resize-none" />
               <Button size="icon" aria-label="שליחה" disabled={!text.trim() || streaming !== null} onClick={() => send("chat")}><Send /></Button>
@@ -187,13 +191,13 @@ const ParentCoach = () => {
   if (pickScenario) return wrap(
     <div className="space-y-3">
       <button onClick={() => setPickScenario(false)} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary"><ArrowRight className="w-4 h-4" /> חזרה</button>
-      <h2 className="font-heading font-bold">בחר תרחיש לתרגול</h2>
+      <h2 className="font-heading font-bold">{me.parent_role === "mother" ? "בחרי" : "בחר"} תרחיש לתרגול</h2>
       <p className="text-xs rounded-lg bg-muted p-2">זהו תרחיש דמיוני לתרגול. הוא אינו תחזית לתגובה של {me.child_name || "הילד/ה"}.</p>
       <div className="grid sm:grid-cols-2 gap-3">
         {scenarios.map((s) => (
           <button key={s.id} disabled={busy} onClick={() => start("simulate", s.id)} className="intake-card-soft text-right hover:border-primary/50">
-            <h3 className="font-semibold">{s.title}</h3>
-            {s.opening && <p className="text-xs text-muted-foreground mt-1">{s.opening}</p>}
+            <h3 className="font-semibold">{g(s.title)}</h3>
+            {s.opening && <p className="text-xs text-muted-foreground mt-1">{g(s.opening)}</p>}
           </button>
         ))}
       </div>
@@ -225,7 +229,7 @@ const ParentCoach = () => {
           <h3 className="font-heading font-semibold">מה אני לומד על התקשורת שלי</h3>
           {finished.slice(0, 3).map((c) => (
             <div key={c.id} className="rounded-xl border border-border bg-card p-3">
-              <p className="text-xs text-muted-foreground mb-1">{c.title} · {new Date(c.created_at).toLocaleDateString("he-IL")}</p>
+              <p className="text-xs text-muted-foreground mb-1">{g(c.title)} · {new Date(c.created_at).toLocaleDateString("he-IL")}</p>
               <div className="prose prose-sm max-w-none text-foreground"><ReactMarkdown>{c.feedback!}</ReactMarkdown></div>
             </div>
           ))}
@@ -236,7 +240,7 @@ const ParentCoach = () => {
           <h3 className="font-heading font-semibold">התרגולים שלי</h3>
           {convs.map((c) => (
             <button key={c.id} onClick={() => openConv(c)} className="w-full text-right rounded-xl border border-border bg-card p-3 hover:border-primary/40 flex justify-between">
-              <span className="text-sm">{c.title}</span>
+              <span className="text-sm">{g(c.title)}</span>
               <span className="text-xs text-muted-foreground">{new Date(c.created_at).toLocaleDateString("he-IL")}{c.feedback ? " · הושלם" : ""}</span>
             </button>
           ))}
