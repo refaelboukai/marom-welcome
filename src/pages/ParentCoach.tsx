@@ -154,7 +154,7 @@ const ParentCoach = () => {
         <button onClick={() => { setActive(null); load(); }} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary">
           <ArrowRight className="w-4 h-4" /> חזרה למסך הבית
         </button>
-        <div className="flex items-center gap-2"><Icon className="w-5 h-5 text-primary" /><h2 className="font-heading font-bold">{active.title}</h2></div>
+        <div className="flex items-center gap-2"><Icon className="w-5 h-5 text-primary" /><h2 className="font-heading font-bold">{g(active.title)}</h2></div>
         <p className="text-[11px] text-muted-foreground flex items-center gap-1"><Eye className="w-3.5 h-3.5" /> {SUPERVISION}</p>
         {active.mode === "simulate" && <p className="text-xs rounded-lg bg-muted p-2">זהו תרחיש דמיוני לתרגול. הוא אינו תחזית לתגובה של {me.child_name || "הילד/ה"}.</p>}
         <div className="space-y-3 min-h-[200px]">
@@ -229,7 +229,7 @@ const ParentCoach = () => {
           <h3 className="font-heading font-semibold">מה אני לומד על התקשורת שלי</h3>
           {finished.slice(0, 3).map((c) => (
             <div key={c.id} className="rounded-xl border border-border bg-card p-3">
-              <p className="text-xs text-muted-foreground mb-1">{c.title} · {new Date(c.created_at).toLocaleDateString("he-IL")}</p>
+              <p className="text-xs text-muted-foreground mb-1">{g(c.title)} · {new Date(c.created_at).toLocaleDateString("he-IL")}</p>
               <div className="prose prose-sm max-w-none text-foreground"><ReactMarkdown>{c.feedback!}</ReactMarkdown></div>
             </div>
           ))}
@@ -240,7 +240,7 @@ const ParentCoach = () => {
           <h3 className="font-heading font-semibold">התרגולים שלי</h3>
           {convs.map((c) => (
             <button key={c.id} onClick={() => openConv(c)} className="w-full text-right rounded-xl border border-border bg-card p-3 hover:border-primary/40 flex justify-between">
-              <span className="text-sm">{c.title}</span>
+              <span className="text-sm">{g(c.title)}</span>
               <span className="text-xs text-muted-foreground">{new Date(c.created_at).toLocaleDateString("he-IL")}{c.feedback ? " · הושלם" : ""}</span>
             </button>
           ))}
