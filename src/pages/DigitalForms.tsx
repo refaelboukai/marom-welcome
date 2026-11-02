@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowLeft, HeartPulse, Clock, FileText, Brain, School, Footprints, MapPin } from "lucide-react";
+import { ArrowLeft, HeartPulse, Clock, FileText, Brain, School, Footprints, MapPin, MessageCircleHeart } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 import moeLogo from "@/assets/moe-state.png";
 import { ACADEMIC_YEAR } from "@/lib/short-day";
@@ -39,6 +39,13 @@ const FORMS = [
     title: "אישור יציאה עצמאית — ללא ליווי וללא הסעה",
     desc: "אישור הורים לשחרור התלמיד/ה מבית הספר ללא ליווי הורי וללא הסעה, עם חתימות ההורים והורדת PDF לאימות עו\"ד.",
     tag: "אישור הורים",
+  },
+  {
+    to: "/forms/parent-coach",
+    icon: MessageCircleHeart,
+    title: "רגע לפני — תרגול תקשורת מקרבת",
+    desc: "מרחב תרגול להורים: בדיקת הודעה לפני שליחה, תרגול שיחה, התבוננות עצמית ותיקון אחרי ריב. כניסה עם קוד.",
+    tag: "להורים",
   },
   {
     to: "/forms/trip-consent",
