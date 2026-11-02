@@ -637,6 +637,148 @@ export type Database = {
         }
         Relationships: []
       }
+      parent_coach_conversations: {
+        Row: {
+          created_at: string
+          ended_at: string | null
+          feedback: string | null
+          id: string
+          mode: string
+          participant_id: string
+          safety_flag: boolean
+          scenario_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          ended_at?: string | null
+          feedback?: string | null
+          id?: string
+          mode: string
+          participant_id: string
+          safety_flag?: boolean
+          scenario_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          ended_at?: string | null
+          feedback?: string | null
+          id?: string
+          mode?: string
+          participant_id?: string
+          safety_flag?: boolean
+          scenario_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parent_coach_conversations_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "parent_coach_participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      parent_coach_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          model: string | null
+          role: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          model?: string | null
+          role: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          model?: string | null
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parent_coach_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "parent_coach_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      parent_coach_participants: {
+        Row: {
+          active: boolean
+          consent_at: string | null
+          created_at: string
+          id: string
+          last_seen_at: string
+          name: string
+          token: string
+        }
+        Insert: {
+          active?: boolean
+          consent_at?: string | null
+          created_at?: string
+          id?: string
+          last_seen_at?: string
+          name: string
+          token?: string
+        }
+        Update: {
+          active?: boolean
+          consent_at?: string | null
+          created_at?: string
+          id?: string
+          last_seen_at?: string
+          name?: string
+          token?: string
+        }
+        Relationships: []
+      }
+      parent_coach_scenarios: {
+        Row: {
+          active: boolean
+          created_at: string
+          guidance: string
+          id: string
+          opening: string
+          sort_order: number
+          title: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          guidance?: string
+          id?: string
+          opening?: string
+          sort_order?: number
+          title: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          guidance?: string
+          id?: string
+          opening?: string
+          sort_order?: number
+          title?: string
+        }
+        Relationships: []
+      }
       school_settings: {
         Row: {
           id: string
