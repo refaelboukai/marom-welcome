@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
     if (body.admin_code !== ADMIN_CODE) return json({ error: "אין הרשאה" }, 403);
     if (action === "admin_overview") {
       const [{ data: participants }, { data: convs }, { data: scenarios }, settings] = await Promise.all([
-        db.from("parent_coach_participants").select("id,name,child_name,parent_role,child_gender,consent_at,active,last_seen_at,created_at").order("last_seen_at", { ascending: false }),
+        db.from("parent_coach_participants").select("id,name,child_name,parent_role,child_gender,consent_at,active,last_seen_at,created_at,archived_at").order("last_seen_at", { ascending: false }),
         db.from("parent_coach_conversations").select("id,participant_id,mode,title,feedback,safety_flag,ended_at,created_at").order("created_at", { ascending: false }),
         db.from("parent_coach_scenarios").select("*").order("sort_order"),
         getSettings(),
