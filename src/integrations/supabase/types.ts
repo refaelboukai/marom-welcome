@@ -722,6 +722,7 @@ export type Database = {
       parent_coach_participants: {
         Row: {
           active: boolean
+          archived_at: string | null
           child_gender: string
           child_name: string
           consent_at: string | null
@@ -734,6 +735,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          archived_at?: string | null
           child_gender?: string
           child_name?: string
           consent_at?: string | null
@@ -746,6 +748,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          archived_at?: string | null
           child_gender?: string
           child_name?: string
           consent_at?: string | null

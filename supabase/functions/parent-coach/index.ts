@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
     if (body.admin_code !== ADMIN_CODE) return json({ error: "אין הרשאה" }, 403);
     if (action === "admin_overview") {
       const [{ data: participants }, { data: convs }, { data: scenarios }, settings] = await Promise.all([
-        db.from("parent_coach_participants").select("id,name,child_name,parent_role,child_gender,consent_at,active,last_seen_at,created_at").order("last_seen_at", { ascending: false }),
+        db.from("parent_coach_participants").select("id,name,child_name,parent_role,child_gender,consent_at,active,last_seen_at,created_at,archived_at").order("last_seen_at", { ascending: false }),
         db.from("parent_coach_conversations").select("id,participant_id,mode,title,feedback,safety_flag,ended_at,created_at").order("created_at", { ascending: false }),
         db.from("parent_coach_scenarios").select("*").order("sort_order"),
         getSettings(),
@@ -97,6 +97,20 @@ Deno.serve(async (req) => {
     if (action === "admin_set_participant") {
       await db.from("parent_coach_participants").update({ active: !!body.active }).eq("id", body.id);
       return json({ ok: true });
+    }
+    if (action === "admin_archive_participant") {
+      await db.from("parent_coach_participants").update({ archived_at: body.archived ? new Date().toISOString() : null }).eq("id", body.id);
+      return json({ ok: true });
+    }
+    if (action === "admin_delete_participant") {
+      const { data: cs } = await db.from("parent_coach_conversations").select("id").eq("participant_id", body.id);
+      const ids = (cs ?? []).map((c: any) => c.id);
+      if (ids.length) {
+        await db.from("parent_coach_messages").delete().in("conversation_id", ids);
+        await db.from("parent_coach_conversations").delete().in("id", ids);
+      }
+      const { error } = await db.from("parent_coach_participants").delete().eq("id", body.id);
+      return error ? json({ error: error.message }, 500) : json({ ok: true });
     }
     if (action === "admin_settings") {
       const value = { ai_enabled: !!body.ai_enabled };
