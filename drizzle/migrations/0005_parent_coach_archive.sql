@@ -1,0 +1,1 @@
+ALTER TABLE public.parent_coach_participants ADD COLUMN IF NOT EXISTS archived_at timestamptz;

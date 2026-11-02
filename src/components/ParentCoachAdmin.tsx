@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { AlertTriangle, ArrowRight, Folder, Loader2, Plus, Power, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowRight, Folder, Loader2, Plus, Power, Trash2, Archive } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { coachApi, MODE_LABELS } from "@/lib/parent-coach";
 
 const ADMIN = { admin_code: "9020" };
-type P = { id: string; name: string; child_name?: string; parent_role?: string; child_gender?: string; consent_at: string | null; active: boolean; last_seen_at: string; created_at: string };
+type P = { id: string; name: string; child_name?: string; parent_role?: string; child_gender?: string; consent_at: string | null; active: boolean; last_seen_at: string; created_at: string; archived_at?: string | null };
 type C = { id: string; participant_id: string; mode: string; title: string; feedback: string | null; safety_flag: boolean; ended_at: string | null; created_at: string };
 type S = { id?: string; title: string; opening: string; guidance: string; active: boolean; sort_order: number };
 
@@ -21,6 +21,7 @@ const ParentCoachAdmin = () => {
   const [conv, setConv] = useState<C | null>(null);
   const [msgs, setMsgs] = useState<{ role: string; content: string; created_at: string }[]>([]);
   const [q, setQ] = useState("");
+  const [showArch, setShowArch] = useState(false);
   const [modeF, setModeF] = useState("");
   const [editing, setEditing] = useState<S | null>(null);
 
@@ -33,7 +34,8 @@ const ParentCoachAdmin = () => {
     setMsgs(d.messages ?? []);
   };
 
-  const parents = useMemo(() => (data?.participants ?? []).filter((p) => p.name.includes(q.trim())), [data, q]);
+  const parents = useMemo(() => (data?.participants ?? []).filter((p) => p.name.includes(q.trim()) && !!p.archived_at === showArch), [data, q, showArch]);
+  const archCount = (data?.participants ?? []).filter((p) => p.archived_at).length;
   if (!data) return <div className="py-10 flex justify-center"><Loader2 className="animate-spin text-primary" /></div>;
   const convsOf = (pid: string) => data.conversations.filter((c) => c.participant_id === pid && (!modeF || c.mode === modeF));
 
@@ -122,6 +124,12 @@ const ParentCoachAdmin = () => {
           <Button size="sm" variant="outline" onClick={async () => { await coachApi({ action: "admin_set_participant", id: folder.id, active: !folder.active, ...ADMIN }); setFolder({ ...folder, active: !folder.active }); load(); }}>
             {folder.active ? "חסימת גישה" : "החזרת גישה"}
           </Button>
+          <Button size="sm" variant="outline" onClick={async () => { const a = !folder.archived_at; await coachApi({ action: "admin_archive_participant", id: folder.id, archived: a, ...ADMIN }); toast.success(a ? "התיקייה הועברה לארכיון" : "התיקייה הוחזרה מהארכיון"); setFolder(null); load(); }}>
+            <Archive /> {folder.archived_at ? "החזרה מהארכיון" : "העברה לארכיון"}
+          </Button>
+          <Button size="sm" variant="destructive" onClick={async () => { if (!confirm(`למחוק לצמיתות את התיקייה של ${folder.name} וכל התרגולים שבה? לא ניתן לשחזר.`)) return; await coachApi({ action: "admin_delete_participant", id: folder.id, ...ADMIN }); toast.success("התיקייה נמחקה"); setFolder(null); load(); }}>
+            <Trash2 /> מחיקה
+          </Button>
         </div>
         <p className="text-xs text-muted-foreground">נכנס לראשונה {fmt(folder.created_at)} · פעילות אחרונה {fmt(folder.last_seen_at)} · {folder.consent_at ? `אישר את תנאי הפיקוח ${fmt(folder.consent_at)}` : "טרם אישר את תנאי הפיקוח"}</p>
         <select value={modeF} onChange={(e) => setModeF(e.target.value)} className="rounded-lg border border-border bg-card px-2 py-1.5 text-sm">
@@ -142,8 +150,11 @@ const ParentCoachAdmin = () => {
   return (
     <div className="space-y-3">
       {top}
-      <Input placeholder="חיפוש לפי שם הורה" value={q} onChange={(e) => setQ(e.target.value)} />
-      {parents.length === 0 && <p className="text-sm text-muted-foreground">עדיין אין הורים שנכנסו למרחב.</p>}
+      <div className="flex gap-2">
+        <Input placeholder="חיפוש לפי שם הורה" value={q} onChange={(e) => setQ(e.target.value)} />
+        <Button size="sm" variant={showArch ? "default" : "outline"} onClick={() => setShowArch(!showArch)} className="shrink-0 h-10"><Archive /> {showArch ? "חזרה לתיקיות פעילות" : `ארכיון (${archCount})`}</Button>
+      </div>
+      {parents.length === 0 && <p className="text-sm text-muted-foreground">{showArch ? "הארכיון ריק." : "אין תיקיות פעילות."}</p>}
       <div className="grid sm:grid-cols-2 gap-2">
         {parents.map((p) => {
           const cs = data.conversations.filter((c) => c.participant_id === p.id);

@@ -36,6 +36,13 @@
       "when": 1793613082501,
       "tag": "0004_parent_coach_roles",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793614733224,
+      "tag": "0005_parent_coach_archive",
+      "breakpoints": true
     }
   ]
 }
