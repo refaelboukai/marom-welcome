@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { coachApi, MODE_LABELS } from "@/lib/parent-coach";
 
 const ADMIN = { admin_code: "9020" };
-type P = { id: string; name: string; child_name?: string; consent_at: string | null; active: boolean; last_seen_at: string; created_at: string };
+type P = { id: string; name: string; child_name?: string; parent_role?: string; child_gender?: string; consent_at: string | null; active: boolean; last_seen_at: string; created_at: string };
 type C = { id: string; participant_id: string; mode: string; title: string; feedback: string | null; safety_flag: boolean; ended_at: string | null; created_at: string };
 type S = { id?: string; title: string; opening: string; guidance: string; active: boolean; sort_order: number };
 
@@ -118,7 +118,7 @@ const ParentCoachAdmin = () => {
         {top}
         <button onClick={() => setFolder(null)} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary"><ArrowRight className="w-4 h-4" /> כל התיקיות</button>
         <div className="flex flex-wrap items-center gap-2 justify-between">
-          <h3 className="font-heading font-bold flex items-center gap-2"><Folder className="w-5 h-5 text-primary" /> {folder.name}{folder.child_name ? ` · הבן: ${folder.child_name}` : ""}</h3>
+          <h3 className="font-heading font-bold flex items-center gap-2"><Folder className="w-5 h-5 text-primary" /> {folder.parent_role === "mother" ? "אמא" : "אבא"}: {folder.name}{folder.child_name ? ` · ${folder.child_gender === "daughter" ? "הבת" : "הבן"}: ${folder.child_name}` : ""}</h3>
           <Button size="sm" variant="outline" onClick={async () => { await coachApi({ action: "admin_set_participant", id: folder.id, active: !folder.active, ...ADMIN }); setFolder({ ...folder, active: !folder.active }); load(); }}>
             {folder.active ? "חסימת גישה" : "החזרת גישה"}
           </Button>
@@ -152,7 +152,7 @@ const ParentCoachAdmin = () => {
               <Folder className="w-6 h-6 text-primary" />
               <div className="flex-1">
                 <p className="font-semibold text-sm">{p.name} {!p.active && <span className="text-xs text-destructive">(חסום)</span>}</p>
-                <p className="text-xs text-muted-foreground">{p.child_name ? `הבן: ${p.child_name} · ` : ""}{cs.length} תרגולים · {fmt(p.last_seen_at)}</p>
+                <p className="text-xs text-muted-foreground">{p.parent_role === "mother" ? "אמא" : "אבא"}{p.child_name ? ` של ${p.child_name} (${p.child_gender === "daughter" ? "בת" : "בן"})` : ""} · {cs.length} תרגולים · {fmt(p.last_seen_at)}</p>
               </div>
               {cs.some((c) => c.safety_flag) && <AlertTriangle className="w-4 h-4 text-destructive" />}
             </button>

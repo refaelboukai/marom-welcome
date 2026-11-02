@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
     if (body.admin_code !== ADMIN_CODE) return json({ error: "אין הרשאה" }, 403);
     if (action === "admin_overview") {
       const [{ data: participants }, { data: convs }, { data: scenarios }, settings] = await Promise.all([
-        db.from("parent_coach_participants").select("id,name,child_name,consent_at,active,last_seen_at,created_at").order("last_seen_at", { ascending: false }),
+        db.from("parent_coach_participants").select("id,name,child_name,parent_role,child_gender,consent_at,active,last_seen_at,created_at").order("last_seen_at", { ascending: false }),
         db.from("parent_coach_conversations").select("id,participant_id,mode,title,feedback,safety_flag,ended_at,created_at").order("created_at", { ascending: false }),
         db.from("parent_coach_scenarios").select("*").order("sort_order"),
         getSettings(),
@@ -97,11 +97,13 @@ Deno.serve(async (req) => {
     if (name.length < 2) return json({ error: "יש להזין שם" }, 400);
     const child_name = String(body.child_name ?? "").trim().slice(0, 60);
     if (child_name.length < 2) return json({ error: "יש להזין את שם הבן" }, 400);
-    const { data, error } = await db.from("parent_coach_participants").insert({ name, child_name }).select("id,name,child_name,token,consent_at").single();
+    const parent_role = body.parent_role === "mother" ? "mother" : "father";
+    const child_gender = body.child_gender === "daughter" ? "daughter" : "son";
+    const { data, error } = await db.from("parent_coach_participants").insert({ name, child_name, parent_role, child_gender }).select("id,name,child_name,token,consent_at").single();
     return error ? json({ error: error.message }, 500) : json({ participant: data });
   }
 
-  const { data: me } = await db.from("parent_coach_participants").select("id,name,child_name,consent_at,active").eq("token", String(body.token ?? "")).maybeSingle();
+  const { data: me } = await db.from("parent_coach_participants").select("id,name,child_name,parent_role,child_gender,consent_at,active").eq("token", String(body.token ?? "")).maybeSingle();
   if (!me) return json({ error: "יש להיכנס מחדש" }, 401);
   if (!me.active) return json({ error: "הגישה למרחב הושבתה על ידי מנהל המערכת" }, 403);
   await db.from("parent_coach_participants").update({ last_seen_at: new Date().toISOString() }).eq("id", me.id);
@@ -186,7 +188,7 @@ Deno.serve(async (req) => {
     });
     const result = streamText({
       model: openai.responses(MODEL),
-      system: `${BASE_PROMPT}\n\n${MODES[conv.mode]}${scenarioGuide}\nשם ההורה: ${me.name}. שם הבן: ${me.child_name || "לא צוין"}. זו שיחת תרגול בלבד — בסימולציה אתה דמות בדיונית בשם הזה, לא הבן האמיתי.`,
+      system: `${BASE_PROMPT}\n\n${MODES[conv.mode]}${scenarioGuide}\nההורה: ${me.parent_role === "mother" ? "אמא" : "אבא"} בשם ${me.name} — פנה ${me.parent_role === "mother" ? "בלשון נקבה" : "בלשון זכר"}. ${me.child_gender === "daughter" ? "הבת" : "הבן"}: ${me.child_name || "לא צוין"} — התייחס ${me.child_gender === "daughter" ? "בלשון נקבה (בת מתבגרת)" : "בלשון זכר (בן מתבגר)"}, והתאם בהתאם את כל ההנחיות שנכתבו על ״אב״ ו״בן״. זו שיחת תרגול בלבד — בסימולציה אתה דמות בדיונית בשם הזה, לא הילד האמיתי.`,
       messages,
       abortSignal: req.signal,
       providerOptions: { openai: { forceReasoning: true, reasoningEffort: "low", store: false, include: ["reasoning.encrypted_content"] } },
