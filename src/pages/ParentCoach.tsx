@@ -123,7 +123,11 @@ const ParentCoach = () => {
   if (!token) return wrap(
     <div className="intake-card-soft max-w-md mx-auto space-y-4">
       <h2 className="font-heading font-bold text-lg">כניסה למרחב התרגול</h2>
-      <p className="text-sm leading-relaxed rounded-lg bg-primary/5 p-3">מערכת לתרגול תקשורת מקרבת בין הורים לילדים, בליווי צוות בית הספר.</p>
+      <div className="text-sm leading-relaxed rounded-lg bg-primary/5 p-3 space-y-2">
+        <p className="font-medium">מערכת לתרגול תקשורת מקרבת בין הורים לילדים, בליווי צוות בית הספר.</p>
+        <p>תקשורת מקרבת היא דרך לדבר שמחזקת את הקשר: להקשיב באמת, לשקף רגשות, לומר מה אנחנו מרגישים וצריכים בלי האשמה, ולחפש יחד פתרון.</p>
+        <p>ברגעים טעונים קשה להגיב כפי שהיינו רוצים. תרגול מראש, במרחב בטוח ובלי לחץ, עוזר למצוא מילים חדשות, להכיר את הדפוסים שלנו ולהגיע לשיחה האמיתית רגועים ובטוחים יותר.</p>
+      </div>
       <p className="text-sm text-muted-foreground">הזינו את קוד הכניסה, את שמכם ואת שם הילד/ה.</p>
       <Input inputMode="numeric" placeholder="קוד כניסה" value={code} onChange={(e) => setCode(e.target.value)} />
       <Seg value={role} onChange={setRole as any} options={[["father", "אבא"], ["mother", "אמא"]]} />
