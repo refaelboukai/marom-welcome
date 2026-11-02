@@ -128,7 +128,7 @@ Deno.serve(async (req) => {
     let scenario_id: string | null = null;
     if (mode === "simulate" && body.scenario_id) {
       const { data: sc } = await db.from("parent_coach_scenarios").select("id,title,opening").eq("id", body.scenario_id).maybeSingle();
-      if (sc) { scenario_id = sc.id; title = `תרגול: ${sc.title}`; opening = sc.opening ? `**הבן (בדיוני):** ${sc.opening}\n\nאיך היית מגיב?` : null; }
+      if (sc) { scenario_id = sc.id; title = `תרגול: ${sc.title}`; opening = sc.opening ? `**${me.child_gender === "daughter" ? "הבת (בדיונית)" : "הבן (בדיוני)"}:** ${sc.opening}\n\n${me.parent_role === "mother" ? "איך היית מגיבה?" : "איך היית מגיב?"}` : null; }
     }
     const { data: conv, error } = await db.from("parent_coach_conversations").insert({ participant_id: me.id, mode, scenario_id, title }).select("id,mode,title,created_at").single();
     if (error) return json({ error: error.message }, 500);

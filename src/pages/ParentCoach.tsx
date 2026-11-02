@@ -152,7 +152,7 @@ const ParentCoach = () => {
         </button>
         <div className="flex items-center gap-2"><Icon className="w-5 h-5 text-primary" /><h2 className="font-heading font-bold">{active.title}</h2></div>
         <p className="text-[11px] text-muted-foreground flex items-center gap-1"><Eye className="w-3.5 h-3.5" /> {SUPERVISION}</p>
-        {active.mode === "simulate" && <p className="text-xs rounded-lg bg-muted p-2">זהו תרחיש דמיוני לתרגול. הוא אינו תחזית לתגובת הבן שלך.</p>}
+        {active.mode === "simulate" && <p className="text-xs rounded-lg bg-muted p-2">זהו תרחיש דמיוני לתרגול. הוא אינו תחזית לתגובה של {me.child_name || "הילד/ה"}.</p>}
         <div className="space-y-3 min-h-[200px]">
           {msgs.map((m, i) => <Bubble key={i} m={m} canCopy={active.mode !== "simulate"} />)}
           {streaming !== null && (streaming ? <Bubble m={{ role: "assistant", content: streaming }} /> :
@@ -188,7 +188,7 @@ const ParentCoach = () => {
     <div className="space-y-3">
       <button onClick={() => setPickScenario(false)} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary"><ArrowRight className="w-4 h-4" /> חזרה</button>
       <h2 className="font-heading font-bold">בחר תרחיש לתרגול</h2>
-      <p className="text-xs rounded-lg bg-muted p-2">זהו תרחיש דמיוני לתרגול. הוא אינו תחזית לתגובת הבן שלך.</p>
+      <p className="text-xs rounded-lg bg-muted p-2">זהו תרחיש דמיוני לתרגול. הוא אינו תחזית לתגובה של {me.child_name || "הילד/ה"}.</p>
       <div className="grid sm:grid-cols-2 gap-3">
         {scenarios.map((s) => (
           <button key={s.id} disabled={busy} onClick={() => start("simulate", s.id)} className="intake-card-soft text-right hover:border-primary/50">
