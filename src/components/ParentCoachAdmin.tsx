@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { AlertTriangle, ArrowRight, Folder, Loader2, Plus, Power, Trash2, Archive } from "lucide-react";
+import { AlertTriangle, ArrowRight, Folder, Loader2, Plus, Power, Trash2, Archive, Sparkles, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,13 @@ const ParentCoachAdmin = () => {
   const [q, setQ] = useState("");
   const [showArch, setShowArch] = useState(false);
   const [modeF, setModeF] = useState("");
+  const [ins, setIns] = useState<{ id: string; text: string } | null>(null);
+  const [insLoading, setInsLoading] = useState(false);
+  const runInsights = async (id: string) => {
+    setInsLoading(true);
+    try { const d = await coachApi({ action: "admin_insights", id, ...ADMIN }); setIns({ id, text: d.insights }); }
+    catch (e: any) { toast.error(e.message); } finally { setInsLoading(false); }
+  };
   const [editing, setEditing] = useState<S | null>(null);
 
   const load = () => coachApi({ action: "admin_overview", ...ADMIN }).then(setData).catch((e) => toast.error(e.message));
@@ -132,6 +139,22 @@ const ParentCoachAdmin = () => {
           </Button>
         </div>
         <p className="text-xs text-muted-foreground">נכנס לראשונה {fmt(folder.created_at)} · פעילות אחרונה {fmt(folder.last_seen_at)} · {folder.consent_at ? `אישר את תנאי הפיקוח ${fmt(folder.consent_at)}` : "טרם אישר את תנאי הפיקוח"}</p>
+        <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 space-y-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="font-heading font-bold text-sm flex items-center gap-1.5"><Sparkles className="w-4 h-4 text-primary" /> תובנות, דפוסים ותמות</span>
+            <div className="flex gap-2">
+              {ins?.id === folder.id && <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(ins.text); toast.success("הועתק"); }}><Copy /> העתקה</Button>}
+              <Button size="sm" disabled={insLoading || list.length === 0} onClick={() => runInsights(folder.id)}>
+                {insLoading ? <><Loader2 className="animate-spin" /> מנתח את התרגולים…</> : ins?.id === folder.id ? "ניתוח מחדש" : "הפקת תובנות"}
+              </Button>
+            </div>
+          </div>
+          {ins?.id === folder.id ? (
+            <div className="prose prose-sm max-w-none text-foreground"><ReactMarkdown>{ins.text}</ReactMarkdown></div>
+          ) : (
+            <p className="text-xs text-muted-foreground">ניתוח של כל התרגולים של ההורה: תמות מרכזיות, דפוסי תגובה, חוזקות, נקודות לחיזוק, התפתחות והמלצות לליווי.</p>
+          )}
+        </div>
         <select value={modeF} onChange={(e) => setModeF(e.target.value)} className="rounded-lg border border-border bg-card px-2 py-1.5 text-sm">
           <option value="">כל סוגי התרגול</option>
           {Object.entries(MODE_LABELS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}

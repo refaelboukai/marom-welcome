@@ -1,6 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { createOpenAI } from "npm:@ai-sdk/openai";
-import { streamText } from "npm:ai";
+import { streamText, generateText } from "npm:ai";
 import { parseParentLogin } from "./login-input.ts";
 
 const cors = {
@@ -77,6 +77,38 @@ Deno.serve(async (req) => {
         getSettings(),
       ]);
       return json({ participants, conversations: convs, scenarios, settings });
+    }
+    if (action === "admin_insights") {
+      const key = Deno.env.get("LOVABLE_API_KEY");
+      if (!key) return json({ error: "השירות אינו מוגדר" }, 500);
+      const { data: p } = await db.from("parent_coach_participants").select("name,child_name,parent_role,child_gender").eq("id", body.id).maybeSingle();
+      if (!p) return json({ error: "לא נמצא" }, 404);
+      const { data: cs } = await db.from("parent_coach_conversations").select("id,mode,title,feedback,safety_flag,created_at").eq("participant_id", body.id).order("created_at");
+      if (!cs?.length) return json({ error: "אין עדיין תרגולים לניתוח" }, 400);
+      const { data: ms } = await db.from("parent_coach_messages").select("conversation_id,role,content,created_at").in("conversation_id", cs.map((c: any) => c.id)).order("created_at");
+      let corpus = "";
+      cs.forEach((c: any, i: number) => {
+        corpus += `\n\n### תרגול ${i + 1} (${c.mode}) — ${c.title} — ${String(c.created_at).slice(0, 10)}${c.safety_flag ? " [סימון בטיחות]" : ""}\n`;
+        for (const m of (ms ?? []).filter((m: any) => m.conversation_id === c.id)) corpus += `${m.role === "user" ? "הורה" : "מאמן/דמות"}: ${String(m.content).slice(0, 1500)}\n`;
+      });
+      corpus = corpus.slice(-60000);
+      const role = p.parent_role === "mother" ? "אמא" : "אבא";
+      const child = p.child_gender === "daughter" ? "בת" : "בן";
+      const openai = createOpenAI({ baseURL: "https://ai.gateway.lovable.dev/v1", apiKey: key, headers: { "Lovable-API-Key": key, "X-Lovable-AIG-SDK": "vercel-ai-sdk" } });
+      const { text } = await generateText({
+        model: openai.responses(MODEL),
+        system: `את/ה איש/אשת מקצוע פסיכו־חינוכי/ת שכותב/ת לצוות בית ספר (מתבגרים, כיתות ז–יב) סיכום מקצועי על הורה שתרגל תקשורת מקרבת. כתוב/י בעברית, בגוף שלישי, בלשון ${role === "אמא" ? "נקבה להורה" : "זכר להורה"}, בטון מכבד, לא שיפוטי וללא אבחנות. התבסס/י רק על מה שמופיע בשיחות וצטט/י ניסוחים קצרים של ההורה כראיה. אל תשתמש/י במילים "בינה מלאכותית" או AI. החזר/י Markdown עם הכותרות הבאות בדיוק:
+## תמונה כללית
+## תמות מרכזיות
+## דפוסי תגובה חוזרים
+## חוזקות בתקשורת
+## נקודות לחיזוק
+## התפתחות לאורך התרגולים
+## המלצות לצוות להמשך ליווי
+אם יש מעט חומר — ציין/י זאת במפורש.`,
+        prompt: `${role}: ${p.name}. ה${child}: ${p.child_name ?? ""}. מספר תרגולים: ${cs.length}.\n${corpus}`,
+      });
+      return json({ insights: text, count: cs.length });
     }
     if (action === "admin_messages") {
       const { data } = await db.from("parent_coach_messages").select("role,content,created_at").eq("conversation_id", body.conversation_id).order("created_at");
