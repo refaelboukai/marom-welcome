@@ -1,13 +1,13 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { createOpenAI } from "npm:@ai-sdk/openai";
 import { streamText } from "npm:ai";
+import { parseParentLogin } from "./login-input.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
   "Access-Control-Expose-Headers": "X-Lovable-AIG-Run-ID",
 };
-const ENTRY_CODE = "100";
 const ADMIN_CODE = "9020";
 const MODEL = "openai/gpt-6-astra";
 
@@ -122,14 +122,10 @@ Deno.serve(async (req) => {
 
   // ---------- parent ----------
   if (action === "login") {
-    if (String(body.code ?? "").trim() !== ENTRY_CODE) return json({ error: "קוד שגוי" }, 403);
-    const name = String(body.name ?? "").trim().slice(0, 80);
-    if (name.length < 2) return json({ error: "יש להזין שם" }, 400);
-    const child_name = String(body.child_name ?? "").trim().slice(0, 60);
-    if (child_name.length < 2) return json({ error: "יש להזין את שם הבן" }, 400);
-    const parent_role = body.parent_role === "mother" ? "mother" : "father";
-    const child_gender = body.child_gender === "daughter" ? "daughter" : "son";
-    const { data, error } = await db.from("parent_coach_participants").insert({ name, child_name, parent_role, child_gender }).select("id,name,child_name,token,consent_at").single();
+    let participant;
+    try { participant = parseParentLogin(body); }
+    catch (error) { return json({ error: error instanceof Error ? error.message : "פרטים לא תקינים" }, 400); }
+    const { data, error } = await db.from("parent_coach_participants").insert(participant).select("id,name,child_name,token,consent_at").single();
     return error ? json({ error: error.message }, 500) : json({ participant: data });
   }
 

@@ -22,7 +22,7 @@ const CARDS = [
   { key: "short-day" as const, icon: Clock, title: "בקשה לקיצור יום לימודים", desc: "בקשות הורים לקיצור יום הלימודים, רישום החלטת בית הספר וחתימות הצוות.", link: `${APP_URL}/forms/short-day` },
   { key: "inclusion" as const, icon: School, title: "אישור הורים — שילוב לימודי", desc: "אישור הורים לשילוב לימודי בבית ספר קולט — פרטי השילוב, יעד חזרה וחתימות ההורים.", link: `${APP_URL}/forms/inclusion-consent` },
   { key: "exit" as const, icon: Footprints, title: "אישור יציאה עצמאית — ללא ליווי וללא הסעה", desc: "אישור הורים לשחרור התלמיד/ה ללא ליווי הורי וללא הסעה, כולל חתימות ואימות עו\"ד ב-PDF.", link: `${APP_URL}/forms/independent-exit` },
-  { key: "coach" as const, icon: MessageCircleHeart, title: "תרגול תקשורת מקרבת — הורים", desc: "צ'אט אימון להורים (קוד כניסה 100). תיקייה לכל הורה עם כל התרגולים, ניהול סימולציות ועצירת התשובות.", link: `${APP_URL}/forms/parent-coach` },
+  { key: "coach" as const, icon: MessageCircleHeart, title: "תרגול תקשורת מקרבת — הורים", desc: "צ'אט אימון להורים בכניסה עם שמות בלבד. תיקייה לכל הורה עם כל התרגולים, ניהול סימולציות ועצירת התשובות.", link: `${APP_URL}/forms/parent-coach` },
   { key: "trip" as const, icon: MapPin, title: "אישור הורים — יציאה לטיול", desc: "פרטי הטיול, ציוד נדרש והתאמות, הצהרת בריאות וחתימת הורה — כולל PDF.", link: `${APP_URL}/forms/trip-consent` },
 ];
 

@@ -30,7 +30,6 @@ const ParentCoach = () => {
   const [convs, setConvs] = useState<Conv[]>([]);
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [aiEnabled, setAiEnabled] = useState(true);
-  const [code, setCode] = useState("");
   const [name, setName] = useState("");
   const [child, setChild] = useState("");
   const [role, setRole] = useState<"father" | "mother">("father");
@@ -60,9 +59,10 @@ const ParentCoach = () => {
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs, streaming, feedback]);
 
   const login = async () => {
+    if (busy || name.trim().length < 2 || child.trim().length < 2) return;
     setBusy(true);
     try {
-      const d = await coachApi({ action: "login", code, name, child_name: child, parent_role: role, child_gender: gender });
+      const d = await coachApi({ action: "login", name, child_name: child, parent_role: role, child_gender: gender });
       localStorage.setItem(TOKEN_KEY, d.participant.token);
       setToken(d.participant.token);
     } catch (e: any) { toast.error(e.message); } finally { setBusy(false); }
@@ -129,27 +129,19 @@ const ParentCoach = () => {
         <p>תקשורת מקרבת היא דרך לדבר שמחזקת את הקשר: להקשיב באמת, לשקף רגשות, לומר מה אנחנו מרגישים וצריכים בלי האשמה, ולחפש יחד פתרון.</p>
         <p>ברגעים טעונים קשה להגיב כפי שהיינו רוצים. תרגול מראש, במרחב בטוח ובלי לחץ, עוזר למצוא מילים חדשות, להכיר את הדפוסים שלנו ולהגיע לשיחה האמיתית רגועים ובטוחים יותר.</p>
       </div>
-      <p className="text-sm text-muted-foreground">הזינו את קוד הכניסה, את שמכם ואת שם הילד/ה.</p>
-      <Input inputMode="numeric" placeholder="קוד כניסה" value={code} onChange={(e) => setCode(e.target.value)} />
+      <p className="text-sm text-muted-foreground">הזינו את שמכם ואת שם הילד/ה.</p>
       <Seg value={role} onChange={setRole as any} options={[["father", "אבא"], ["mother", "אמא"]]} />
       <Input placeholder="שם ההורה" value={name} onChange={(e) => setName(e.target.value)} />
       <Seg value={gender} onChange={setGender as any} options={[["son", "בן"], ["daughter", "בת"]]} />
       <Input placeholder={gender === "daughter" ? "שם הבת" : "שם הבן"} value={child} onChange={(e) => setChild(e.target.value)} onKeyDown={(e) => e.key === "Enter" && login()} />
-      <Button className="w-full" disabled={busy || !code || name.trim().length < 2 || child.trim().length < 2} onClick={login}>
-        {busy && <Loader2 className="animate-spin" />} כניסה
+      <p className="text-xs text-muted-foreground leading-relaxed">זו שיחת תרגול בלבד. השיחות נשמרות במערכת ומנהל המערכת יכול לקרוא אותן.</p>
+      <Button className="w-full" disabled={busy || name.trim().length < 2 || child.trim().length < 2} onClick={login}>
+        {busy && <Loader2 className="animate-spin" />} כניסה לתרגול
       </Button>
     </div>
   );
 
   if (!me) return wrap(<div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary" /></div>);
-
-  if (!me.consent_at) return wrap(
-    <div className="intake-card-soft space-y-4">
-      <h2 className="font-heading font-bold text-lg">שלום {me.name}</h2>
-      <p className="text-sm leading-relaxed">זו שיחת תרגול בלבד — {me.child_gender === "daughter" ? "הבת בתרגול היא דמות דמיונית, לא" : "הבן בתרגול הוא דמות דמיונית, לא"} {me.child_name} {me.child_gender === "daughter" ? "האמיתית" : "האמיתי"}. מנהל המערכת יכול לקרוא את השיחות.</p>
-      <Button onClick={async () => { await coachApi({ action: "consent", token }); load(); }}>קדימה לתרגול</Button>
-    </div>
-  );
 
   if (active) {
     const Icon = MODE_ICONS[active.mode] ?? MessageCircleHeart;
